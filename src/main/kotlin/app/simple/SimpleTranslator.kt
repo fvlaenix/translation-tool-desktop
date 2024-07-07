@@ -17,6 +17,7 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
+import app.TopBar
 import kotlinx.coroutines.launch
 import utils.ClipboardUtils.getClipboardImage
 import utils.ProtobufUtils
@@ -32,18 +33,7 @@ fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
 
   val currentSize = remember { mutableStateOf(IntSize.Zero) }
 
-  Scaffold(
-    topBar = {
-      TopAppBar(
-        title = { Text("Simple Translator") },
-        navigationIcon = {
-          IconButton(onClick = { mutableState.value = AppStateEnum.MAIN_MENU }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
-          }
-        }
-      )
-    },
-  ) { innerPadding ->
+  TopBar(mutableState, "Simple Translator") {
     Column(
       modifier = Modifier
         .fillMaxSize().onSizeChanged { size -> currentSize.value = size }

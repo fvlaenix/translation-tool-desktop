@@ -10,19 +10,22 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
+import app.TopBar
 
 @Composable
 @Preview
 fun MainMenu(mutableState: MutableState<AppStateEnum>) {
-  Column(
-    modifier = Modifier.padding(16.dp),
-  ) {
-    Text("Simple Translator is designed for simple translations where you just need to paste the text, recognise it, and translate it")
-    Button(onClick = { mutableState.value = AppStateEnum.SIMPLE_VERSION }) {
-      Text("Simple Translator")
-    }
-    Button(onClick = { mutableState.value = AppStateEnum.ADVANCED_VERSION }) {
-      Text("Advanced Translator")
+  TopBar(mutableState, "Main Menu", false) {
+    Column(
+      modifier = Modifier.padding(16.dp),
+    ) {
+      Text("Simple Translator is designed for simple translations where you just need to paste the text, recognise it, and translate it")
+      Button(onClick = { mutableState.value = AppStateEnum.SIMPLE_VERSION }) {
+        Text("Simple Translator")
+      }
+      Button(onClick = { mutableState.value = AppStateEnum.ADVANCED_VERSION }) {
+        Text("Advanced Translator")
+      }
     }
   }
 }

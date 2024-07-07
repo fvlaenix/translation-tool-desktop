@@ -19,11 +19,20 @@ fun App() {
 
   MaterialTheme {
     AnimatedContent(
-      targetState = state,
+      targetState = state.value,
+      transitionSpec = {
+        if (targetState.ordinal > initialState.ordinal) {
+          slideInHorizontally { height -> height } togetherWith slideOutHorizontally { height -> -height }
+        } else {
+          slideInHorizontally { height -> -height } togetherWith slideOutHorizontally { height -> height }
+        }.using(
+          SizeTransform(clip = false)
+        )
+      }
     ) { targetState ->
-      when (targetState.value) {
-        AppStateEnum.MAIN_MENU -> MainMenu(targetState)
-        AppStateEnum.SIMPLE_VERSION -> SimpleTranslator(targetState)
+      when (targetState) {
+        AppStateEnum.MAIN_MENU -> MainMenu(state)
+        AppStateEnum.SIMPLE_VERSION -> SimpleTranslator(state)
         AppStateEnum.ADVANCED_VERSION -> TODO()
       }
     }
