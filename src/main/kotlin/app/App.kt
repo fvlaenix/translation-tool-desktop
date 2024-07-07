@@ -1,14 +1,11 @@
 package app
 
-import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.*
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import app.main.MainMenu
 import app.simple.SimpleTranslator
 
@@ -22,20 +19,16 @@ fun App() {
 
   MaterialTheme {
     AnimatedContent(
-      modifier = Modifier
-        .padding(8.dp),
-      targetState = state
+      targetState = state,
     ) { targetState ->
       when (targetState.value) {
         AppStateEnum.MAIN_MENU -> MainMenu(targetState)
-        AppStateEnum.SIMPLE_VERSION -> SimpleTranslator()
+        AppStateEnum.SIMPLE_VERSION -> SimpleTranslator(targetState)
         AppStateEnum.ADVANCED_VERSION -> TODO()
       }
     }
   }
 }
-
-
 
 enum class AppStateEnum {
   MAIN_MENU, SIMPLE_VERSION, ADVANCED_VERSION
