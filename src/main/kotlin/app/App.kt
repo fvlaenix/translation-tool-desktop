@@ -7,10 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import app.main.MainMenu
+import app.settings.Settings
 import app.simple.SimpleTranslator
-
-const val OCR_SERVICE_HOSTNAME = "192.168.31.102" // "localhost"
-const val TRANSLATION_SERVICE_HOSTNAME = "192.168.31.102" // "localhost"
 
 @Composable
 @Preview
@@ -34,11 +32,12 @@ fun App() {
         AppStateEnum.MAIN_MENU -> MainMenu(state)
         AppStateEnum.SIMPLE_VERSION -> SimpleTranslator(state)
         AppStateEnum.ADVANCED_VERSION -> TODO()
+        AppStateEnum.SETTINGS -> Settings(state)
       }
     }
   }
 }
 
 enum class AppStateEnum {
-  MAIN_MENU, SIMPLE_VERSION, ADVANCED_VERSION
+  MAIN_MENU, SIMPLE_VERSION, ADVANCED_VERSION, SETTINGS
 }

@@ -6,6 +6,7 @@ plugins {
   id("com.google.protobuf") version "0.9.4"
   id("org.jetbrains.compose")
   id("org.jetbrains.kotlin.plugin.compose")
+  kotlin("plugin.serialization") version "2.0.0"
 }
 
 group = "org.example"
@@ -36,6 +37,9 @@ dependencies {
 
   // coroutines
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+
+  // json
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
 }
 
 compose.desktop {

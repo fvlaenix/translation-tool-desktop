@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 
@@ -11,17 +12,22 @@ import androidx.compose.runtime.MutableState
 fun TopBar(
   mutableState: MutableState<AppStateEnum>,
   text: String,
-  goToMenu: Boolean = true,
+  isMainMenu: Boolean = false,
   body: @Composable (PaddingValues) -> Unit
 ) {
   Scaffold(
     topBar = {
       TopAppBar(
         title = { Text(text) },
-        navigationIcon = if (goToMenu) { {
+        navigationIcon = if (!isMainMenu) { {
           IconButton(onClick = { mutableState.value = AppStateEnum.MAIN_MENU }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
-          } } } else null
+          } } } else null,
+        actions = { if (isMainMenu) {
+          IconButton(onClick = { mutableState.value = AppStateEnum.SETTINGS }) {
+            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Settings")
+          } }
+        }
       )
     },
     content = body

@@ -1,7 +1,6 @@
 package utils
 
-import app.OCR_SERVICE_HOSTNAME
-import app.TRANSLATION_SERVICE_HOSTNAME
+import app.settings.SettingsState
 import com.fvlaenix.ocr.protobuf.OcrImageRequest
 import com.fvlaenix.ocr.protobuf.OcrServiceGrpcKt
 import com.fvlaenix.ocr.protobuf.ocrImageRequest
@@ -26,7 +25,7 @@ object ProtobufUtils {
 
   fun getOCR(image: BufferedImage): String {
     return runBlocking {
-      val ocrChannel = ManagedChannelBuilder.forAddress(OCR_SERVICE_HOSTNAME, 50051)
+      val ocrChannel = ManagedChannelBuilder.forAddress(SettingsState.DEFAULT.ocrServiceHostname, 50051)
         .usePlaintext()
         .maxInboundMessageSize(50 * 1024 * 1024)
         .build()
@@ -46,7 +45,7 @@ object ProtobufUtils {
 
   fun getTranslation(text: String): String {
     return runBlocking {
-      val gptChannel = ManagedChannelBuilder.forAddress(TRANSLATION_SERVICE_HOSTNAME, 50052)
+      val gptChannel = ManagedChannelBuilder.forAddress(SettingsState.DEFAULT.translatorServiceHostname, 50052)
         .usePlaintext()
         .maxInboundMessageSize(50 * 1024 * 1024)
         .build()

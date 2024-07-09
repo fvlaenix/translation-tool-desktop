@@ -15,7 +15,7 @@ import app.TopBar
 @Composable
 @Preview
 fun MainMenu(mutableState: MutableState<AppStateEnum>) {
-  TopBar(mutableState, "Main Menu", false) {
+  TopBar(mutableState, "Main Menu", true) {
     Column(
       modifier = Modifier.padding(16.dp),
     ) {
