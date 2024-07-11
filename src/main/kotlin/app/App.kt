@@ -6,6 +6,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import app.advanced.AdvancedTranslator
 import app.main.MainMenu
 import app.settings.Settings
 import app.simple.SimpleTranslator
@@ -31,7 +32,7 @@ fun App() {
       when (targetState) {
         AppStateEnum.MAIN_MENU -> MainMenu(state)
         AppStateEnum.SIMPLE_VERSION -> SimpleTranslator(state)
-        AppStateEnum.ADVANCED_VERSION -> TODO()
+        AppStateEnum.ADVANCED_VERSION -> AdvancedTranslator(state)
         AppStateEnum.SETTINGS -> Settings(state)
       }
     }

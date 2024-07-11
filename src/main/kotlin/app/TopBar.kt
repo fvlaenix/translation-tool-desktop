@@ -13,6 +13,7 @@ fun TopBar(
   mutableState: MutableState<AppStateEnum>,
   text: String,
   isMainMenu: Boolean = false,
+  bottomBar: @Composable () -> Unit = {},
   body: @Composable (PaddingValues) -> Unit
 ) {
   Scaffold(
@@ -30,6 +31,7 @@ fun TopBar(
         }
       )
     },
+    bottomBar = bottomBar,
     content = body
   )
 }
