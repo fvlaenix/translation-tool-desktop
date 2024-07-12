@@ -17,6 +17,7 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.advanced.TranslationInfo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import utils.ProtobufUtils
 import java.io.ByteArrayInputStream
@@ -67,7 +68,7 @@ fun TranslationStep(parentSize: MutableState<IntSize>, translationInfos: Mutable
             .size(width = localSize.value.width.dp / 3, height = localSize.value.height.dp)
         ) {
           Button(onClick = {
-            scope.launch {
+            scope.launch(Dispatchers.IO) {
               val localBufferedImage = info.subImage
               val previous = if (localOcrText.isBlank()) "" else localOcrText + "\n\n"
               localOcrText = previous + ProtobufUtils.getOCR(localBufferedImage)
@@ -90,7 +91,7 @@ fun TranslationStep(parentSize: MutableState<IntSize>, translationInfos: Mutable
             .size(width = localSize.value.width.dp / 3, height = localSize.value.height.dp)
         ) {
           Button(onClick = {
-            scope.launch {
+            scope.launch(Dispatchers.IO) {
               val previous = if (localTranslationText.isBlank()) "" else localTranslationText + "\n\n"
               localTranslationText = previous + ProtobufUtils.getTranslation(localOcrText)
             }

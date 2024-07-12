@@ -1,6 +1,7 @@
 package app.simple
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.TopBar
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import utils.ClipboardUtils.getClipboardImage
 import utils.ProtobufUtils
@@ -33,6 +35,10 @@ fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
 
   val currentSize = remember { mutableStateOf(IntSize.Zero) }
 
+  var commentText by remember { mutableStateOf("Press CTRL+V for insert picture") }
+
+  val scope = rememberCoroutineScope()
+
   TopBar(mutableState, "Simple Translator") {
     Column(
       modifier = Modifier
@@ -40,20 +46,25 @@ fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
         .padding(16.dp)
         .onKeyEvent { keyEvent ->
           if (keyEvent.isCtrlPressed && keyEvent.key == Key.V) {
-            val image = getClipboardImage()
-            if (image == null) {
-              println("Failed to get image")
-            } else {
-              val outputStream = ByteArrayOutputStream()
-              ImageIO.write(image, "png", outputStream)
-              val byteArray = outputStream.toByteArray()
-              imageBuffered.value = image
-              imagePaster.value = loadImageBitmap(ByteArrayInputStream(byteArray))
+            commentText = "Image is loading"
+            scope.launch(Dispatchers.IO) {
+              val image = getClipboardImage()
+              if (image == null) {
+                println("Failed to get image")
+              } else {
+                val outputStream = ByteArrayOutputStream()
+                ImageIO.write(image, "png", outputStream)
+                val byteArray = outputStream.toByteArray()
+                imageBuffered.value = image
+                imagePaster.value = loadImageBitmap(ByteArrayInputStream(byteArray))
+              }
+              commentText = "Press CTRL+V for insert picture"
             }
           }
           false
         }
     ) {
+      Text(commentText)
       InsideSimpleTranslator(imageBuffered, imagePaster, currentSize)
     }
   }
@@ -61,16 +72,17 @@ fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
 
 @Composable
 private fun InsideSimpleTranslator(imageBuffered: MutableState<BufferedImage?>, imagePaster: MutableState<ImageBitmap?>, currentSize: MutableState<IntSize>) {
-  val commentText by remember { mutableStateOf("Press CTRL+V for insert picture") }
+
 
   var ocrText by remember { mutableStateOf("") }
   var translationText by remember { mutableStateOf("") }
 
   val scope = rememberCoroutineScope()
 
-  Text(commentText)
+
   Row(modifier = Modifier
     .size(width = currentSize.value.width.dp / 3, height = currentSize.value.height.dp / 3)
+    .focusable()
   ) {
     if (imagePaster.value != null) {
       Image(
@@ -81,7 +93,7 @@ private fun InsideSimpleTranslator(imageBuffered: MutableState<BufferedImage?>, 
     }
   }
   Button(onClick = {
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       val localBufferedImage = imageBuffered.value
       if (localBufferedImage != null) {
         val previous = if (ocrText.isBlank()) "" else ocrText + "\n\n"
@@ -100,7 +112,7 @@ private fun InsideSimpleTranslator(imageBuffered: MutableState<BufferedImage?>, 
       .fillMaxWidth()
   )
   Button(onClick = {
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       val previous = if (translationText.isBlank()) "" else translationText + "\n\n"
       translationText = previous + ProtobufUtils.getTranslation(ocrText)
     }
