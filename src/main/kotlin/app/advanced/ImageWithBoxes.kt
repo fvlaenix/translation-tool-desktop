@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color.Companion.Blue
 import androidx.compose.ui.graphics.Color.Companion.Cyan
+import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Color.Companion.Magenta
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.*
@@ -21,6 +21,7 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import utils.ClipboardUtils.getClipboardImage
@@ -84,11 +85,12 @@ fun ImageWithBoxes(
         alignment = Alignment.TopStart
       )
     } else {
-      val gradientColors = listOf(Cyan, Blue, Magenta)
+      val gradientColors = listOf(Cyan, Gray, Magenta)
       Text(
         text = emptyText.value,
         modifier = Modifier.fillMaxSize(),
         textAlign = TextAlign.Center,
+        fontSize = 20.sp,
         style = TextStyle(
           brush = Brush.linearGradient(
             colors = gradientColors
