@@ -37,6 +37,8 @@ object ProtobufUtils {
         } else {
           response.rectangles.rectanglesList.joinToString("\n") { it.text }
         }
+      } catch (e: Exception) {
+        e.message!!
       } finally {
         ocrChannel.shutdown()
       }
@@ -57,6 +59,8 @@ object ProtobufUtils {
         } else {
           response.text
         }
+      } catch (e: Exception) {
+        e.message!!
       } finally {
         gptChannel.shutdown()
       }
