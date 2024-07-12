@@ -44,7 +44,7 @@ fun TranslationStep(parentSize: MutableState<IntSize>, translationInfos: Mutable
       val image = loadImageBitmap(ByteArrayInputStream(byteArray))
       Row(
         modifier = Modifier
-          .border(1.dp, Color.Black, CutCornerShape(4.dp))
+          .border(1.dp, Color.Black, CutCornerShape(16.dp))
           .height(parentSize.value.height.dp / 4)
           .fillMaxWidth()
           .onSizeChanged { localSize.value = it }
@@ -52,7 +52,7 @@ fun TranslationStep(parentSize: MutableState<IntSize>, translationInfos: Mutable
         // Image
         Column(
           modifier = Modifier
-            .padding(4.dp)
+            .padding(16.dp)
             .size(width = localSize.value.width.dp / 3, height = localSize.value.height.dp)
         ) {
           Image(
@@ -64,7 +64,7 @@ fun TranslationStep(parentSize: MutableState<IntSize>, translationInfos: Mutable
         // OCR
         Column(
           modifier = Modifier
-            .padding(4.dp)
+            .padding(16.dp)
             .size(width = localSize.value.width.dp / 3, height = localSize.value.height.dp)
         ) {
           Button(onClick = {
@@ -87,7 +87,7 @@ fun TranslationStep(parentSize: MutableState<IntSize>, translationInfos: Mutable
         // Translate
         Column(
           modifier = Modifier
-            .padding(4.dp)
+            .padding(16.dp)
             .size(width = localSize.value.width.dp / 3, height = localSize.value.height.dp)
         ) {
           Button(onClick = {
