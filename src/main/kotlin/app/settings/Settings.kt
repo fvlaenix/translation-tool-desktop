@@ -41,7 +41,7 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
       modifier = Modifier.padding(16.dp)
     ) {
       Row(modifier = Modifier.padding(top = 8.dp)) {
-        Text("OCR Hostname")
+        Text("OCR Hostname: ")
         TextField(
           singleLine = true,
           value = ocrServiceHostname,
@@ -49,7 +49,7 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
         )
       }
       Row(modifier = Modifier.padding(top = 8.dp)) {
-        Text("Translator Hostname")
+        Text("Translator Hostname: ")
         TextField(
           singleLine = true,
           value = translatorServiceHostname,
