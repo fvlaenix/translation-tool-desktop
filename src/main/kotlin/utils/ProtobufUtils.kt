@@ -2,16 +2,18 @@ package utils
 
 import app.settings.SettingsState
 import com.fvlaenix.ocr.protobuf.OcrImageRequest
-import com.fvlaenix.ocr.protobuf.OcrServiceGrpcKt
 import com.fvlaenix.ocr.protobuf.ocrImageRequest
-import com.fvlaenix.translation.protobuf.TranslationServiceGrpcKt
+import com.fvlaenix.proxy.protobuf.ProxyServiceGrpcKt
 import com.fvlaenix.translation.protobuf.translationRequest
 import com.google.protobuf.kotlin.toByteString
 import io.grpc.ManagedChannelBuilder
+import io.grpc.Metadata
 import kotlinx.coroutines.runBlocking
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
+
+private val AUTHORIZATION_KEY: Metadata.Key<String> = Metadata.Key.of("x-api-key", Metadata.ASCII_STRING_MARSHALLER)
 
 object ProtobufUtils {
   private fun BufferedImage.getImageRequest(): OcrImageRequest = ocrImageRequest {
@@ -23,46 +25,45 @@ object ProtobufUtils {
     }
   }
 
-  fun getOCR(image: BufferedImage): String {
+  private fun getStringFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> String): String {
     return runBlocking {
-      val ocrChannel = ManagedChannelBuilder.forAddress(SettingsState.DEFAULT.ocrServiceHostname, 50051)
+      val channel = ManagedChannelBuilder.forAddress(SettingsState.DEFAULT.proxyServiceHostname, 50058)
         .usePlaintext()
         .maxInboundMessageSize(50 * 1024 * 1024)
         .build()
       try {
-        val ocrChannelService = OcrServiceGrpcKt.OcrServiceCoroutineStub(ocrChannel)
-        val response = ocrChannelService.ocrImage(image.getImageRequest())
-        if (response.hasError()) {
-          response.error
-        } else {
-          response.rectangles.rectanglesList.joinToString("\n") { it.text }
-        }
+        val proxyService = ProxyServiceGrpcKt.ProxyServiceCoroutineStub(channel)
+        return@runBlocking body(proxyService)
       } catch (e: Exception) {
         e.message!!
       } finally {
-        ocrChannel.shutdown()
+        channel.shutdown()
+      }
+    }
+  }
+
+  fun getOCR(image: BufferedImage): String {
+    return getStringFromChannel { proxyStub ->
+      val metadata = Metadata()
+      metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
+      val response = proxyStub.ocrImage(image.getImageRequest(), metadata)
+      if (response.hasError()) {
+        response.error
+      } else {
+        response.rectangles.rectanglesList.joinToString("\n") { it.text }
       }
     }
   }
 
   fun getTranslation(text: String): String {
-    return runBlocking {
-      val gptChannel = ManagedChannelBuilder.forAddress(SettingsState.DEFAULT.translatorServiceHostname, 50052)
-        .usePlaintext()
-        .maxInboundMessageSize(50 * 1024 * 1024)
-        .build()
-      try {
-        val gptChannelService = TranslationServiceGrpcKt.TranslationServiceCoroutineStub(gptChannel)
-        val response = gptChannelService.translation(translationRequest { this.text = text })
-        if (response.hasError()) {
-          throw IllegalStateException()
-        } else {
-          response.text
-        }
-      } catch (e: Exception) {
-        e.message!!
-      } finally {
-        gptChannel.shutdown()
+    return getStringFromChannel { proxyStub ->
+      val metadata = Metadata()
+      metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
+      val response = proxyStub.translation(translationRequest { this.text = text }, metadata)
+      if (response.hasError()) {
+        response.error
+      } else {
+        response.text
       }
     }
   }

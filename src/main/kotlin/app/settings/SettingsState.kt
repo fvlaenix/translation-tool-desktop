@@ -9,16 +9,16 @@ import kotlin.io.path.writeText
 
 @Serializable
 data class SettingsState(
-  val ocrServiceHostname: String = "localhost",
-  val translatorServiceHostname: String = "localhost"
+  val proxyServiceHostname: String = "localhost",
+  val apiKey: String = "TEST_API_KEY"
 ) {
   companion object {
     private const val path = "settings.json"
 
     var DEFAULT = load()
 
-    fun save(ocrServiceHostname: String, translatorServiceHostname: String) {
-      DEFAULT = SettingsState(ocrServiceHostname, translatorServiceHostname)
+    fun save(proxyServiceHostname: String, apiKey: String) {
+      DEFAULT = SettingsState(proxyServiceHostname, apiKey)
       Path(path).writeText(
         Json { prettyPrint = true }.encodeToString(DEFAULT)
       )

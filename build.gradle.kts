@@ -33,7 +33,7 @@ dependencies {
   implementation("io.grpc:grpc-protobuf:1.59.0")
   implementation("io.grpc:grpc-stub:1.59.0")
   compileOnly("org.apache.tomcat:annotations-api:6.0.53")
-  protobuf(files("discord-bots-rpc/ocr-request.proto", "discord-bots-rpc/gpt-request.proto", "discord-bots-rpc/is-alive.proto", "discord-bots-rpc/image.proto"))
+  protobuf(files("discord-bots-rpc/proxy-request.proto", "discord-bots-rpc/ocr-request.proto", "discord-bots-rpc/gpt-request.proto", "discord-bots-rpc/is-alive.proto", "discord-bots-rpc/image.proto"))
 
   // coroutines
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")

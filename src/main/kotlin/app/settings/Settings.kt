@@ -13,8 +13,8 @@ import app.AppStateEnum
 
 @Composable
 fun Settings(mutableState: MutableState<AppStateEnum>) {
-  var ocrServiceHostname by remember { mutableStateOf(SettingsState.DEFAULT.ocrServiceHostname)}
-  var translatorServiceHostname by remember { mutableStateOf(SettingsState.DEFAULT.translatorServiceHostname) }
+  var ocrServiceHostname by remember { mutableStateOf(SettingsState.DEFAULT.proxyServiceHostname)}
+  var apiKey by remember { mutableStateOf(SettingsState.DEFAULT.apiKey) }
 
   Scaffold(
     topBar = {
@@ -29,7 +29,7 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
     bottomBar = {
       BottomAppBar {
         Button(onClick = {
-          SettingsState.save(ocrServiceHostname, translatorServiceHostname)
+          SettingsState.save(ocrServiceHostname, apiKey)
           mutableState.value = AppStateEnum.MAIN_MENU
         }) {
           Text("Save")
@@ -41,7 +41,7 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
       modifier = Modifier.padding(16.dp)
     ) {
       Row(modifier = Modifier.padding(top = 8.dp)) {
-        Text("OCR Hostname: ")
+        Text("Hostname: ")
         TextField(
           singleLine = true,
           value = ocrServiceHostname,
@@ -49,11 +49,11 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
         )
       }
       Row(modifier = Modifier.padding(top = 8.dp)) {
-        Text("Translator Hostname: ")
+        Text("API key: ")
         TextField(
           singleLine = true,
-          value = translatorServiceHostname,
-          onValueChange = { translatorServiceHostname = it}
+          value = apiKey,
+          onValueChange = { apiKey = it}
         )
       }
     }
