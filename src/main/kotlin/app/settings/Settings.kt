@@ -14,6 +14,7 @@ import app.AppStateEnum
 @Composable
 fun Settings(mutableState: MutableState<AppStateEnum>) {
   var ocrServiceHostname by remember { mutableStateOf(SettingsState.DEFAULT.proxyServiceHostname)}
+  var port by remember { mutableStateOf(SettingsState.DEFAULT.proxyServicePort) }
   var apiKey by remember { mutableStateOf(SettingsState.DEFAULT.apiKey) }
 
   Scaffold(
@@ -29,7 +30,7 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
     bottomBar = {
       BottomAppBar {
         Button(onClick = {
-          SettingsState.save(ocrServiceHostname, apiKey)
+          SettingsState.save(ocrServiceHostname, port, apiKey)
           mutableState.value = AppStateEnum.MAIN_MENU
         }) {
           Text("Save")
@@ -46,6 +47,12 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
           singleLine = true,
           value = ocrServiceHostname,
           onValueChange = { ocrServiceHostname = it }
+        )
+        Text("Port: ")
+        TextField(
+          singleLine = true,
+          value = port.toString(),
+          onValueChange = { port = it.toIntOrNull() ?: 443 }
         )
       }
       Row(modifier = Modifier.padding(top = 8.dp)) {

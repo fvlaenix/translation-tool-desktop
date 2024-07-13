@@ -27,7 +27,7 @@ object ProtobufUtils {
 
   private fun getStringFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> String): String {
     return runBlocking {
-      val channel = ManagedChannelBuilder.forAddress(SettingsState.DEFAULT.proxyServiceHostname, 50058)
+      val channel = ManagedChannelBuilder.forAddress(SettingsState.DEFAULT.proxyServiceHostname, SettingsState.DEFAULT.proxyServicePort)
         .usePlaintext()
         .maxInboundMessageSize(50 * 1024 * 1024)
         .build()

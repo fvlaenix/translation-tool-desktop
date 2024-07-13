@@ -10,6 +10,7 @@ import kotlin.io.path.writeText
 @Serializable
 data class SettingsState(
   val proxyServiceHostname: String = "localhost",
+  val proxyServicePort: Int = 443,
   val apiKey: String = "TEST_API_KEY"
 ) {
   companion object {
@@ -17,8 +18,8 @@ data class SettingsState(
 
     var DEFAULT = load()
 
-    fun save(proxyServiceHostname: String, apiKey: String) {
-      DEFAULT = SettingsState(proxyServiceHostname, apiKey)
+    fun save(proxyServiceHostname: String, port: Int, apiKey: String) {
+      DEFAULT = SettingsState(proxyServiceHostname, port, apiKey)
       Path(path).writeText(
         Json { prettyPrint = true }.encodeToString(DEFAULT)
       )
