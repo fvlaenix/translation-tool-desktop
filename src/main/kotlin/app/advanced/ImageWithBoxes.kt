@@ -53,7 +53,7 @@ fun ImageWithBoxes(
           scope.launch(Dispatchers.IO) {
             val clipboardImage = getClipboardImage()
             if (clipboardImage == null) {
-              println("Failed to get image")
+              emptyText.value = "Can't take image from clipboard"
             } else {
               val outputStream = ByteArrayOutputStream()
               ImageIO.write(clipboardImage, "png", outputStream)
