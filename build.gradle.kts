@@ -1,8 +1,10 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.google.protobuf.gradle.id
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
   kotlin("jvm")
+  id("com.github.johnrengelman.shadow") version "8.1.1"
   id("com.google.protobuf") version "0.9.4"
   id("org.jetbrains.compose")
   id("org.jetbrains.kotlin.plugin.compose")
@@ -16,6 +18,20 @@ repositories {
   mavenCentral()
   maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
   google()
+}
+
+kotlin {
+  val versions = listOf("macos-x64", "macos-arm64", "windows-x64", "windows-arm64", "linux-x64", "linux-arm64")
+
+  val version = "0.7.70"
+
+  sourceSets {
+    dependencies {
+      for (versiona in versions) {
+        implementation("org.jetbrains.skiko:skiko-awt-runtime-$versiona:$version")
+      }
+    }
+  }
 }
 
 dependencies {
@@ -53,6 +69,30 @@ compose.desktop {
     }
   }
 }
+
+task<JavaExec>("runServer") {
+  classpath = sourceSets.main.get().runtimeClasspath
+  mainClass.set("MainKt")
+}
+
+fun createJarTaskByJavaExec(name: String, resultName: String) = tasks.create<ShadowJar>("${name}Jar") {
+  mergeServiceFiles()
+  group = "shadow"
+  description = "Run server $name"
+
+  from(sourceSets.main.get().output)
+  from(project.configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+  exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+  configurations = listOf(project.configurations.runtimeClasspath.get())
+
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  archiveFileName.set("${resultName}.jar")
+  manifest {
+    attributes["Main-Class"] = (tasks.findByName(name) as JavaExec).mainClass.get()
+  }
+}.apply task@ { tasks.named("jar") { dependsOn(this@task) } }
+
+createJarTaskByJavaExec("runServer", "translation-tool-0.1-beta")
 
 protobuf {
   protoc {
