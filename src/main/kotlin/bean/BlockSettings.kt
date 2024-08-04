@@ -17,4 +17,8 @@ data class BlockSettings(
 ) {
   @Transient
   val font: Font = FontService.getInstance().getFontNotNull(fontName, fontSize.toFloat())
+
+  companion object {
+    val DEFAULT = BlockSettings()
+  }
 }
