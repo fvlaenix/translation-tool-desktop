@@ -19,7 +19,9 @@ class FontService(private val path: Path) {
 
   fun load() {
     fontsPaths.clear()
-    fontsPaths.putAll(Json.decodeFromString<Map<String, String>>(path.readText()).mapValues { Path.of(it.value) })
+    runCatching {
+      fontsPaths.putAll(Json.decodeFromString<Map<String, String>>(path.readText()).mapValues { Path.of(it.value) })
+    }
     fonts.clear()
     fonts.putAll(fontsPaths.mapValues { Font.createFont(0, it.value.toFile()) })
   }
