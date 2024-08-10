@@ -25,6 +25,9 @@ fun TopBar(
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
           } } } else null,
         actions = { if (isMainMenu) {
+          IconButton(onClick = { mutableState.value = AppStateEnum.FONT_SETTINGS }) {
+            Text("F")
+          }
           IconButton(onClick = { mutableState.value = AppStateEnum.SETTINGS }) {
             Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Settings")
           } }

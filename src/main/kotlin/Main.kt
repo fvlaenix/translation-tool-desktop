@@ -3,12 +3,14 @@ import androidx.compose.ui.window.application
 import app.App
 import utils.FontService
 
-fun main() = application {
-  FontService.getInstance()
-  Window(
-    onCloseRequest = ::exitApplication,
-    title = "Translator"
-  ) {
-    App()
+suspend fun main() {
+  FontService.getInstance().load()
+  application {
+    Window(
+      onCloseRequest = ::exitApplication,
+      title = "Translator"
+    ) {
+      App()
+    }
   }
 }

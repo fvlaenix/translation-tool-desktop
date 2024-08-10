@@ -10,10 +10,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import app.advanced.AdvancedTranslator
 import app.batch.BatchCreator
+import app.fonts.FontsSettings
 import app.main.MainMenu
+import app.ocr.OCRCreator
 import app.settings.Settings
 import app.simple.SimpleTranslator
-import app.ocr.OCRCreator
+import utils.AnimatedContentUtils.horizontalSpec
 
 @Composable
 @Preview
@@ -24,15 +26,7 @@ fun App() {
     AnimatedContent(
       targetState = state.value,
       modifier = Modifier.fillMaxSize(),
-      transitionSpec = {
-        if (targetState.ordinal > initialState.ordinal) {
-          slideInHorizontally { height -> height } togetherWith slideOutHorizontally { height -> -height }
-        } else {
-          slideInHorizontally { height -> -height } togetherWith slideOutHorizontally { height -> height }
-        }.using(
-          SizeTransform(clip = false)
-        )
-      }
+      transitionSpec = horizontalSpec<AppStateEnum>()
     ) { targetState ->
       when (targetState) {
         AppStateEnum.MAIN_MENU -> MainMenu(state)
@@ -41,6 +35,7 @@ fun App() {
         AppStateEnum.BATCH_CREATOR -> BatchCreator(state)
         AppStateEnum.TRANSLATION_CREATOR -> OCRCreator(state)
         AppStateEnum.SETTINGS -> Settings(state)
+        AppStateEnum.FONT_SETTINGS -> FontsSettings(state)
       }
     }
   }
@@ -51,5 +46,5 @@ enum class AppStateEnum {
   SIMPLE_VERSION,
   ADVANCED_VERSION,
   BATCH_CREATOR, TRANSLATION_CREATOR, //EDIT_CREATOR,
-  SETTINGS,
+  SETTINGS, FONT_SETTINGS
 }

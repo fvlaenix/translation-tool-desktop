@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.TopBar
+import utils.FontService
 
 @Composable
 @Preview
@@ -32,7 +33,10 @@ fun MainMenu(mutableState: MutableState<AppStateEnum>) {
       Button(onClick = { mutableState.value = AppStateEnum.BATCH_CREATOR }) {
         Text("Batch Creator")
       }
-      Button(onClick = { mutableState.value = AppStateEnum.TRANSLATION_CREATOR }) {
+      Button(
+        onClick = { mutableState.value = AppStateEnum.TRANSLATION_CREATOR },
+        enabled = FontService.getInstance().isFontsAdded()
+      ) {
         Text("Translation Creator")
       }
     }
