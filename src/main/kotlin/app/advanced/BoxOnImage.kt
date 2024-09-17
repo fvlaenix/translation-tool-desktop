@@ -12,7 +12,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
@@ -21,10 +20,17 @@ import kotlin.math.min
 
 private const val HANDLE_SIZE = 16
 
-private fun isTwoPointsNear(x1: Int, y1: Int, x2: Int, y2: Int): Boolean =
+private fun isTwoPointsNear(x1: Double, y1: Double, x2: Double, y2: Double): Boolean =
   abs(x1 - x2) < HANDLE_SIZE && abs(y1 - y2) < HANDLE_SIZE
 
-private fun insideRectangle(rectangleX1: Int, rectangleY1: Int, rectangleX2: Int, rectangleY2: Int, pointX: Int, pointY: Int): Boolean {
+private fun insideRectangle(
+  rectangleX1: Double,
+  rectangleY1: Double,
+  rectangleX2: Double,
+  rectangleY2: Double,
+  pointX: Double,
+  pointY: Double
+): Boolean {
   val leftUpX = min(rectangleX1, rectangleX2)
   val leftUpY = min(rectangleY1, rectangleY2)
   val rightDownX = max(rectangleX1, rectangleX2)
@@ -33,83 +39,83 @@ private fun insideRectangle(rectangleX1: Int, rectangleY1: Int, rectangleX2: Int
 }
 
 @Composable
-fun BoxOnImage(boxOnImageData: BoxOnImageData, imageSize: State<IntSize>) {
+fun BoxOnImage(boxOnImageData: BoxOnImageWithSizeData) {
   with(boxOnImageData) {
     Box(
       modifier = Modifier
-        .offset { IntOffset(offsetX.value.toInt(), offsetY.value.toInt()) }
+        .offset(this.xWithoutDensity.dp, this.yWithoutDensity.dp)
         .background(Color(Color.Blue.red, Color.Blue.green, Color.Blue.blue, 0.3f))
-        .size(sizeX.value.dp, sizeY.value.dp)
+        .size(this.sizeXWithoutDensity.dp, this.sizeYWithoutDensity.dp)
         .pointerInput(Unit) {
           detectDragGestures { change, dragAmount ->
-            val touchX = change.previousPosition.x.toInt() + boxOnImageData.x
-            val touchY = change.previousPosition.y.toInt() + boxOnImageData.y
+            val touchX = change.previousPosition.x + x
+            val touchY = change.previousPosition.y + y
 
-            val changeX = dragAmount.x.toInt()
-            val changeY = dragAmount.y.toInt()
+            val changeX = dragAmount.x
+            val changeY = dragAmount.y
 
-            if (!insideRectangle(boxOnImageData.x, boxOnImageData.y, boxOnImageData.x + boxOnImageData.sizeX.value, boxOnImageData.y + boxOnImageData.sizeY.value, touchX, touchY)) {
+            if (!insideRectangle(x, y, x + sizeX, y + sizeY, touchX, touchY)) {
               return@detectDragGestures
             }
 
             change.consume()
 
             if (isLeftUpCorner(touchX, touchY)) {
-              boxOnImageData.offsetX.value += changeX
-              boxOnImageData.offsetY.value += changeY
-              boxOnImageData.sizeX.value -= changeX
-              boxOnImageData.sizeY.value -= changeY
-              imageCorrection(imageSize)
+              x += changeX
+              y += changeY
+              sizeX -= changeX
+              sizeY -= changeY
+              imageCorrection(boxOnImageData.displayImageSize)
               return@detectDragGestures
             }
             if (isRightUpCorner(touchX, touchY)) {
-              boxOnImageData.offsetY.value += changeY
-              boxOnImageData.sizeX.value += changeX
-              boxOnImageData.sizeY.value -= changeY
-              imageCorrection(imageSize)
+              y += changeY
+              sizeX += changeX
+              sizeY -= changeY
+              imageCorrection(boxOnImageData.displayImageSize)
               return@detectDragGestures
             }
             if (isLeftDownCorner(touchX, touchY)) {
-              boxOnImageData.offsetX.value += changeX
-              boxOnImageData.sizeX.value -= changeX
-              boxOnImageData.sizeY.value += changeY
-              imageCorrection(imageSize)
+              x += changeX
+              sizeX -= changeX
+              sizeY += changeY
+              imageCorrection(boxOnImageData.displayImageSize)
               return@detectDragGestures
             }
             if (isRightDownCorner(touchX, touchY)) {
-              boxOnImageData.sizeX.value += changeX
-              boxOnImageData.sizeY.value += changeY
-              imageCorrection(imageSize)
+              sizeX += changeX
+              sizeY += changeY
+              imageCorrection(boxOnImageData.displayImageSize)
               return@detectDragGestures
             }
 
             if (isUpBorder(touchX, touchY)) {
-              boxOnImageData.offsetY.value += changeY
-              boxOnImageData.sizeY.value -= changeY
-              imageCorrection(imageSize)
+              y += changeY
+              sizeY -= changeY
+              imageCorrection(boxOnImageData.displayImageSize)
               return@detectDragGestures
             }
             if (isLeftBorder(touchX, touchY)) {
-              boxOnImageData.offsetX.value += changeX
-              boxOnImageData.sizeX.value -= changeX
-              imageCorrection(imageSize)
+              x += changeX
+              sizeX -= changeX
+              imageCorrection(boxOnImageData.displayImageSize)
               return@detectDragGestures
             }
             if (isRightBorder(touchX, touchY)) {
-              boxOnImageData.sizeX.value += changeX
-              imageCorrection(imageSize)
+              sizeX += changeX
+              imageCorrection(boxOnImageData.displayImageSize)
               return@detectDragGestures
             }
             if (isDownBorder(touchX, touchY)) {
-              boxOnImageData.sizeY.value += changeY
-              imageCorrection(imageSize)
+              sizeY += changeY
+              imageCorrection(boxOnImageData.displayImageSize)
               return@detectDragGestures
             }
 
-            if (insideRectangle(boxOnImageData.x, boxOnImageData.y, boxOnImageData.x + boxOnImageData.sizeX.value, boxOnImageData.y + boxOnImageData.sizeY.value, touchX, touchY)) {
-              boxOnImageData.offsetX.value += changeX
-              boxOnImageData.offsetY.value += changeY
-              imageCorrection(imageSize)
+            if (insideRectangle(x, y, x + sizeX, y + sizeY, touchX, touchY)) {
+              x += changeX
+              y += changeY
+              imageCorrection(boxOnImageData.displayImageSize)
             }
           }
         }
@@ -119,62 +125,168 @@ fun BoxOnImage(boxOnImageData: BoxOnImageData, imageSize: State<IntSize>) {
 }
 
 data class BoxOnImageData(
-  val offsetX: MutableState<Float>,
-  val offsetY: MutableState<Float>,
-  val sizeX: MutableState<Int>,
-  val sizeY: MutableState<Int>,
+  val stateX: MutableState<Int>,
+  val stateY: MutableState<Int>,
+  val stateSizeX: MutableState<Int>,
+  val stateSizeY: MutableState<Int>,
 ) {
-  val x
-    get() = offsetX.value.toInt()
-  val y
-    get() = offsetY.value.toInt()
-
-  constructor(offsetX: Float, offsetY: Float, sizeX: Int, sizeY: Int) : this(
+  constructor(offsetX: Int, offsetY: Int, sizeX: Int, sizeY: Int) : this(
     mutableStateOf(offsetX),
     mutableStateOf(offsetY),
     mutableStateOf(sizeX),
     mutableStateOf(sizeY)
   )
 
-  fun isLeftUpCorner(x: Int, y: Int): Boolean =
+  var x: Int = stateX.value.toInt()
+    get() = stateX.value.toInt()
+    set(value) {
+      stateX.value = value
+      field = value
+    }
+
+  var y: Int = stateY.value.toInt()
+    get() = stateY.value.toInt()
+    set(value) {
+      stateY.value = value
+      field = value
+    }
+
+  var sizeX: Int = stateSizeX.value.toInt()
+    get() = stateSizeX.value.toInt()
+    set(value) {
+      stateSizeX.value = value
+      field = value
+    }
+
+  var sizeY: Int = stateSizeY.value.toInt()
+    get() = stateSizeY.value.toInt()
+    set(value) {
+      stateSizeY.value = value
+      field = value
+    }
+}
+
+data class BoxOnImageWithSizeData(
+  val boxOnImageData: BoxOnImageData,
+  val density: Float,
+  val displayImageSize: MutableState<IntSize>,
+  val originalImageSize: IntSize
+) {
+  private fun scaleFromDisplayToOrigin(): Double = max(
+    originalImageSize.width.toDouble() / displayImageSize.value.width / density,
+    originalImageSize.height.toDouble() / displayImageSize.value.height / density
+  )
+
+  private fun scaleFromOriginToDisplay(): Double = min(
+    displayImageSize.value.width.toDouble() / originalImageSize.width * density,
+    displayImageSize.value.height.toDouble() / originalImageSize.height * density
+  )
+
+  private fun Int.convertToLocal(): Double = this * scaleFromOriginToDisplay()
+  private fun Double.convertToGlobal(): Int = (this * scaleFromDisplayToOrigin()).toInt()
+
+  var x: Double = boxOnImageData.x.convertToLocal()
+    set(value) {
+      field = value; boxOnImageData.x = value.convertToGlobal()
+    }
+  var y: Double = boxOnImageData.y.convertToLocal()
+    set(value) {
+      field = value; boxOnImageData.y = value.convertToGlobal()
+    }
+  var sizeX: Double = boxOnImageData.sizeX.convertToLocal()
+    set(value) {
+      field = value; boxOnImageData.sizeX = value.convertToGlobal()
+    }
+  var sizeY: Double = boxOnImageData.sizeY.convertToLocal()
+    set(value) {
+      field = value; boxOnImageData.sizeY = value.convertToGlobal()
+    }
+
+  val xWithoutDensity
+    get() = x / density
+  val yWithoutDensity
+    get() = y / density
+  val sizeXWithoutDensity
+    get() = sizeX / density
+  val sizeYWithoutDensity
+    get() = sizeY / density
+
+  fun isLeftUpCorner(x: Double, y: Double): Boolean =
     isTwoPointsNear(x, y, this.x, this.y)
 
-  fun isLeftDownCorner(x: Int, y: Int): Boolean =
-    isTwoPointsNear(x, y, this.x, this.y + this.sizeY.value)
+  fun isLeftDownCorner(x: Double, y: Double): Boolean =
+    isTwoPointsNear(x, y, this.x, this.y + this.sizeY)
 
-  fun isRightUpCorner(x: Int, y: Int): Boolean =
-    isTwoPointsNear(x, y, this.x + this.sizeX.value, this.y)
+  fun isRightUpCorner(x: Double, y: Double): Boolean =
+    isTwoPointsNear(x, y, this.x + this.sizeX, this.y)
 
-  fun isRightDownCorner(x: Int, y: Int): Boolean =
-    isTwoPointsNear(x, y, this.x + this.sizeX.value, this.y + this.sizeY.value)
+  fun isRightDownCorner(x: Double, y: Double): Boolean =
+    isTwoPointsNear(x, y, this.x + this.sizeX, this.y + this.sizeY)
 
-  fun isLeftBorder(x: Int, y: Int): Boolean =
-    insideRectangle(this.x - HANDLE_SIZE, this.y - HANDLE_SIZE, this.x + HANDLE_SIZE, this.y + this.sizeY.value + HANDLE_SIZE, x, y)
+  fun isLeftBorder(x: Double, y: Double): Boolean =
+    insideRectangle(
+      this.x - HANDLE_SIZE,
+      this.y - HANDLE_SIZE,
+      this.x + HANDLE_SIZE,
+      this.y + this.sizeY + HANDLE_SIZE,
+      x,
+      y
+    )
 
-  fun isUpBorder(x: Int, y: Int): Boolean =
-    insideRectangle(this.x - HANDLE_SIZE, this.y - HANDLE_SIZE, this.x + this.sizeX.value + HANDLE_SIZE, this.y + HANDLE_SIZE, x, y)
+  fun isUpBorder(x: Double, y: Double): Boolean =
+    insideRectangle(
+      this.x - HANDLE_SIZE,
+      this.y - HANDLE_SIZE,
+      this.x + this.sizeX + HANDLE_SIZE,
+      this.y + HANDLE_SIZE,
+      x,
+      y
+    )
 
-  fun isRightBorder(x: Int, y: Int): Boolean =
-    insideRectangle(this.x + this.sizeX.value - HANDLE_SIZE, this.y - HANDLE_SIZE, this.x + this.sizeX.value + HANDLE_SIZE, this.y + this.sizeY.value + HANDLE_SIZE, x, y)
+  fun isRightBorder(x: Double, y: Double): Boolean =
+    insideRectangle(
+      this.x + this.sizeX - HANDLE_SIZE,
+      this.y - HANDLE_SIZE,
+      this.x + this.sizeX + HANDLE_SIZE,
+      this.y + this.sizeY + HANDLE_SIZE,
+      x,
+      y
+    )
 
-  fun isDownBorder(x: Int, y: Int): Boolean =
-    insideRectangle(this.x - HANDLE_SIZE, this.y + this.sizeY.value - HANDLE_SIZE, this.x + this.sizeX.value + HANDLE_SIZE, this.y + this.sizeY.value + HANDLE_SIZE, x, y)
+  fun isDownBorder(x: Double, y: Double): Boolean =
+    insideRectangle(
+      this.x - HANDLE_SIZE,
+      this.y + this.sizeY - HANDLE_SIZE,
+      this.x + this.sizeX + HANDLE_SIZE,
+      this.y + this.sizeY + HANDLE_SIZE,
+      x,
+      y
+    )
 
-  fun isNearOrInRectangle(x: Int, y: Int): Boolean =
-    insideRectangle(this.x - HANDLE_SIZE, this.y - HANDLE_SIZE, this.x + this.sizeX.value + HANDLE_SIZE, this.y + this.sizeY.value + HANDLE_SIZE, x, y)
+  fun isNearOrInRectangle(x: Double, y: Double): Boolean =
+    insideRectangle(
+      this.x - HANDLE_SIZE,
+      this.y - HANDLE_SIZE,
+      this.x + this.sizeX + HANDLE_SIZE,
+      this.y + this.sizeY + HANDLE_SIZE,
+      x,
+      y
+    )
 
   fun imageCorrection(imageSize: State<IntSize>) {
-    if (this.x + sizeX.value > imageSize.value.width) {
-      sizeX.value = imageSize.value.width - this.x
+    if (this.x + sizeX > imageSize.value.width) {
+      sizeX = imageSize.value.width - this.x
     }
-    if (this.y + sizeY.value > imageSize.value.height) {
-      sizeY.value = imageSize.value.height - this.y
+    if (this.y + sizeY > imageSize.value.height) {
+      sizeY = imageSize.value.height - this.y
     }
     if (this.x < 0) {
-      this.offsetX.value = 0f
+      this.sizeX += this.x
+      this.x = .0
     }
     if (this.y < 0) {
-      this.offsetY.value = 0f
+      this.sizeY += this.y
+      this.y = .0
     }
   }
 }

@@ -38,15 +38,15 @@ fun BlockSettingsPanelWithPreview(settings: MutableState<BlockSettings>, imageSt
   val coroutineScope = rememberCoroutineScope()
 
   Row {
-    Column(modifier = Modifier.fillMaxWidth(0.7f)) {
+    Column(modifier = Modifier.fillMaxWidth(0.5f)) {
       SimpleLoadedImageDisplayer(imageState)
     }
-    Column(modifier = Modifier.fillMaxWidth(0.3f)) {
+    Column(modifier = Modifier.fillMaxWidth()) {
       BlockSettingsPanel(settings)
     }
     LaunchedEffect(settings.value) {
       imageState.value = null
-      coroutineScope.launch(Dispatchers.Main) {
+      coroutineScope.launch(Dispatchers.IO) {
         val image = Text2ImageUtils.createSample(500, 500, settings.value)
         imageState.value = image
       }
@@ -177,7 +177,7 @@ private fun SizeOfSomething(defaultValue: Int, getter: () -> Int, setter: (Int) 
   val size = remember { mutableStateOf(getter()) }
 
   TextField(
-    value = size.toString(),
+    value = size.value.toString(),
     onValueChange = { size.value = it.toIntOrNull() ?: defaultValue; setter(size.value) },
     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
   )

@@ -22,7 +22,6 @@ import app.AppStateEnum
 import app.TopBar
 import app.advanced.steps.TranslationStep
 import java.awt.image.BufferedImage
-import kotlin.math.max
 
 @Composable
 fun AdvancedTranslator(mutableState: MutableState<AppStateEnum>) {
@@ -56,11 +55,8 @@ fun AdvancedTranslator(mutableState: MutableState<AppStateEnum>) {
 
               val fullBufferedImage = imageBuffered.value!!.toAwtImage()
 
-              val scale = max(fullBufferedImage.width / imageSize.value.width.toDouble(), fullBufferedImage.height / imageSize.value.height.toDouble())
-
               translationInfos.value = boxes.value.map { boxData ->
-                fun Int.scale(): Int = (this * scale).toInt()
-                val subImage = fullBufferedImage.getSubimage(boxData.x.scale(), boxData.y.scale(), boxData.sizeX.value.scale(), boxData.sizeY.value.scale())
+                val subImage = fullBufferedImage.getSubimage(boxData.x, boxData.y, boxData.sizeX, boxData.sizeY)
                 TranslationInfo(subImage)
               }
               if (translationInfos.value.isEmpty()) {

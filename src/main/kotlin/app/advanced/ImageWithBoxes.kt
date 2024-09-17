@@ -2,6 +2,7 @@ package app.advanced
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Text
@@ -17,6 +18,7 @@ import androidx.compose.ui.graphics.Color.Companion.Magenta
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -64,7 +66,7 @@ fun ImageWithBoxes(
         }
         if (keyEvent.isCtrlPressed && keyEvent.key == Key.N) {
           if (image.value != null) {
-            boxes.value += BoxOnImageData(0.0f, 0.0f, currentSize.value.width / 10, currentSize.value.height / 10)
+            boxes.value += BoxOnImageData(0, 0, image.value!!.width / 10, image.value!!.height / 10)
           }
         }
         if (keyEvent.key == Key.Delete) {
@@ -76,14 +78,29 @@ fun ImageWithBoxes(
       .focusable()
   ) {
     val imageNotNull = image.value
-    if (imageNotNull!= null) {
-      Image(
-        bitmap = imageNotNull,
-        contentDescription = null,
-        modifier = Modifier.fillMaxSize()
-          .onSizeChanged { size -> currentSize.value = size },
-        alignment = Alignment.TopStart
-      )
+    if (imageNotNull != null) {
+      val imageOriginalSize = IntSize(imageNotNull.width, imageNotNull.height)
+      val boxOnImage = boxes.value.map { box ->
+        BoxOnImageWithSizeData(
+          box,
+          LocalDensity.current.density,
+          currentSize,
+          imageOriginalSize
+        )
+      }
+
+      Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+          bitmap = imageNotNull,
+          contentDescription = null,
+          modifier = Modifier.fillMaxSize()
+            .onSizeChanged { size -> currentSize.value = size; println("Size image changed: $size") },
+          alignment = Alignment.TopStart
+        )
+        boxOnImage.forEach { box ->
+          BoxOnImage(box)
+        }
+      }
     } else {
       val gradientColors = listOf(Cyan, Gray, Magenta)
       Text(
@@ -101,8 +118,5 @@ fun ImageWithBoxes(
   }
   LaunchedEffect(Unit) {
     requester.requestFocus()
-  }
-  boxes.value.forEach { box ->
-    BoxOnImage(box, currentSize)
   }
 }

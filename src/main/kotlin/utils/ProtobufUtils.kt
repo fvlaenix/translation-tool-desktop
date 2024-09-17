@@ -68,8 +68,6 @@ object ProtobufUtils {
   }
 
   fun getBoxedOCR(image: BufferedImage): List<OCRBoxData> {
-    val imageHeight = image.height
-
     return getDataFromChannel { proxyStub ->
       val metadata = Metadata()
       metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
@@ -83,10 +81,10 @@ object ProtobufUtils {
       rectangles.map { rectangle ->
         OCRBoxData(
           box = BoxOnImageData(
-            offsetX = rectangle.x,
-            offsetY = rectangle.y,
-            sizeX = rectangle.width,
-            sizeY = rectangle.height
+            offsetX = rectangle.x.toInt(),
+            offsetY = rectangle.y.toInt(),
+            sizeX = rectangle.width.toInt(),
+            sizeY = rectangle.height.toInt()
           ),
           text = rectangle.text
         )

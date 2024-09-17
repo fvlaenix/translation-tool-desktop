@@ -109,6 +109,15 @@ class FontService(private val path: Path) {
     }
   }
 
+  fun getDefaultFont(): String {
+    return runBlocking {
+      fontLock.withLock {
+        checkLoaded()
+        fonts.keys.first()
+      }
+    }
+  }
+
   companion object {
     private val path = Path.of("fonts.json")
 

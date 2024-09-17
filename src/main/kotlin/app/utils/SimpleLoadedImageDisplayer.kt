@@ -14,14 +14,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import app.advanced.BoxOnImage
+import app.advanced.BoxOnImageWithSizeData
 import app.ocr.OCRBoxData
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
+import kotlin.math.min
 
 @Composable
 fun SimpleLoadedImageDisplayer(image: MutableState<BufferedImage?>, boxes: SnapshotStateList<OCRBoxData>) {
@@ -37,15 +40,31 @@ fun SimpleLoadedImageDisplayer(image: MutableState<BufferedImage?>, boxes: Snaps
   }
 
   if (imagePaster.value != null) {
+    val imageOriginalSize = IntSize(image.value!!.width, image.value!!.height)
+    val imageBoxes = boxes.map {
+      BoxOnImageWithSizeData(it.box, LocalDensity.current.density, imageSize, imageOriginalSize)
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
       Image(
         bitmap = imagePaster.value!!,
         contentDescription = null,
-        modifier = Modifier.fillMaxSize()
-          .onSizeChanged { imageSize.value = it },
+        modifier = Modifier.fillMaxSize(0.9f)
+          .onSizeChanged { imageBoxSize ->
+            val scaleImageToBox = min(
+              imageBoxSize.width.toDouble() / imageOriginalSize.width,
+              imageBoxSize.height.toDouble() / imageOriginalSize.height
+            )
+
+            val newWidth = (imageOriginalSize.width * scaleImageToBox).toInt()
+            val newHeight = (imageOriginalSize.height * scaleImageToBox).toInt()
+
+            val newIntSize = IntSize(newWidth, newHeight)
+            imageSize.value = newIntSize
+          },
         alignment = Alignment.TopStart
       )
-      boxes.forEach { box -> BoxOnImage(box.box, imageSize); println(box.box) }
+      imageBoxes.forEach { box -> BoxOnImage(box) }
     }
   } else {
     CircularProgressIndicator(
