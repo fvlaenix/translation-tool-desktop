@@ -15,6 +15,7 @@ import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -22,15 +23,25 @@ import app.AppStateEnum
 import app.TopBar
 import app.advanced.BoxOnImageData
 import app.batch.BatchService
+import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanelWithPreview
 import app.utils.SimpleLoadedImageDisplayer
-import bean.BlockSettings
+import app.utils.openFileDialog
+import bean.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import utils.FontService
+import utils.JSON
 import utils.ProtobufUtils
+import java.awt.FileDialog
 import java.awt.image.BufferedImage
+import java.nio.file.InvalidPathException
+import java.nio.file.Path
+import javax.imageio.ImageIO
+import kotlin.io.path.name
+import kotlin.io.path.writeText
 
 @Composable
 fun OCRCreator(state: MutableState<AppStateEnum>) {
@@ -43,20 +54,19 @@ fun OCRCreator(state: MutableState<AppStateEnum>) {
   var index by remember { mutableStateOf(-1) }
   val imagesBoxes = remember { mutableStateListOf<List<OCRBoxData>>() }
 
-  var currentImage = remember { mutableStateOf<BufferedImage?>(null) }
+  val currentImage = remember { mutableStateOf<BufferedImage?>(null) }
   val boxes = remember { mutableStateListOf<OCRBoxData>() }
   var selectedBox by remember { mutableStateOf<BoxOnImageData?>(null) }
 
   fun setIndex(newIndex: Int) {
     if (newIndex == -1) index = -1
-    else if (newIndex == images.size) index = images.size
     else {
       // save result
       if (index >= 0) {
         while (imagesBoxes.size <= index) {
           imagesBoxes.add(listOf())
         }
-        imagesBoxes[index] = boxes
+        imagesBoxes[index] = boxes.toList()
       }
 
       // clean
@@ -67,6 +77,7 @@ fun OCRCreator(state: MutableState<AppStateEnum>) {
       // set new index
       index = newIndex
 
+      if (newIndex == images.size) return
       // show new
       boxes.addAll(imagesBoxes.getOrElse(index) { listOf() })
       currentImage.value = images[index].image
@@ -85,7 +96,7 @@ fun OCRCreator(state: MutableState<AppStateEnum>) {
     }
   ) {
     if (index == -1) Text("Click next if you want to continue")
-    else if (index == images.size) OCRCreatorFinal(state, imagesBoxes)
+    else if (index == images.size) OCRCreatorFinal(state, images, imagesBoxes)
     else OCRCreatorStep(imageSize, currentImage, boxes, lockedByTask, coroutineScope)
   }
 }
@@ -138,11 +149,17 @@ private fun OCRCreatorStep(
 @Composable
 private fun OCRCreatorFinal(
   state: MutableState<AppStateEnum>,
-  imageBoxes: SnapshotStateList<List<OCRBoxData>>
+  images: List<ImagePathInfo>,
+  imageBoxes: SnapshotStateList<List<OCRBoxData>>,
 ) {
-  val image = mutableStateOf<BufferedImage?>(null)
+  val image: MutableState<BufferedImage?> = remember { mutableStateOf(null) }
   // TODO make font take better
-  val settings = mutableStateOf(BlockSettings(FontService.getInstance().getDefaultFont()))
+  val settings: MutableState<BlockSettings> = remember { mutableStateOf(BlockSettings(FontService.getInstance().getDefaultFont())) }
+  val author: MutableState<String> = remember { mutableStateOf("") }
+  val savePath: MutableState<String> = remember { mutableStateOf("") }
+
+  val parent = remember { ComposeWindow(null) }
+  val scope = rememberCoroutineScope()
 
   Column(
     modifier = Modifier.verticalScroll(rememberScrollState())
@@ -151,8 +168,66 @@ private fun OCRCreatorFinal(
 
     BlockSettingsPanelWithPreview(settings, image)
 
+    Row {
+      Text("Author")
+
+      TextField(
+        value = author.value,
+        onValueChange = { author.value = it },
+        modifier = Modifier.fillMaxWidth().padding(8.dp)
+      )
+    }
+    Row {
+      Text("Output")
+      TextField(
+        value = savePath.value,
+        onValueChange = { savePath.value = it },
+      )
+      Button(
+        onClick = {
+          scope.launch(Dispatchers.IO) {
+            val files = openFileDialog(parent, "Files to add", false, FileDialog.SAVE)
+            savePath.value = files.single().absolutePath
+          }
+        }
+      ) {
+        Text("Select output")
+      }
+    }
+
     Button(onClick = {
-      TODO()
+      val service = OCRService.getInstance()
+      val imagesBoxes = imageBoxes + List(images.size - imageBoxes.size) { listOf() }
+      val compilation = images.zip(imagesBoxes)
+
+      val workData = WorkData(
+        1,
+        author.value,
+        compilation.mapIndexed { index, (imagePathInfo, imageBoxes) ->
+          ImageData(
+            index = index,
+            imageName = imagePathInfo.path.name,
+            image = null,
+            blockData = imageBoxes.map { box ->
+              BlockData(
+                blockType = BlockType.Rectangle(box.box.x, box.box.y, box.box.sizeX, box.box.sizeY),
+                text = box.text,
+                settings = null
+              )
+            },
+            settings = settings.value,
+          )
+        }
+      )
+
+      service.workData = workData
+      try {
+        val path = Path.of(savePath.value)
+        path.writeText(JSON.encodeToString(workData))
+      } catch (e: InvalidPathException) {
+        println(e)
+      }
+      state.value = AppStateEnum.MAIN_MENU
     }) {
       Text("Done")
     }
