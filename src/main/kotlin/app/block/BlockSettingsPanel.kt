@@ -1,27 +1,17 @@
 package app.block
 
+import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import app.utils.NumberField
 import app.utils.SimpleLoadedImageDisplayer
 import bean.BeanColor
 import bean.BlockSettings
@@ -72,7 +62,7 @@ private fun FontBlockSettingsPanel(settings: MutableState<BlockSettings>) {
   val fontService = FontService.getInstance()
   val fonts = fontService.getMutableState()
 
-  var expanded = remember { mutableStateOf(false) }
+  val expanded = remember { mutableStateOf(false) }
   val scrollState = rememberScrollState()
 
   fun changeFont(fontName: String) {
@@ -106,8 +96,8 @@ private fun FontBlockSettingsPanel(settings: MutableState<BlockSettings>) {
 @Composable
 private fun FontSizePanel(settings: MutableState<BlockSettings>) {
   Row {
-    Text("Font Size: ")
     SizeOfSomething(
+      name = "Font Size",
       defaultValue = 12,
       getter = { settings.value.fontSize },
       setter = { settings.value = settings.value.copy(fontSize = it) }
@@ -140,8 +130,8 @@ private fun OutlineColor(settings: MutableState<BlockSettings>) {
 private fun OutlineSize(settings: MutableState<BlockSettings>) {
   // TODO make double
   Row {
-    Text("Outline Size: ")
     SizeOfSomething(
+      name = "Outline Size",
       defaultValue = 5,
       getter = { settings.value.outlineSize.toInt() },
       setter = { settings.value = settings.value.copy(outlineSize = it.toDouble()) }
@@ -163,8 +153,8 @@ private fun BackgroundColor(settings: MutableState<BlockSettings>) {
 @Composable
 private fun BorderSize(settings: MutableState<BlockSettings>) {
   Row {
-    Text("Border Size: ")
     SizeOfSomething(
+      name = "Border Size",
       defaultValue = 3,
       getter = { settings.value.border },
       setter = { settings.value = settings.value.copy(border = it) }
@@ -173,13 +163,14 @@ private fun BorderSize(settings: MutableState<BlockSettings>) {
 }
 
 @Composable
-private fun SizeOfSomething(defaultValue: Int, getter: () -> Int, setter: (Int) -> Unit) {
+private fun SizeOfSomething(name: String?, defaultValue: Int, getter: () -> Int, setter: (Int) -> Unit) {
   val size = remember { mutableStateOf(getter()) }
 
-  TextField(
-    value = size.value.toString(),
-    onValueChange = { size.value = it.toIntOrNull() ?: defaultValue; setter(size.value) },
-    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+  NumberField(
+    name = name,
+    number = size,
+    setter = setter,
+    convertNumber = { it ?: defaultValue }
   )
 }
 
@@ -204,16 +195,21 @@ private fun BeanColor(getter: () -> BeanColor, setter: (BeanColor) -> Unit) {
 }
 
 @Composable
+@Preview
+private fun Test() {
+  ColorComponentController("Red", mutableStateOf(255)) { }
+}
+
+@Composable
+@Preview
 private fun ColorComponentController(name: String, color: MutableState<Int>, setter: (Int) -> Unit) {
-  Text("$name: ")
-
-  fun convertColor(it: String): Int {
-    return max(0, min(255, it.toIntOrNull() ?: 0))
+  fun convertColor(it: Int?): Int {
+    return max(0, min(255, it ?: 0))
   }
-
-  TextField(
-    value = color.value.toString(),
-    onValueChange = { color.value = convertColor(it); setter(color.value) },
-    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+  NumberField(
+    name = name,
+    number = color,
+    setter = setter,
+    convertNumber = { convertColor(it) }
   )
 }
