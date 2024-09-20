@@ -142,15 +142,17 @@ private fun OCRCreatorFinal(
 ) {
   val image = mutableStateOf<BufferedImage?>(null)
   // TODO make font take better
-  val settings = mutableStateOf<BlockSettings>(BlockSettings(FontService.getInstance().getDefaultFont()))
+  val settings = mutableStateOf(BlockSettings(FontService.getInstance().getDefaultFont()))
 
-  Column {
+  Column(
+    modifier = Modifier.verticalScroll(rememberScrollState())
+  ) {
     Text("Please, select default settings for text")
 
     BlockSettingsPanelWithPreview(settings, image)
 
     Button(onClick = {
-
+      TODO()
     }) {
       Text("Done")
     }

@@ -4,14 +4,13 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.utils.NumberField
+import app.utils.SearchableExpandedDropDownMenu
 import app.utils.SimpleLoadedImageDisplayer
 import bean.BeanColor
 import bean.BlockSettings
@@ -71,18 +70,15 @@ private fun FontBlockSettingsPanel(settings: MutableState<BlockSettings>) {
 
   Row {
     Text("Font: ")
-    DropdownMenu(
-      expanded = expanded.value,
-      onDismissRequest = { expanded.value = false },
-      scrollState = scrollState
-    ) {
-      fonts.forEach { font ->
-        DropdownMenuItem(
-          content = { Text(font.name) },
-          onClick = { changeFont(font.name) }
-        )
-      }
-    }
+
+    SearchableExpandedDropDownMenu(
+      listOfItems = fonts,
+      dropdownItem = { name -> Text(name.name) },
+      textFromItem = { font -> font.name },
+      defaultItem = {  },
+      onSearchTextFieldClicked = {  },
+      onDropDownItemSelected = { changeFont(it.name) }
+    )
 
     LaunchedEffect(expanded.value) {
       if (expanded.value) {
