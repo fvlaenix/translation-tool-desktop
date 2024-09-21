@@ -1,6 +1,5 @@
 package app.main
 
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -16,7 +15,6 @@ import app.TopBar
 import utils.FontService
 
 @Composable
-@Preview
 fun MainMenu(mutableState: MutableState<AppStateEnum>) {
   TopBar(mutableState, "Main Menu", true) {
     Column(

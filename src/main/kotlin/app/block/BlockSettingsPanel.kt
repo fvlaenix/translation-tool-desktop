@@ -190,13 +190,6 @@ private fun BeanColor(getter: () -> BeanColor, setter: (BeanColor) -> Unit) {
 }
 
 @Composable
-@Preview
-private fun Test() {
-  ColorComponentController("Red", mutableStateOf(255)) { }
-}
-
-@Composable
-@Preview
 private fun ColorComponentController(name: String, color: MutableState<Int>, setter: (Int) -> Unit) {
   fun convertColor(it: Int?): Int {
     return max(0, min(255, it ?: 0))
