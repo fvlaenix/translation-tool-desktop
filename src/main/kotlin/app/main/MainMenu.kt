@@ -42,6 +42,11 @@ fun MainMenu(mutableState: MutableState<AppStateEnum>) {
       ) {
         Text("Load OCR")
       }
+      Button(
+        onClick = { mutableState.value = AppStateEnum.TRANSLATION_CREATOR }
+      ) {
+        Text("Translation Creator")
+      }
     }
   }
 }

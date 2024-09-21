@@ -16,6 +16,7 @@ import app.ocr.OCRCreator
 import app.settings.Settings
 import app.simple.SimpleTranslator
 import app.translation.LoadOCR
+import app.translation.TranslationCreator
 import utils.AnimatedContentUtils.horizontalSpec
 
 @Composable
@@ -39,6 +40,7 @@ fun App() {
         AppStateEnum.BATCH_CREATOR -> BatchCreator(state)
         AppStateEnum.OCR_CREATOR -> OCRCreator(state)
         AppStateEnum.LOAD_OCR_CREATOR -> LoadOCR(state)
+        AppStateEnum.TRANSLATION_CREATOR -> TranslationCreator(state)
 
         AppStateEnum.SETTINGS -> Settings(state)
         AppStateEnum.FONT_SETTINGS -> FontsSettings(state)
@@ -51,6 +53,6 @@ enum class AppStateEnum {
   MAIN_MENU,
   SIMPLE_VERSION,
   ADVANCED_VERSION,
-  BATCH_CREATOR, OCR_CREATOR, LOAD_OCR_CREATOR, //EDIT_CREATOR,
+  BATCH_CREATOR, OCR_CREATOR, LOAD_OCR_CREATOR, TRANSLATION_CREATOR, //EDIT_CREATOR,
   SETTINGS, FONT_SETTINGS
 }
