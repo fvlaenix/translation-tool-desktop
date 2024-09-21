@@ -15,6 +15,7 @@ import app.main.MainMenu
 import app.ocr.OCRCreator
 import app.settings.Settings
 import app.simple.SimpleTranslator
+import app.translation.LoadOCR
 import utils.AnimatedContentUtils.horizontalSpec
 
 @Composable
@@ -30,10 +31,15 @@ fun App() {
     ) { targetState ->
       when (targetState) {
         AppStateEnum.MAIN_MENU -> MainMenu(state)
+
         AppStateEnum.SIMPLE_VERSION -> SimpleTranslator(state)
+
         AppStateEnum.ADVANCED_VERSION -> AdvancedTranslator(state)
+
         AppStateEnum.BATCH_CREATOR -> BatchCreator(state)
-        AppStateEnum.TRANSLATION_CREATOR -> OCRCreator(state)
+        AppStateEnum.OCR_CREATOR -> OCRCreator(state)
+        AppStateEnum.LOAD_OCR_CREATOR -> LoadOCR(state)
+
         AppStateEnum.SETTINGS -> Settings(state)
         AppStateEnum.FONT_SETTINGS -> FontsSettings(state)
       }
@@ -45,6 +51,6 @@ enum class AppStateEnum {
   MAIN_MENU,
   SIMPLE_VERSION,
   ADVANCED_VERSION,
-  BATCH_CREATOR, TRANSLATION_CREATOR, //EDIT_CREATOR,
+  BATCH_CREATOR, OCR_CREATOR, LOAD_OCR_CREATOR, //EDIT_CREATOR,
   SETTINGS, FONT_SETTINGS
 }

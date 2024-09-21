@@ -32,10 +32,15 @@ fun MainMenu(mutableState: MutableState<AppStateEnum>) {
         Text("Batch Creator")
       }
       Button(
-        onClick = { mutableState.value = AppStateEnum.TRANSLATION_CREATOR },
+        onClick = { mutableState.value = AppStateEnum.OCR_CREATOR },
         enabled = FontService.getInstance().isFontsAdded()
       ) {
-        Text("Translation Creator")
+        Text("OCR Creator")
+      }
+      Button(
+        onClick = { mutableState.value = AppStateEnum.LOAD_OCR_CREATOR }
+      ) {
+        Text("Load OCR")
       }
     }
   }
