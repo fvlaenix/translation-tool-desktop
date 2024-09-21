@@ -11,7 +11,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.utils.NumberField
 import app.utils.SearchableExpandedDropDownMenu
-import app.utils.SimpleLoadedImageDisplayer
 import bean.BeanColor
 import bean.BlockSettings
 import kotlinx.coroutines.Dispatchers

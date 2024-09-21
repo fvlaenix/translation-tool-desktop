@@ -8,10 +8,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.BottomAppBar
-import androidx.compose.material.Button
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
@@ -25,7 +24,7 @@ import app.advanced.BoxOnImageData
 import app.batch.BatchService
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanelWithPreview
-import app.utils.SimpleLoadedImageDisplayer
+import app.block.SimpleLoadedImageDisplayer
 import app.utils.openFileDialog
 import bean.*
 import kotlinx.coroutines.CoroutineScope
@@ -39,7 +38,6 @@ import java.awt.FileDialog
 import java.awt.image.BufferedImage
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
-import javax.imageio.ImageIO
 import kotlin.io.path.name
 import kotlin.io.path.writeText
 
@@ -112,7 +110,7 @@ private fun OCRCreatorStep(
   Row(
     modifier = Modifier
   ) {
-    Column(modifier = Modifier.fillMaxWidth(0.8f).onSizeChanged { imageSize.value = it }) {
+    Column(modifier = Modifier.fillMaxWidth(0.7f).onSizeChanged { imageSize.value = it }) {
       SimpleLoadedImageDisplayer(currentImage, boxes)
     }
     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
@@ -140,6 +138,12 @@ private fun OCRCreatorStep(
             modifier = Modifier.fillMaxSize(0.9f).padding(10.dp),
             onValueChange = { boxes[index] = box.copy(text = it) }
           )
+          Button(onClick = { boxes.removeAt(index) }, enabled = !lockedByTask.value) {
+            Icon(
+              imageVector = Icons.Default.Delete,
+              contentDescription = "Trash"
+            )
+          }
         }
       }
     }

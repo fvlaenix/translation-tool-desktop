@@ -1,4 +1,4 @@
-package app.utils
+package app.block
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -27,7 +27,10 @@ import javax.imageio.ImageIO
 import kotlin.math.min
 
 @Composable
-fun SimpleLoadedImageDisplayer(image: MutableState<BufferedImage?>, boxes: SnapshotStateList<OCRBoxData>) {
+fun SimpleLoadedImageDisplayer(
+  image: MutableState<BufferedImage?>,
+  boxes: SnapshotStateList<OCRBoxData>
+) {
   val imageSize = remember { mutableStateOf(IntSize.Zero) }
   val imagePaster = remember { mutableStateOf<ImageBitmap?>(null) }
 
