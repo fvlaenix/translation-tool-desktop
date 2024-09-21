@@ -54,6 +54,7 @@ fun OCRCreator(state: MutableState<AppStateEnum>) {
 
   val currentImage = remember { mutableStateOf<BufferedImage?>(null) }
   val boxes = remember { mutableStateListOf<OCRBoxData>() }
+  // TODO selectBox remove
   var selectedBox by remember { mutableStateOf<BoxOnImageData?>(null) }
 
   fun setIndex(newIndex: Int) {
