@@ -9,12 +9,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
-import app.TopBar
 import app.ocr.OCRService
+import app.utils.PagesPanel
 import app.utils.openFileDialog
 import bean.BlockData
 import bean.ImageData
@@ -31,92 +32,58 @@ import kotlin.io.path.writeText
 
 @Composable
 fun TranslationCreator(state: MutableState<AppStateEnum>) {
-  val ocrCounter = remember { AtomicInteger(0) }
-
-  var index by remember { mutableStateOf(-1) }
-
-  val untranslatedImageDatas = remember {
-    val workData = OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
-    mutableStateListOf(*workData.imagesData.toTypedArray())
-  }
-  val translatedImageDatas = remember {
-    val workData = OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
-    val imagesData = workData.imagesData.map { imageData: ImageData ->
-      ImageData(
-        index = imageData.index,
-        imageName = imageData.imageName,
-        image = imageData.image,
-        blockData = imageData.blockData.map { blockData: BlockData ->
-          BlockData(
-            blockType = blockData.blockType,
-            text = "",
-            settings = blockData.settings,
+  PagesPanel<TranslationData>(
+    name = "Translation creator",
+    state = state,
+    dataExtractor = {
+      val workData = OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
+      workData.imagesData.map { imageData: ImageData ->
+        TranslationData(
+          untranslatedData = imageData,
+          translatedData = imageData.copy(
+            blockData = imageData.blockData.map { blockData: BlockData ->
+              blockData.copy(
+                text = ""
+              )
+            }
           )
-        },
-        settings = imageData.settings
-      )
-    }
-    mutableStateListOf(*imagesData.toTypedArray())
-  }
-
-  val currentUntranslatedData = remember { mutableStateOf(emptyList<BlockData>()) }
-  val currentTranslatedData = remember { mutableStateOf(emptyList<BlockData>()) }
-
-  fun setIndex(newIndex: Int) {
-    if (newIndex == -1) index = -1
-    else {
-      // save result
-      if (index in translatedImageDatas.indices) {
-        translatedImageDatas[index] = translatedImageDatas[index].copy(
-          blockData = currentTranslatedData.value
         )
       }
-
-      // clean
-      currentTranslatedData.value = emptyList()
-      currentUntranslatedData.value = emptyList()
-
-      // set new index
-      index = newIndex
-
-      if (newIndex !in translatedImageDatas.indices) return
-
-      // show new
-      currentUntranslatedData.value = untranslatedImageDatas[index].blockData
-      currentTranslatedData.value = translatedImageDatas[index].blockData
-    }
-  }
-
-  fun isWorkingInProgress(): Boolean = ocrCounter.get() > 0
-
-  TopBar(state, "Translation creator",
-    bottomBar = {
-      BottomAppBar {
-        Row {
-          Button(onClick = { setIndex(index - 1) }, enabled = index > 0 && !isWorkingInProgress()) { Text("Previous") }
-          Button(onClick = { setIndex(index + 1) }, enabled = index + 1 < untranslatedImageDatas.size && !isWorkingInProgress()) { Text("Next") }
-          Button(onClick = { setIndex(untranslatedImageDatas.size) }, enabled = index != untranslatedImageDatas.size && !isWorkingInProgress()) { Text("Done") }
-        }
-      }
-    }
-  ) {
-    when (index) {
-      -1 -> Text("Click next if you want to continue")
-      untranslatedImageDatas.size -> TranslatorCreatorFinal(state, translatedImageDatas)
-      else -> TranslatorCreatorStep(ocrCounter, currentUntranslatedData, currentTranslatedData)
-    }
-  }
+    },
+    stepWindow = { jobCounter, data ->
+      TranslatorCreatorStep(jobCounter, data)
+    },
+    finalWindow = { translatedImageDatas ->
+      TranslatorCreatorFinal(state, translatedImageDatas)
+    },
+  )
 }
+
+private data class TranslationData(
+  val untranslatedData: ImageData,
+  val translatedData: ImageData
+)
 
 @Composable
 private fun TranslatorCreatorStep(
   ocrCounter: AtomicInteger,
-  currentUntranslatedData: MutableState<List<BlockData>>,
-  currentTranslatedData: MutableState<List<BlockData>>
+  translationData: MutableState<TranslationData?>
 ) {
   val coroutineScope = rememberCoroutineScope()
+
+  fun setTranslation(index: Int, text: String) {
+    translationData.value = translationData.value!!.copy(
+      translatedData = translationData.value!!.translatedData.copy(
+        blockData = translationData.value!!.translatedData.blockData.toMutableList().apply {
+          set(index, translationData.value!!.translatedData.blockData[index].copy(text = text))
+        }
+      )
+    )
+  }
+
   Column {
-    val currentData = currentUntranslatedData.value.zip(currentTranslatedData.value)
+    val currentData = translationData.value!!.untranslatedData.blockData
+      .zip(translationData.value!!.translatedData.blockData)
     currentData.forEachIndexed { index, (untranslatedData, translatedData) ->
       Row(
         modifier = Modifier
@@ -136,9 +103,7 @@ private fun TranslatorCreatorStep(
             coroutineScope.launch(Dispatchers.IO) {
               try {
                 val translation = ProtobufUtils.getTranslation(untranslatedData.text)
-                currentTranslatedData.value = currentTranslatedData.value.toMutableList().apply {
-                  set(index, translatedData.copy(text = translation))
-                }
+                setTranslation(index, translation)
               } finally {
                 ocrCounter.decrementAndGet()
               }
@@ -151,14 +116,11 @@ private fun TranslatorCreatorStep(
         TextField(
           value = translatedData.text,
           onValueChange = { newText ->
-            currentTranslatedData.value = currentTranslatedData.value.toMutableList().apply {
-              set(index, translatedData.copy(text = newText))
-            }
+            setTranslation(index, newText)
           },
           modifier = Modifier.weight(1f)
         )
       }
-
     }
   }
 }
@@ -166,7 +128,7 @@ private fun TranslatorCreatorStep(
 @Composable
 private fun TranslatorCreatorFinal(
   state: MutableState<AppStateEnum>,
-  translatedImageDatas: List<ImageData>,
+  translationData: SnapshotStateList<TranslationData>,
 ) {
   val savePath: MutableState<String> = remember { mutableStateOf("") }
 
@@ -196,7 +158,7 @@ private fun TranslatorCreatorFinal(
     Button(onClick = {
       val service = OCRService.getInstance()
       val newWorkData = OCRService.getInstance().workData!!.copy(
-        imagesData = translatedImageDatas
+        imagesData = translationData.map { it.translatedData }
       )
       service.workData = newWorkData
       try {
