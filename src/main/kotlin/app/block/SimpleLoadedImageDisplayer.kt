@@ -31,6 +31,23 @@ fun SimpleLoadedImageDisplayer(
   image: MutableState<BufferedImage?>,
   boxes: SnapshotStateList<OCRBoxData>
 ) {
+  SimpleLoadedImageDisplayer(
+    image = image,
+    displayableOnImage = { imageSize, imageOriginalSize ->
+      val imageBoxes = boxes.map {
+        BoxOnImageWithSizeData(it.box, LocalDensity.current.density, imageSize, imageOriginalSize)
+      }
+      imageBoxes.forEach { box -> BoxOnImage(box) }
+    }
+  )
+}
+
+@Composable
+fun SimpleLoadedImageDisplayer(
+  modifier: Modifier = Modifier.fillMaxSize(0.9f),
+  image: MutableState<BufferedImage?>,
+  displayableOnImage: @Composable ((MutableState<IntSize>, IntSize) -> Unit)? = null
+) {
   val imageSize = remember { mutableStateOf(IntSize.Zero) }
   val imagePaster = remember { mutableStateOf<ImageBitmap?>(null) }
 
@@ -44,15 +61,12 @@ fun SimpleLoadedImageDisplayer(
 
   if (imagePaster.value != null) {
     val imageOriginalSize = IntSize(image.value!!.width, image.value!!.height)
-    val imageBoxes = boxes.map {
-      BoxOnImageWithSizeData(it.box, LocalDensity.current.density, imageSize, imageOriginalSize)
-    }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier) {
       Image(
         bitmap = imagePaster.value!!,
         contentDescription = null,
-        modifier = Modifier.fillMaxSize(0.9f)
+        modifier = Modifier.fillMaxSize()
           .onSizeChanged { imageBoxSize ->
             val scaleImageToBox = min(
               imageBoxSize.width.toDouble() / imageOriginalSize.width,
@@ -67,34 +81,11 @@ fun SimpleLoadedImageDisplayer(
           },
         alignment = Alignment.TopStart
       )
-      imageBoxes.forEach { box -> BoxOnImage(box) }
+      if (displayableOnImage != null) displayableOnImage(imageSize, imageOriginalSize)
     }
   } else {
     CircularProgressIndicator(
-      modifier = Modifier.fillMaxSize()
-    )
-  }
-}
-
-@Composable
-fun SimpleLoadedImageDisplayer(image: MutableState<BufferedImage?>) {
-  val imageSize = remember { mutableStateOf(IntSize.Zero) }
-
-  val image = image.value
-  if (image != null) {
-    val imagePaster = remember { mutableStateOf<ImageBitmap?>(null) }
-    val outputStream = ByteArrayOutputStream()
-    ImageIO.write(image, "png", outputStream)
-    val byteArray = outputStream.toByteArray()
-    imagePaster.value = loadImageBitmap(ByteArrayInputStream(byteArray))
-    Image(
-      bitmap = imagePaster.value!!,
-      contentDescription = null,
-      modifier = Modifier.fillMaxSize().onSizeChanged { imageSize.value = it }
-    )
-  } else {
-    CircularProgressIndicator(
-      modifier = Modifier.fillMaxSize()
+      modifier = Modifier.fillMaxSize(0.5f),
     )
   }
 }
