@@ -52,7 +52,7 @@ fun SimpleLoadedImageDisplayer(
   val imagePaster = remember { mutableStateOf<ImageBitmap?>(null) }
 
   LaunchedEffect(image.value) {
-    val image = image.value
+    val image = image.value ?: return@LaunchedEffect
     val outputStream = ByteArrayOutputStream()
     ImageIO.write(image, "png", outputStream)
     val byteArray = outputStream.toByteArray()
