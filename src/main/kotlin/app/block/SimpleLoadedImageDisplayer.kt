@@ -28,10 +28,12 @@ import kotlin.math.min
 
 @Composable
 fun SimpleLoadedImageDisplayer(
+  modifier: Modifier = Modifier,
   image: MutableState<BufferedImage?>,
   boxes: SnapshotStateList<OCRBoxData>
 ) {
   SimpleLoadedImageDisplayer(
+    modifier = modifier,
     image = image,
     displayableOnImage = { imageSize, imageOriginalSize ->
       val imageBoxes = boxes.map {
@@ -44,7 +46,7 @@ fun SimpleLoadedImageDisplayer(
 
 @Composable
 fun SimpleLoadedImageDisplayer(
-  modifier: Modifier = Modifier.fillMaxSize(0.9f),
+  modifier: Modifier = Modifier,
   image: MutableState<BufferedImage?>,
   displayableOnImage: @Composable ((MutableState<IntSize>, IntSize) -> Unit)? = null
 ) {

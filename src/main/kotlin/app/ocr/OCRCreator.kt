@@ -77,7 +77,7 @@ private fun OCRCreatorStep(
     modifier = Modifier
   ) {
     Column(modifier = Modifier.fillMaxWidth(0.7f)) {
-      SimpleLoadedImageDisplayer(image, boxes)
+      SimpleLoadedImageDisplayer(Modifier.fillMaxSize(0.9f), image, boxes)
     }
     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
       Row(modifier = Modifier.fillMaxWidth()) {
