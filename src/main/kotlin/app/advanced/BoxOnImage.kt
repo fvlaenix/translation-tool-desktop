@@ -65,57 +65,57 @@ fun BoxOnImage(boxOnImageData: BoxOnImageWithSizeData) {
               y += changeY
               sizeX -= changeX
               sizeY -= changeY
-              imageCorrection(boxOnImageData.displayImageSize)
+              imageCorrection(displayImageSize)
               return@detectDragGestures
             }
             if (isRightUpCorner(touchX, touchY)) {
               y += changeY
               sizeX += changeX
               sizeY -= changeY
-              imageCorrection(boxOnImageData.displayImageSize)
+              imageCorrection(displayImageSize)
               return@detectDragGestures
             }
             if (isLeftDownCorner(touchX, touchY)) {
               x += changeX
               sizeX -= changeX
               sizeY += changeY
-              imageCorrection(boxOnImageData.displayImageSize)
+              imageCorrection(displayImageSize)
               return@detectDragGestures
             }
             if (isRightDownCorner(touchX, touchY)) {
               sizeX += changeX
               sizeY += changeY
-              imageCorrection(boxOnImageData.displayImageSize)
+              imageCorrection(displayImageSize)
               return@detectDragGestures
             }
 
             if (isUpBorder(touchX, touchY)) {
               y += changeY
               sizeY -= changeY
-              imageCorrection(boxOnImageData.displayImageSize)
+              imageCorrection(displayImageSize)
               return@detectDragGestures
             }
             if (isLeftBorder(touchX, touchY)) {
               x += changeX
               sizeX -= changeX
-              imageCorrection(boxOnImageData.displayImageSize)
+              imageCorrection(displayImageSize)
               return@detectDragGestures
             }
             if (isRightBorder(touchX, touchY)) {
               sizeX += changeX
-              imageCorrection(boxOnImageData.displayImageSize)
+              imageCorrection(displayImageSize)
               return@detectDragGestures
             }
             if (isDownBorder(touchX, touchY)) {
               sizeY += changeY
-              imageCorrection(boxOnImageData.displayImageSize)
+              imageCorrection(displayImageSize)
               return@detectDragGestures
             }
 
             if (insideRectangle(x, y, x + sizeX, y + sizeY, touchX, touchY)) {
               x += changeX
               y += changeY
-              imageCorrection(boxOnImageData.displayImageSize)
+              imageCorrection(displayImageSize)
             }
           }
         }
