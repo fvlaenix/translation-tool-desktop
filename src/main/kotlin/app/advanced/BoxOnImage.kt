@@ -137,29 +137,29 @@ data class BoxOnImageData(
     mutableStateOf(sizeY)
   )
 
-  var x: Int = stateX.value.toInt()
-    get() = stateX.value.toInt()
+  var x: Int = stateX.value
+    get() = stateX.value
     set(value) {
       stateX.value = value
       field = value
     }
 
-  var y: Int = stateY.value.toInt()
-    get() = stateY.value.toInt()
+  var y: Int = stateY.value
+    get() = stateY.value
     set(value) {
       stateY.value = value
       field = value
     }
 
-  var sizeX: Int = stateSizeX.value.toInt()
-    get() = stateSizeX.value.toInt()
+  var sizeX: Int = stateSizeX.value
+    get() = stateSizeX.value
     set(value) {
       stateSizeX.value = value
       field = value
     }
 
-  var sizeY: Int = stateSizeY.value.toInt()
-    get() = stateSizeY.value.toInt()
+  var sizeY: Int = stateSizeY.value
+    get() = stateSizeY.value
     set(value) {
       stateSizeY.value = value
       field = value
