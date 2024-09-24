@@ -76,11 +76,10 @@ object Text2ImageUtils {
     }
   }
 
-  private fun textToImage(
+  fun textToImage(
     globalSettings: BlockSettings,
     blockData: BlockData
   ): Text2ImageResult {
-
     val x: Int
     val y: Int
     val width: Int
