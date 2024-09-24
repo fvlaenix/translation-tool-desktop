@@ -61,7 +61,7 @@ fun SimpleLoadedImageDisplayer(
     imagePaster.value = loadImageBitmap(ByteArrayInputStream(byteArray))
   }
 
-  if (imagePaster.value != null) {
+  if (imagePaster.value != null && image.value != null) {
     val imageOriginalSize = IntSize(image.value!!.width, image.value!!.height)
 
     Box(modifier = modifier) {
