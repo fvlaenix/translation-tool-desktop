@@ -4,19 +4,24 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class BlockType {
+  abstract val x: Int
+  abstract val y: Int
+  abstract val width: Int
+  abstract val height: Int
+
   @Serializable
   data class Rectangle(
-    val x: Int,
-    val y: Int,
-    val width: Int,
-    val height: Int,
+    override val x: Int,
+    override val y: Int,
+    override val width: Int,
+    override val height: Int,
   ): BlockType()
 
   @Serializable
   data class Oval(
-    val x: Int,
-    val y: Int,
-    val width: Int,
-    val height: Int,
+    override val x: Int,
+    override val y: Int,
+    override val width: Int,
+    override val height: Int,
   ): BlockType()
 }

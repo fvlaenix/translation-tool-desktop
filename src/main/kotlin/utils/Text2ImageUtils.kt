@@ -80,24 +80,11 @@ object Text2ImageUtils {
     globalSettings: BlockSettings,
     blockData: BlockData
   ): Text2ImageResult {
-    val x: Int
-    val y: Int
-    val width: Int
-    val height: Int
-    when (blockData.blockType) {
-      is BlockType.Rectangle -> {
-        x = blockData.blockType.x
-        y = blockData.blockType.y
-        width = blockData.blockType.width
-        height = blockData.blockType.height
-      }
-      is BlockType.Oval -> {
-        x = blockData.blockType.x
-        y = blockData.blockType.y
-        width = blockData.blockType.width
-        height = blockData.blockType.height
-      }
-    }
+    val x: Int = blockData.blockType.x
+    val y: Int = blockData.blockType.y
+    val width: Int = blockData.blockType.width
+    val height: Int = blockData.blockType.height
+
     val settings = blockData.settings ?: globalSettings
 
     val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
