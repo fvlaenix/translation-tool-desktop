@@ -1,8 +1,8 @@
 package app.ocr
 
-import app.advanced.BoxOnImageData
+import bean.BlockPosition
 
 data class OCRBoxData(
-  val box: BoxOnImageData,
+  val box: BlockPosition,
   val text: String
 )

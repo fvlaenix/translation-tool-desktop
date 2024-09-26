@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -24,9 +25,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
+import bean.BlockPosition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import utils.ClipboardUtils.getClipboardImage
+import utils.FollowableMutableState
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -34,9 +37,9 @@ import javax.imageio.ImageIO
 @Composable
 fun ImageWithBoxes(
   image: MutableState<ImageBitmap?>,
-  boxes: MutableState<List<BoxOnImageData>>,
+  boxes: SnapshotStateList<BlockPosition>,
   isEnabled: MutableState<Boolean>,
-  currentSize: MutableState<IntSize>
+  currentSize: FollowableMutableState<IntSize>
 ) {
   val requester = remember { FocusRequester() }
   val emptyText = remember { mutableStateOf("Press CTRL+V to insert image\nThen press CTRL+N to create box to translate,\nDelete to delete previous box") }
@@ -66,11 +69,11 @@ fun ImageWithBoxes(
         }
         if (keyEvent.isCtrlPressed && keyEvent.key == Key.N) {
           if (image.value != null) {
-            boxes.value += BoxOnImageData(0, 0, image.value!!.width / 10, image.value!!.height / 10)
+            boxes += BlockPosition(.0, .0, image.value!!.width.toDouble() / 10, image.value!!.height.toDouble() / 10, BlockPosition.Shape.Rectangle)
           }
         }
         if (keyEvent.key == Key.Delete) {
-          if (boxes.value.isNotEmpty()) boxes.value = boxes.value.dropLast(1)
+          if (boxes.isNotEmpty()) boxes.dropLast(1)
         }
         false
       }
@@ -80,25 +83,21 @@ fun ImageWithBoxes(
     val imageNotNull = image.value
     if (imageNotNull != null) {
       val imageOriginalSize = IntSize(imageNotNull.width, imageNotNull.height)
-      val boxOnImage = boxes.value.map { box ->
-        BoxOnImageWithSizeData(
-          box,
-          LocalDensity.current.density,
-          currentSize,
-          imageOriginalSize
-        )
-      }
 
       Box(modifier = Modifier.fillMaxSize()) {
         Image(
           bitmap = imageNotNull,
           contentDescription = null,
           modifier = Modifier.fillMaxSize()
-            .onSizeChanged { size -> currentSize.value = size; println("Size image changed: $size") },
+            .onSizeChanged { size -> currentSize.value = size },
           alignment = Alignment.TopStart
         )
-        boxOnImage.forEach { box ->
-          BoxOnImage(box)
+        boxes.forEachIndexed { index, box ->
+          val boxFollowable = remember { FollowableMutableState(mutableStateOf(box)) }
+          boxFollowable.follow {
+            boxes[index] = it
+          }
+          BoxOnImage(imageOriginalSize, currentSize.value, boxFollowable)
         }
       }
     } else {

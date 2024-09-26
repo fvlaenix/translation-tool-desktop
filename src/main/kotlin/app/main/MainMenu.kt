@@ -47,6 +47,11 @@ fun MainMenu(mutableState: MutableState<AppStateEnum>) {
       ) {
         Text("Translation Creator")
       }
+      Button(
+        onClick = { mutableState.value = AppStateEnum.EDIT_CREATOR }
+      ) {
+        Text("Edit creator")
+      }
     }
   }
 }

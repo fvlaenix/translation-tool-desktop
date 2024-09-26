@@ -25,6 +25,7 @@ import bean.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import utils.FollowableMutableList
 import utils.FontService
 import utils.JSON
 import utils.ProtobufUtils
@@ -71,7 +72,15 @@ private fun OCRCreatorStep(
 ) {
   val coroutineScope = rememberCoroutineScope()
   val image = remember { mutableStateOf<BufferedImage?>(imageInfoWithBox.value!!.imagePathInfo.image) }
-  val boxes = remember { mutableStateListOf<OCRBoxData>().apply { addAll(imageInfoWithBox.value!!.box) } }
+  val boxes = remember {
+    FollowableMutableList(mutableStateListOf<OCRBoxData>())
+      .apply {
+        follow { newList ->
+          imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = newList.toList())
+        }
+      }
+      .apply { addAll(imageInfoWithBox.value!!.box) }
+  }
 
   Row(
     modifier = Modifier
@@ -181,7 +190,7 @@ private fun OCRCreatorFinal(
             image = null,
             blockData = imageBoxes.map { box ->
               BlockData(
-                blockType = BlockType.Rectangle(box.box.x, box.box.y, box.box.sizeX, box.box.sizeY),
+                blockPosition = BlockPosition(box.box.x, box.box.y, box.box.width, box.box.height, BlockPosition.Shape.Rectangle),
                 text = box.text,
                 settings = null
               )

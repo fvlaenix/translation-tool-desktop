@@ -17,29 +17,38 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
-import app.advanced.BoxOnImage
-import app.advanced.BoxOnImageWithSizeData
+import app.advanced.*
 import app.ocr.OCRBoxData
+import bean.BlockData
+import bean.BlockSettings
+import utils.FollowableMutableState
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 import kotlin.math.min
 
 @Composable
 fun SimpleLoadedImageDisplayer(
-  modifier: Modifier = Modifier,
+  jobCounter: AtomicInteger,
+  baseSettings: BlockSettings,
   image: MutableState<BufferedImage?>,
-  boxes: SnapshotStateList<OCRBoxData>
+  boxes: MutableState<List<BlockData>>
 ) {
   SimpleLoadedImageDisplayer(
-    modifier = modifier,
+    modifier = Modifier.fillMaxSize(0.8f),
     image = image,
     displayableOnImage = { imageSize, imageOriginalSize ->
-      val imageBoxes = boxes.map {
-        BoxOnImageWithSizeData(it.box, LocalDensity.current.density, imageSize, imageOriginalSize)
+      boxes.value.forEachIndexed { index, box ->
+        val boxFollowable = FollowableMutableState(mutableStateOf(box))
+        boxFollowable.follow {
+          boxes.value = boxes.value.toMutableList().apply {
+            this[index] = it
+          }
+        }
+        BlockOnImage(jobCounter, imageOriginalSize, imageSize.value, baseSettings, boxFollowable)
       }
-      imageBoxes.forEach { box -> BoxOnImage(box) }
     }
   )
 }
@@ -48,9 +57,30 @@ fun SimpleLoadedImageDisplayer(
 fun SimpleLoadedImageDisplayer(
   modifier: Modifier = Modifier,
   image: MutableState<BufferedImage?>,
-  displayableOnImage: @Composable ((MutableState<IntSize>, IntSize) -> Unit)? = null
+  boxes: MutableList<OCRBoxData>
 ) {
-  val imageSize = remember { mutableStateOf(IntSize.Zero) }
+  SimpleLoadedImageDisplayer(
+    modifier = modifier,
+    image = image,
+    displayableOnImage = { imageSize, imageOriginalSize ->
+      boxes.forEachIndexed { index, box ->
+        val boxFollowable = remember { FollowableMutableState(mutableStateOf(box.box)) }
+        boxFollowable.follow {
+          boxes[index] = boxes[index].copy(box = it)
+        }
+        BoxOnImage(imageOriginalSize, imageSize.value, boxFollowable)
+      }
+    }
+  )
+}
+
+@Composable
+fun SimpleLoadedImageDisplayer(
+  modifier: Modifier = Modifier,
+  image: MutableState<BufferedImage?>,
+  displayableOnImage: @Composable ((FollowableMutableState<IntSize>, IntSize) -> Unit)? = null
+) {
+  val imageSize = remember { FollowableMutableState(mutableStateOf(IntSize.Zero)) }
   val imagePaster = remember { mutableStateOf<ImageBitmap?>(null) }
 
   LaunchedEffect(image.value) {

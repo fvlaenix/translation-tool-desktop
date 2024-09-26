@@ -167,7 +167,6 @@ fun <T> SearchableExpandedDropDownMenu(
               .focusRequester(focusRequester),
             value = searchedOption,
             onValueChange = { selectedSport ->
-              println(selectedSport)
               searchedOption = selectedSport
               filteredItems = listOfItems.filter {
                 it.toString().contains(

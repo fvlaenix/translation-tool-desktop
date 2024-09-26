@@ -2,15 +2,15 @@ package utils
 
 import bean.BlockData
 import bean.BlockSettings
-import bean.BlockType
+import bean.BlockPosition
 import java.awt.BasicStroke
 import java.awt.FontMetrics
-import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.font.GlyphVector
 import java.awt.image.BufferedImage
 import kotlin.math.min
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 object Text2ImageUtils {
@@ -61,17 +61,17 @@ object Text2ImageUtils {
     return result
   }
 
-  private fun splitToLines(textMetrics: FontMetrics, blockData: BlockData): List<String> {
-    return when (blockData.blockType) {
-      is BlockType.Rectangle -> {
-        val width = blockData.blockType.width - blockData.settings!!.border * 2
-        splitToLinesRectangle(blockData.text, textMetrics, width)
+  private fun splitToLines(textMetrics: FontMetrics, settings: BlockSettings, blockData: BlockData): List<String> {
+    return when (blockData.blockPosition.shape) {
+      is BlockPosition.Shape.Rectangle -> {
+        val width = blockData.blockPosition.width - settings.border * 2
+        splitToLinesRectangle(blockData.text, textMetrics, width.roundToInt())
       }
 
-      is BlockType.Oval -> {
-        val width = blockData.blockType.width - blockData.settings!!.border * 2
-        val height = blockData.blockType.height - blockData.settings!!.border * 2
-        splitToLinesOval(blockData.text, textMetrics, width, height)
+      is BlockPosition.Shape.Oval -> {
+        val width = blockData.blockPosition.width - settings.border * 2
+        val height = blockData.blockPosition.height - settings.border * 2
+        splitToLinesOval(blockData.text, textMetrics, width.roundToInt(), height.roundToInt())
       }
     }
   }
@@ -80,10 +80,10 @@ object Text2ImageUtils {
     globalSettings: BlockSettings,
     blockData: BlockData
   ): Text2ImageResult {
-    val x: Int = blockData.blockType.x
-    val y: Int = blockData.blockType.y
-    val width: Int = blockData.blockType.width
-    val height: Int = blockData.blockType.height
+    val x: Int = blockData.blockPosition.x.roundToInt()
+    val y: Int = blockData.blockPosition.y.roundToInt()
+    val width: Int = blockData.blockPosition.width.roundToInt()
+    val height: Int = blockData.blockPosition.height.roundToInt()
 
     val settings = blockData.settings ?: globalSettings
 
@@ -96,7 +96,7 @@ object Text2ImageUtils {
     val textWidth = width - settings.border * 2
     val outlineStroke = BasicStroke(settings.outlineSize.toFloat())
 
-    val lines = splitToLines(fontMetrics, blockData)
+    val lines = splitToLines(fontMetrics, settings, blockData)
     val isOutOfBorder = lines.size * fontMetrics.height + settings.border > height
 
     // background
@@ -104,13 +104,13 @@ object Text2ImageUtils {
     if (backgroundColor.a != 0) {
       graphics2D.color = backgroundColor.color
 
-      when (blockData.blockType) {
-        is BlockType.Rectangle -> {
+      when (blockData.blockPosition.shape) {
+        is BlockPosition.Shape.Rectangle -> {
           val rectangleHeight = min(lines.size * fontMetrics.height + settings.border * 2, height)
           graphics2D.fillRect(x, y, width, rectangleHeight)
         }
 
-        is BlockType.Oval -> {
+        is BlockPosition.Shape.Oval -> {
           val ovalHeight = min(lines.size * fontMetrics.height + settings.border * 2, height)
           graphics2D.fillOval(x, y, width, ovalHeight)
         }
@@ -157,7 +157,7 @@ object Text2ImageUtils {
     val text =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec quis quam tempor, tempus lorem id, aliquet ante. Ut vitae mi blandit, tincidunt arcu eu, mattis metus. Donec eget tincidunt quam, nec tempor ligula. Donec ornare mi nisl, quis imperdiet erat laoreet quis. Phasellus sed neque non sem consequat pharetra. Fusce ultrices erat nec tincidunt vehicula. Duis non odio pharetra, laoreet ipsum varius, porta libero."
     val blockData = BlockData(
-      blockType = BlockType.Oval(0, 0, width, height),
+      blockPosition = BlockPosition(.0, .0, width.toDouble(), height.toDouble(), BlockPosition.Shape.Oval),
       text = text,
       settings = settings
     )

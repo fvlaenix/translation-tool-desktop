@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import app.advanced.AdvancedTranslator
 import app.batch.BatchCreator
+import app.editor.EditCreator
 import app.fonts.FontsSettings
 import app.main.MainMenu
 import app.ocr.OCRCreator
@@ -41,6 +42,7 @@ fun App() {
         AppStateEnum.OCR_CREATOR -> OCRCreator(state)
         AppStateEnum.LOAD_OCR_CREATOR -> LoadOCR(state)
         AppStateEnum.TRANSLATION_CREATOR -> TranslationCreator(state)
+        AppStateEnum.EDIT_CREATOR -> EditCreator(state)
 
         AppStateEnum.SETTINGS -> Settings(state)
         AppStateEnum.FONT_SETTINGS -> FontsSettings(state)
@@ -53,6 +55,6 @@ enum class AppStateEnum {
   MAIN_MENU,
   SIMPLE_VERSION,
   ADVANCED_VERSION,
-  BATCH_CREATOR, OCR_CREATOR, LOAD_OCR_CREATOR, TRANSLATION_CREATOR, //EDIT_CREATOR,
+  BATCH_CREATOR, OCR_CREATOR, LOAD_OCR_CREATOR, TRANSLATION_CREATOR, EDIT_CREATOR,
   SETTINGS, FONT_SETTINGS
 }

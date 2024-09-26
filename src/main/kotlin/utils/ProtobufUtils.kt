@@ -1,8 +1,8 @@
 package utils
 
-import app.advanced.BoxOnImageData
 import app.ocr.OCRBoxData
 import app.settings.SettingsState
+import bean.BlockPosition
 import com.fvlaenix.image.protobuf.image
 import com.fvlaenix.ocr.protobuf.OcrImageRequest
 import com.fvlaenix.ocr.protobuf.ocrImageRequest
@@ -80,11 +80,12 @@ object ProtobufUtils {
 
       rectangles.map { rectangle ->
         OCRBoxData(
-          box = BoxOnImageData(
-            offsetX = rectangle.x.toInt(),
-            offsetY = rectangle.y.toInt(),
-            sizeX = rectangle.width.toInt(),
-            sizeY = rectangle.height.toInt()
+          box = BlockPosition(
+            x = rectangle.x.toDouble(),
+            y = rectangle.y.toDouble(),
+            width = rectangle.width.toDouble(),
+            height = rectangle.height.toDouble(),
+            shape = BlockPosition.Shape.Rectangle
           ),
           text = rectangle.text
         )
