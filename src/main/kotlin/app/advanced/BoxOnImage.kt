@@ -223,41 +223,14 @@ class BlockDataRectangle(private val mutableState: MutableState<BlockData>, priv
 
   private fun MutableState<BlockData>.changeType(block: BlockPosition.() -> BlockPosition) {
     changeData {
-      copy(blockPosition = block(blockPosition).imageCorrection())
+      copy(blockPosition = block(blockPosition).imageCorrection(imageSize))
     }
-  }
-
-  private fun BlockPosition.imageCorrection(): BlockPosition {
-    var sizeX = this.width
-    var sizeY = this.height
-    var x = this.x
-    var y = this.y
-    if (this.x + this.width > imageSize.width) {
-      sizeX = imageSize.width - this.x
-    }
-    if (this.y + this.height > imageSize.height) {
-      sizeY = imageSize.height - this.y
-    }
-    if (this.x < 0) {
-      sizeX += this.x
-      x = .0
-    }
-    if (this.y < 0) {
-      sizeY += this.y
-      y = .0
-    }
-    return copy(
-      x = x,
-      y = y,
-      width = sizeX,
-      height = sizeY
-    )
   }
 }
 
 class BlockPositionRectangle(private val mutableState: MutableState<BlockPosition>, private val imageSize: IntSize): AbstractRectangle {
   private fun MutableState<BlockPosition>.changeType(block: BlockPosition.() -> BlockPosition) {
-    this.value = block(this.value).imageCorrection()
+    this.value = block(this.value).imageCorrection(imageSize)
   }
 
   override var x: Double
@@ -273,31 +246,30 @@ class BlockPositionRectangle(private val mutableState: MutableState<BlockPositio
     get() = mutableState.value.height
     set(value) { mutableState.changeType { copy(height = value)} }
 
-  // TODO remove copy pasta
-  private fun BlockPosition.imageCorrection(): BlockPosition {
-    var sizeX = this.width
-    var sizeY = this.height
-    var x = this.x
-    var y = this.y
-    if (this.x + this.width > imageSize.width) {
-      sizeX = imageSize.width - this.x
-    }
-    if (this.y + this.height > imageSize.height) {
-      sizeY = imageSize.height - this.y
-    }
-    if (this.x < 0) {
-      sizeX += this.x
-      x = .0
-    }
-    if (this.y < 0) {
-      sizeY += this.y
-      y = .0
-    }
-    return copy(
-      x = x,
-      y = y,
-      width = sizeX,
-      height = sizeY
-    )
+}
+private fun BlockPosition.imageCorrection(imageSize: IntSize): BlockPosition {
+  var sizeX = this.width
+  var sizeY = this.height
+  var x = this.x
+  var y = this.y
+  if (this.x + this.width > imageSize.width) {
+    sizeX = imageSize.width - this.x
   }
+  if (this.y + this.height > imageSize.height) {
+    sizeY = imageSize.height - this.y
+  }
+  if (this.x < 0) {
+    sizeX += this.x
+    x = .0
+  }
+  if (this.y < 0) {
+    sizeY += this.y
+    y = .0
+  }
+  return copy(
+    x = x,
+    y = y,
+    width = sizeX,
+    height = sizeY
+  )
 }
