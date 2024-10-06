@@ -78,6 +78,13 @@ private fun EditCreatorStep(
           return@follow
         }
       }
+      follow { _, new ->
+        currentImage.value = currentImage.value!!.copy(
+          imageData = currentImage.value!!.imageData.copy(
+            blockData = new
+          )
+        )
+      }
     }
   }
 
@@ -96,6 +103,18 @@ private fun EditCreatorStep(
 
   val settings = remember { mutableStateOf(currentSettings()) }
   val image = remember { mutableStateOf<BufferedImage?>(currentImage.value!!.imagePathInfo.image) }
+
+  LaunchedEffect(settings.value) {
+    val index = selectedBoxIndex.value
+
+    if (index == null) {
+      val currentImageValue = currentImage.value!!
+      currentImage.value = currentImageValue.copy(imageData = currentImageValue.imageData.copy(settings = settings.value))
+    } else {
+      val box = boxes.value[index]
+      boxes.value = boxes.value.toMutableList().apply { set(index, box.copy(settings = settings.value)) }
+    }
+  }
 
   LaunchedEffect(selectedBoxIndex.value) {
     settings.value = currentSettings()
