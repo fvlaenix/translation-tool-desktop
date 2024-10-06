@@ -94,8 +94,8 @@ fun ImageWithBoxes(
         )
         boxes.forEachIndexed { index, box ->
           val boxFollowable = remember { FollowableMutableState(mutableStateOf(box)) }
-          boxFollowable.follow {
-            boxes[index] = it
+          boxFollowable.follow { _, after ->
+            boxes[index] = after
           }
           BoxOnImage(imageOriginalSize, currentSize.value, boxFollowable)
         }

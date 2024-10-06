@@ -42,9 +42,9 @@ fun SimpleLoadedImageDisplayer(
     displayableOnImage = { imageSize, imageOriginalSize ->
       boxes.value.forEachIndexed { index, box ->
         val boxFollowable = FollowableMutableState(mutableStateOf(box))
-        boxFollowable.follow {
+        boxFollowable.follow { _, after ->
           boxes.value = boxes.value.toMutableList().apply {
-            this[index] = it
+            this[index] = after
           }
         }
         BlockOnImage(jobCounter, imageOriginalSize, imageSize.value, baseSettings, boxFollowable)
@@ -65,8 +65,8 @@ fun SimpleLoadedImageDisplayer(
     displayableOnImage = { imageSize, imageOriginalSize ->
       boxes.forEachIndexed { index, box ->
         val boxFollowable = remember { FollowableMutableState(mutableStateOf(box.box)) }
-        boxFollowable.follow {
-          boxes[index] = boxes[index].copy(box = it)
+        boxFollowable.follow { _, after ->
+          boxes[index] = boxes[index].copy(box = after)
         }
         BoxOnImage(imageOriginalSize, imageSize.value, boxFollowable)
       }
