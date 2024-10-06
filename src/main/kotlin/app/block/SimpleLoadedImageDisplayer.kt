@@ -4,17 +4,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import app.advanced.*
@@ -34,7 +28,8 @@ fun SimpleLoadedImageDisplayer(
   jobCounter: AtomicInteger,
   baseSettings: BlockSettings,
   image: MutableState<BufferedImage?>,
-  boxes: MutableState<List<BlockData>>
+  boxes: MutableState<List<BlockData>>,
+  selectedBoxIndex: MutableState<Int?>
 ) {
   SimpleLoadedImageDisplayer(
     modifier = Modifier.fillMaxSize(0.8f),
@@ -47,7 +42,15 @@ fun SimpleLoadedImageDisplayer(
             this[index] = after
           }
         }
-        BlockOnImage(jobCounter, imageOriginalSize, imageSize.value, baseSettings, boxFollowable)
+        BlockOnImage(
+          jobCounter = jobCounter,
+          imageSize = imageOriginalSize,
+          displayImageSize = imageSize.value,
+          basicSettings = baseSettings,
+          blockData = boxFollowable,
+          index = index,
+          selectedBoxIndex = selectedBoxIndex
+        )
       }
     }
   )

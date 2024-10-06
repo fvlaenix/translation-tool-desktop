@@ -1,7 +1,9 @@
 package app.advanced
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -17,6 +19,7 @@ import bean.BlockPosition
 import bean.BlockSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import utils.KotlinUtils.applyIf
 import utils.PreemptiveCoroutineScope
 import utils.Text2ImageUtils
 import java.awt.image.BufferedImage
@@ -26,7 +29,11 @@ import kotlin.math.min
 
 private const val HANDLE_SIZE = 16
 
-private fun Modifier.pointerInputForBox(rectangle: AbstractRectangle, convertToGlobal: Double.() -> Double): Modifier {
+private fun Modifier.pointerInputForBox(
+  rectangle: AbstractRectangle,
+  convertToGlobal: Double.() -> Double,
+  onClick: () -> Unit = {}
+): Modifier {
   fun isLeftBorder(x: Float): Boolean = x < HANDLE_SIZE
   fun isUpBorder(y: Float): Boolean = y < HANDLE_SIZE
   fun isRightBorder(x: Float): Boolean = x > rectangle.width - HANDLE_SIZE
@@ -34,6 +41,11 @@ private fun Modifier.pointerInputForBox(rectangle: AbstractRectangle, convertToG
 
   return with(rectangle) {
     this@pointerInputForBox
+      .pointerInput(Unit) {
+        detectTapGestures { offset ->
+          onClick()
+        }
+      }
       .pointerInput(Unit) {
         detectDragGestures { change, dragAmount ->
           val touchX = change.previousPosition.x.toDouble().convertToGlobal().toFloat()
@@ -101,7 +113,9 @@ fun BlockOnImage(
   imageSize: IntSize,
   displayImageSize: IntSize,
   basicSettings: BlockSettings,
-  blockData: MutableState<BlockData>
+  blockData: MutableState<BlockData>,
+  index: Int,
+  selectedBoxIndex: MutableState<Int?>
 ) {
   val image = remember { mutableStateOf<BufferedImage?>(null) }
   val coroutineScope = rememberCoroutineScope()
@@ -155,7 +169,8 @@ fun BlockOnImage(
       modifier = Modifier
         .offset(x.dp, y.dp)
         .size(sizeX.dp, sizeY.dp)
-        .pointerInputForBox(rectangle) { convertToGlobal() },
+        .applyIf(index == selectedBoxIndex.value) { it.border(2.dp, Color.Red) }
+        .pointerInputForBox(rectangle = rectangle, convertToGlobal = { convertToGlobal() }, onClick = { selectedBoxIndex.value = index }),
       image = image
     )
   }
@@ -192,7 +207,7 @@ fun BoxOnImage(
       .offset(x.dp, y.dp)
       .background(Color(Color.Blue.red, Color.Blue.green, Color.Blue.blue, 0.3f))
       .size(sizeX.dp, sizeY.dp)
-      .pointerInputForBox(rectangle) { convertToGlobal() }
+      .pointerInputForBox(rectangle = rectangle, convertToGlobal = { convertToGlobal() })
   )
 }
 

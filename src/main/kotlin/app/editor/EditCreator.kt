@@ -3,10 +3,7 @@ package app.editor
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import app.AppStateEnum
 import app.batch.BatchService
@@ -15,7 +12,9 @@ import app.block.BlockSettingsPanel
 import app.block.SimpleLoadedImageDisplayer
 import app.ocr.OCRService
 import app.utils.PagesPanel
+import bean.BlockSettings
 import bean.ImageData
+import utils.FollowableMutableState
 import java.awt.image.BufferedImage
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -50,21 +49,56 @@ private fun EditCreatorStep(
   imageEditsCounter: AtomicInteger,
   currentImage: MutableState<CleanedImageWithBlock?>
 ) {
-  val settings = remember { currentImage.value!!.imageData.settings }
+  val selectedBoxIndex = remember { mutableStateOf<Int?>(null) }
+
+  val boxes = remember {
+    FollowableMutableState(mutableStateOf(currentImage.value!!.imageData.blockData)).apply {
+      follow { old, new ->
+        if (old.size != new.size) {
+          // TODO make check
+          selectedBoxIndex.value = null
+          return@follow
+        }
+      }
+    }
+  }
+
+  fun currentSettings(): BlockSettings =
+    if (selectedBoxIndex.value == null) {
+      currentImage.value!!.imageData.settings
+    } else {
+      val boxIndex = selectedBoxIndex.value!!
+      if (boxes.value.indices.contains(boxIndex)) {
+        boxes.value[boxIndex].settings ?: currentImage.value!!.imageData.settings
+      } else {
+        selectedBoxIndex.value = null
+        currentImage.value!!.imageData.settings
+      }
+    }
+
+  val settings = remember { mutableStateOf(currentSettings()) }
   val image = remember { mutableStateOf<BufferedImage?>(currentImage.value!!.imagePathInfo.image) }
-  val blockData = remember { mutableStateOf(currentImage.value!!.imageData.blockData) }
+
+  LaunchedEffect(selectedBoxIndex.value) {
+    settings.value = currentSettings()
+  }
+
+  LaunchedEffect(boxes.value) {
+    currentSettings()
+  }
 
   Row {
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
       SimpleLoadedImageDisplayer(
         imageEditsCounter,
-        settings,
+        settings.value,
         image,
-        blockData
+        boxes,
+        selectedBoxIndex
       )
     }
     Column {
-      BlockSettingsPanel(mutableStateOf(settings))
+      BlockSettingsPanel(settings)
     }
   }
 }
@@ -72,7 +106,7 @@ private fun EditCreatorStep(
 @Composable
 private fun EditCreatorFinal(
   state: MutableState<AppStateEnum>,
-  uncleanedImages: List<CleanedImageWithBlock>
+  cleanedImages: List<CleanedImageWithBlock>
 ) {
   TODO()
 }
