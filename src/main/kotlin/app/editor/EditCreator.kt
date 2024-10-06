@@ -1,5 +1,6 @@
 package app.editor
 
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,7 @@ import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import javax.imageio.ImageIO
+import javax.swing.text.StyleConstants.Orientation
 import kotlin.concurrent.withLock
 import kotlin.io.path.isDirectory
 
@@ -134,7 +136,21 @@ private fun EditCreatorStep(
         selectedBoxIndex
       )
     }
-    Column {
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+      if (selectedBoxIndex.value == null) {
+        TextField(
+          value = "",
+          onValueChange = {},
+          enabled = false
+        )
+      } else {
+        val boxIndex = selectedBoxIndex.value!!
+        val box = boxes.value[boxIndex]
+        TextField(
+          value = box.text,
+          onValueChange = { boxes.value = boxes.value.toMutableList().apply { set(boxIndex, box.copy(text = it)) } }
+        )
+      }
       BlockSettingsPanel(settings)
     }
   }
