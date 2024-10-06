@@ -118,6 +118,7 @@ fun BlockOnImage(
   selectedBoxIndex: MutableState<Int?>
 ) {
   val image = remember { mutableStateOf<BufferedImage?>(null) }
+  val isImageFit = remember { mutableStateOf(true) }
   val coroutineScope = rememberCoroutineScope()
   val preemptiveCoroutineScope = remember { PreemptiveCoroutineScope(coroutineScope) }
 
@@ -133,8 +134,7 @@ fun BlockOnImage(
     preemptiveCoroutineScope.launch(Dispatchers.IO) {
       delay(100)
       image.value = null
-      // TODO make indicator if image not fit
-      image.value = Text2ImageUtils.textToImage(
+      val (resultImage, resultIsImageFit) = Text2ImageUtils.textToImage(
         realSettings,
         blockData.value.copy(
           blockPosition = blockData.value.blockPosition.copy(
@@ -142,7 +142,9 @@ fun BlockOnImage(
             y = .0
           )
         )
-      ).image
+      )
+      image.value = resultImage
+      isImageFit.value = resultIsImageFit
       jobCounter.decrementAndGet()
     }
   }
@@ -172,7 +174,7 @@ fun BlockOnImage(
       modifier = Modifier
         .offset(x.dp, y.dp)
         .size(sizeX.dp, sizeY.dp)
-        .applyIf(index == selectedBoxIndex.value) { it.border(2.dp, Color.Red) }
+        .applyIf(index == selectedBoxIndex.value) { it.border(2.dp, if (isImageFit.value) Color.Blue else Color.Red) }
         .pointerInputForBox(rectangle = rectangle, convertToGlobal = { convertToGlobal() }, onClick = { selectedBoxIndex.value = index }),
       image = image
     )

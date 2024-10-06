@@ -164,7 +164,7 @@ object Text2ImageUtils {
     return textToImage(settings, blockData).image
   }
 
-  class Text2ImageResult(
+  data class Text2ImageResult(
     val image: BufferedImage,
     val isOutOfBorder: Boolean
   )
