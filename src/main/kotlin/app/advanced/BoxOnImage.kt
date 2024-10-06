@@ -121,18 +121,21 @@ fun BlockOnImage(
   val coroutineScope = rememberCoroutineScope()
   val preemptiveCoroutineScope = remember { PreemptiveCoroutineScope(coroutineScope) }
 
+  val realSettings = blockData.value.settings ?: basicSettings
+
   LaunchedEffect(
-    blockData.value.settings,
+    realSettings,
     blockData.value.blockPosition,
     blockData.value.text
   ) {
     jobCounter.incrementAndGet()
-    image.value = null
+
     preemptiveCoroutineScope.launch(Dispatchers.IO) {
       delay(100)
+      image.value = null
       // TODO make indicator if image not fit
       image.value = Text2ImageUtils.textToImage(
-        basicSettings,
+        realSettings,
         blockData.value.copy(
           blockPosition = blockData.value.blockPosition.copy(
             x = .0,
@@ -165,7 +168,7 @@ fun BlockOnImage(
 
     val rectangle = BlockDataRectangle(blockData, imageSize)
 
-    SimpleLoadedImageDisplayer(
+    SimpleLoadedImageDisplayer<Unit>(
       modifier = Modifier
         .offset(x.dp, y.dp)
         .size(sizeX.dp, sizeY.dp)

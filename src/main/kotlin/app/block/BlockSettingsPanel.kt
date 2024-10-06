@@ -26,7 +26,7 @@ fun BlockSettingsPanelWithPreview(settings: MutableState<BlockSettings>, imageSt
 
   Row {
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
-      SimpleLoadedImageDisplayer(image = imageState)
+      SimpleLoadedImageDisplayer<Unit>(image = imageState)
     }
     Column(modifier = Modifier.fillMaxWidth()) {
       BlockSettingsPanel(settings)

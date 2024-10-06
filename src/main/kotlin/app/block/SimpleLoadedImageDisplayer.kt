@@ -31,10 +31,19 @@ fun SimpleLoadedImageDisplayer(
   boxes: MutableState<List<BlockData>>,
   selectedBoxIndex: MutableState<Int?>
 ) {
+  data class KeyClass(
+    val baseSettings: BlockSettings,
+    val boxes: MutableState<List<BlockData>>,
+    val selectedBoxIndex: MutableState<Int?>
+  )
+
+  val key = KeyClass(baseSettings, boxes, selectedBoxIndex)
+
   SimpleLoadedImageDisplayer(
     modifier = Modifier.fillMaxSize(0.8f),
     image = image,
-    displayableOnImage = { imageSize, imageOriginalSize ->
+    displayableKey = key,
+    displayableOnImage = { imageSize, imageOriginalSize, (baseSettings, boxes, selectedBoxIndex) ->
       boxes.value.forEachIndexed { index, box ->
         val boxFollowable = FollowableMutableState(mutableStateOf(box))
         boxFollowable.follow { _, after ->
@@ -65,7 +74,8 @@ fun SimpleLoadedImageDisplayer(
   SimpleLoadedImageDisplayer(
     modifier = modifier,
     image = image,
-    displayableOnImage = { imageSize, imageOriginalSize ->
+    displayableKey = boxes,
+    displayableOnImage = { imageSize, imageOriginalSize, boxes ->
       boxes.forEachIndexed { index, box ->
         val boxFollowable = remember { FollowableMutableState(mutableStateOf(box.box)) }
         boxFollowable.follow { _, after ->
@@ -78,10 +88,11 @@ fun SimpleLoadedImageDisplayer(
 }
 
 @Composable
-fun SimpleLoadedImageDisplayer(
+fun <T> SimpleLoadedImageDisplayer(
   modifier: Modifier = Modifier,
   image: MutableState<BufferedImage?>,
-  displayableOnImage: @Composable ((FollowableMutableState<IntSize>, IntSize) -> Unit)? = null
+  displayableKey: T? = null,
+  displayableOnImage: @Composable ((FollowableMutableState<IntSize>, IntSize, T) -> Unit)? = null
 ) {
   val imageSize = remember { FollowableMutableState(mutableStateOf(IntSize.Zero)) }
   val imagePaster = remember { mutableStateOf<ImageBitmap?>(null) }
@@ -116,7 +127,8 @@ fun SimpleLoadedImageDisplayer(
           },
         alignment = Alignment.TopStart
       )
-      if (displayableOnImage != null) displayableOnImage(imageSize, imageOriginalSize)
+      // TODO deal with displayKey!!
+      if (displayableOnImage != null) displayableOnImage(imageSize, imageOriginalSize, displayableKey!!)
     }
   } else {
     CircularProgressIndicator(
