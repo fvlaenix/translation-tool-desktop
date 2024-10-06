@@ -32,6 +32,8 @@ kotlin {
       }
     }
   }
+
+  jvmToolchain(17)
 }
 
 dependencies {
@@ -56,6 +58,9 @@ dependencies {
 
   // json
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+
+  // file chooser
+  implementation("io.github.vinceglb:filekit-compose:0.8.3")
 }
 
 compose.desktop {
@@ -66,6 +71,10 @@ compose.desktop {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
       packageName = "translation-tool-desktop"
       packageVersion = "1.0.0"
+
+      linux {
+        modules("jdk.security.auth")
+      }
     }
   }
 }

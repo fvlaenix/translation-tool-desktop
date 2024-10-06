@@ -4,6 +4,8 @@ import androidx.compose.ui.awt.ComposeWindow
 import java.awt.FileDialog
 import java.io.File
 
+// TODO remove it
+@Deprecated("use another file chooser")
 fun openFileDialog(
   window: ComposeWindow,
   title: String,
