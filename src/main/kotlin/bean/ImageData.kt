@@ -4,9 +4,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ImageData(
-  val image: String? = null,
-  val imageName: String,
   val index: Int,
+  val imageName: String,
+  val image: String? = null,
   val blockData: List<BlockData> = emptyList(),
   val settings: BlockSettings
 )

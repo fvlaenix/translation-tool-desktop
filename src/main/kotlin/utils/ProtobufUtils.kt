@@ -1,6 +1,9 @@
 package utils
 
+import app.ocr.OCRBoxData
 import app.settings.SettingsState
+import bean.BlockPosition
+import com.fvlaenix.image.protobuf.image
 import com.fvlaenix.ocr.protobuf.OcrImageRequest
 import com.fvlaenix.ocr.protobuf.ocrImageRequest
 import com.fvlaenix.proxy.protobuf.ProxyServiceGrpcKt
@@ -17,7 +20,7 @@ private val AUTHORIZATION_KEY: Metadata.Key<String> = Metadata.Key.of("x-api-key
 
 object ProtobufUtils {
   private fun BufferedImage.getImageRequest(): OcrImageRequest = ocrImageRequest {
-    this.image = com.fvlaenix.image.protobuf.image {
+    this.image = image {
       this.fileName = "image.png"
       val outputStream = ByteArrayOutputStream()
       ImageIO.write(this@getImageRequest, "PNG", outputStream)
@@ -25,24 +28,29 @@ object ProtobufUtils {
     }
   }
 
-  private fun getStringFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> String): String {
+  private fun <T> getDataFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> T): T {
     return runBlocking {
-      val channel = try {
-        ManagedChannelBuilder.forAddress(SettingsState.DEFAULT.proxyServiceHostname, SettingsState.DEFAULT.proxyServicePort)
+      val channel = ManagedChannelBuilder.forAddress(
+        SettingsState.DEFAULT.proxyServiceHostname,
+        SettingsState.DEFAULT.proxyServicePort
+      )
           .usePlaintext()
           .maxInboundMessageSize(50 * 1024 * 1024)
           .build()
-      } catch (e: Exception) {
-        return@runBlocking e.message!!
-      }
       try {
         val proxyService = ProxyServiceGrpcKt.ProxyServiceCoroutineStub(channel)
         return@runBlocking body(proxyService)
-      } catch (e: Exception) {
-        e.message!!
       } finally {
         channel.shutdown()
       }
+    }
+  }
+
+  private fun getStringFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> String): String {
+    return try {
+      getDataFromChannel(body)
+    } catch (e: Exception) {
+      return e.message.toString()
     }
   }
 
@@ -55,6 +63,32 @@ object ProtobufUtils {
         response.error
       } else {
         response.rectangles.rectanglesList.joinToString("\n") { it.text }
+      }
+    }
+  }
+
+  fun getBoxedOCR(image: BufferedImage): List<OCRBoxData> {
+    return getDataFromChannel { proxyStub ->
+      val metadata = Metadata()
+      metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
+      val response = proxyStub.ocrImage(image.getImageRequest(), metadata)
+
+      if (response.hasError()) {
+        throw Exception("Error occurred while processing image: ${response.error}")
+      }
+      val rectangles = response.rectangles.rectanglesList
+
+      rectangles.map { rectangle ->
+        OCRBoxData(
+          box = BlockPosition(
+            x = rectangle.x.toDouble(),
+            y = rectangle.y.toDouble(),
+            width = rectangle.width.toDouble(),
+            height = rectangle.height.toDouble(),
+            shape = BlockPosition.Shape.Rectangle
+          ),
+          text = rectangle.text
+        )
       }
     }
   }

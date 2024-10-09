@@ -1,180 +1,295 @@
 package app.advanced
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import kotlin.math.abs
+import app.block.SimpleLoadedImageDisplayer
+import bean.BlockData
+import bean.BlockPosition
+import bean.BlockSettings
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import utils.KotlinUtils.applyIf
+import utils.PreemptiveCoroutineScope
+import utils.Text2ImageUtils
+import java.awt.image.BufferedImage
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
 import kotlin.math.min
 
 private const val HANDLE_SIZE = 16
 
-private fun isTwoPointsNear(x1: Int, y1: Int, x2: Int, y2: Int): Boolean =
-  abs(x1 - x2) < HANDLE_SIZE && abs(y1 - y2) < HANDLE_SIZE
+private fun Modifier.pointerInputForBox(
+  rectangle: AbstractRectangle,
+  convertToGlobal: Double.() -> Double,
+  onClick: () -> Unit = {}
+): Modifier {
+  fun isLeftBorder(x: Float): Boolean = x < HANDLE_SIZE
+  fun isUpBorder(y: Float): Boolean = y < HANDLE_SIZE
+  fun isRightBorder(x: Float): Boolean = x > rectangle.width - HANDLE_SIZE
+  fun isDownBorder(y: Float): Boolean = y > rectangle.height - HANDLE_SIZE
 
-private fun insideRectangle(rectangleX1: Int, rectangleY1: Int, rectangleX2: Int, rectangleY2: Int, pointX: Int, pointY: Int): Boolean {
-  val leftUpX = min(rectangleX1, rectangleX2)
-  val leftUpY = min(rectangleY1, rectangleY2)
-  val rightDownX = max(rectangleX1, rectangleX2)
-  val rightDownY = max(rectangleY1, rectangleY2)
-  return pointX in leftUpX..rightDownX && pointY in leftUpY..rightDownY
+  return with(rectangle) {
+    this@pointerInputForBox
+      .pointerInput(Unit) {
+        detectTapGestures { offset ->
+          onClick()
+        }
+      }
+      .pointerInput(Unit) {
+        detectDragGestures { change, dragAmount ->
+          val touchX = change.previousPosition.x.toDouble().convertToGlobal().toFloat()
+          val touchY = change.previousPosition.y.toDouble().convertToGlobal().toFloat()
+
+          val changeX = dragAmount.x.toDouble().convertToGlobal()
+          val changeY = dragAmount.y.toDouble().convertToGlobal()
+
+          change.consume()
+
+          if (isLeftBorder(touchX) && isUpBorder(touchY)) {
+            x += changeX
+            y += changeY
+            width -= changeX
+            height -= changeY
+            return@detectDragGestures
+          }
+          if (isRightBorder(touchX) && isUpBorder(touchY)) {
+            y += changeY
+            width += changeX
+            height -= changeY
+            return@detectDragGestures
+          }
+          if (isLeftBorder(touchX) && isDownBorder(touchY)) {
+            x += changeX
+            width -= changeX
+            height += changeY
+            return@detectDragGestures
+          }
+          if (isRightBorder(touchX) && isDownBorder(touchY)) {
+            width += changeX
+            height += changeY
+            return@detectDragGestures
+          }
+
+          if (isUpBorder(touchY)) {
+            y += changeY
+            height -= changeY
+            return@detectDragGestures
+          }
+          if (isLeftBorder(touchX)) {
+            x += changeX
+            width -= changeX
+            return@detectDragGestures
+          }
+          if (isRightBorder(touchX)) {
+            width += changeX
+            return@detectDragGestures
+          }
+          if (isDownBorder(touchY)) {
+            height += changeY
+            return@detectDragGestures
+          }
+          x += changeX
+          y += changeY
+        }
+      }
+    // TODO pointer hover icon
+  }
 }
 
 @Composable
-fun BoxOnImage(boxOnImageData: BoxOnImageData, imageSize: State<IntSize>) {
-  with(boxOnImageData) {
-    Box(
+fun BlockOnImage(
+  jobCounter: AtomicInteger,
+  imageSize: IntSize,
+  displayImageSize: IntSize,
+  basicSettings: BlockSettings,
+  blockData: MutableState<BlockData>,
+  index: Int,
+  selectedBoxIndex: MutableState<Int?>
+) {
+  val image = remember { mutableStateOf<BufferedImage?>(null) }
+  val isImageFit = remember { mutableStateOf(true) }
+  val coroutineScope = rememberCoroutineScope()
+  val preemptiveCoroutineScope = remember { PreemptiveCoroutineScope(coroutineScope) }
+
+  val realSettings = blockData.value.settings ?: basicSettings
+
+  LaunchedEffect(
+    realSettings,
+    blockData.value.blockPosition,
+    blockData.value.text
+  ) {
+    jobCounter.incrementAndGet()
+
+    preemptiveCoroutineScope.launch(Dispatchers.IO) {
+      delay(100)
+      image.value = null
+      val (resultImage, resultIsImageFit) = Text2ImageUtils.textToImage(
+        realSettings,
+        blockData.value.copy(
+          blockPosition = blockData.value.blockPosition.copy(
+            x = .0,
+            y = .0
+          )
+        )
+      )
+      image.value = resultImage
+      isImageFit.value = resultIsImageFit
+      jobCounter.decrementAndGet()
+    }
+  }
+
+  if (image.value != null) {
+    fun scaleFromDisplayToOrigin(): Double = max(
+      imageSize.width.toDouble() / displayImageSize.width,
+      imageSize.height.toDouble() / displayImageSize.height
+    )
+
+    fun scaleFromOriginToDisplay(): Double = min(
+      displayImageSize.width.toDouble() / imageSize.width,
+      displayImageSize.height.toDouble() / imageSize.height
+    )
+
+    fun Double.convertToLocal(): Double = this * scaleFromOriginToDisplay()
+    fun Double.convertToGlobal(): Double = this * scaleFromDisplayToOrigin()
+
+    val x: Double = blockData.value.blockPosition.x.convertToLocal()
+    val y: Double = blockData.value.blockPosition.y.convertToLocal()
+    val sizeX: Double = blockData.value.blockPosition.width.convertToLocal()
+    val sizeY: Double = blockData.value.blockPosition.height.convertToLocal()
+
+    val rectangle = BlockDataRectangle(blockData, imageSize)
+
+    SimpleLoadedImageDisplayer<Unit>(
       modifier = Modifier
-        .offset { IntOffset(offsetX.value.toInt(), offsetY.value.toInt()) }
-        .background(Color(Color.Blue.red, Color.Blue.green, Color.Blue.blue, 0.3f))
-        .size(sizeX.value.dp, sizeY.value.dp)
-        .pointerInput(Unit) {
-          detectDragGestures { change, dragAmount ->
-            val touchX = change.previousPosition.x.toInt() + boxOnImageData.x
-            val touchY = change.previousPosition.y.toInt() + boxOnImageData.y
-
-            val changeX = dragAmount.x.toInt()
-            val changeY = dragAmount.y.toInt()
-
-            if (!insideRectangle(boxOnImageData.x, boxOnImageData.y, boxOnImageData.x + boxOnImageData.sizeX.value, boxOnImageData.y + boxOnImageData.sizeY.value, touchX, touchY)) {
-              return@detectDragGestures
-            }
-
-            change.consume()
-
-            if (isLeftUpCorner(touchX, touchY)) {
-              boxOnImageData.offsetX.value += changeX
-              boxOnImageData.offsetY.value += changeY
-              boxOnImageData.sizeX.value -= changeX
-              boxOnImageData.sizeY.value -= changeY
-              imageCorrection(imageSize)
-              return@detectDragGestures
-            }
-            if (isRightUpCorner(touchX, touchY)) {
-              boxOnImageData.offsetY.value += changeY
-              boxOnImageData.sizeX.value += changeX
-              boxOnImageData.sizeY.value -= changeY
-              imageCorrection(imageSize)
-              return@detectDragGestures
-            }
-            if (isLeftDownCorner(touchX, touchY)) {
-              boxOnImageData.offsetX.value += changeX
-              boxOnImageData.sizeX.value -= changeX
-              boxOnImageData.sizeY.value += changeY
-              imageCorrection(imageSize)
-              return@detectDragGestures
-            }
-            if (isRightDownCorner(touchX, touchY)) {
-              boxOnImageData.sizeX.value += changeX
-              boxOnImageData.sizeY.value += changeY
-              imageCorrection(imageSize)
-              return@detectDragGestures
-            }
-
-            if (isUpBorder(touchX, touchY)) {
-              boxOnImageData.offsetY.value += changeY
-              boxOnImageData.sizeY.value -= changeY
-              imageCorrection(imageSize)
-              return@detectDragGestures
-            }
-            if (isLeftBorder(touchX, touchY)) {
-              boxOnImageData.offsetX.value += changeX
-              boxOnImageData.sizeX.value -= changeX
-              imageCorrection(imageSize)
-              return@detectDragGestures
-            }
-            if (isRightBorder(touchX, touchY)) {
-              boxOnImageData.sizeX.value += changeX
-              imageCorrection(imageSize)
-              return@detectDragGestures
-            }
-            if (isDownBorder(touchX, touchY)) {
-              boxOnImageData.sizeY.value += changeY
-              imageCorrection(imageSize)
-              return@detectDragGestures
-            }
-
-            if (insideRectangle(boxOnImageData.x, boxOnImageData.y, boxOnImageData.x + boxOnImageData.sizeX.value, boxOnImageData.y + boxOnImageData.sizeY.value, touchX, touchY)) {
-              boxOnImageData.offsetX.value += changeX
-              boxOnImageData.offsetY.value += changeY
-              imageCorrection(imageSize)
-            }
-          }
-        }
-        // TODO pointerHoverIcon
+        .offset(x.dp, y.dp)
+        .size(sizeX.dp, sizeY.dp)
+        .applyIf(index == selectedBoxIndex.value) { it.border(2.dp, if (isImageFit.value) Color.Blue else Color.Red) }
+        .pointerInputForBox(rectangle = rectangle, convertToGlobal = { convertToGlobal() }, onClick = { selectedBoxIndex.value = index }),
+      image = image
     )
   }
 }
 
-data class BoxOnImageData(
-  val offsetX: MutableState<Float>,
-  val offsetY: MutableState<Float>,
-  val sizeX: MutableState<Int>,
-  val sizeY: MutableState<Int>,
+@Composable
+fun BoxOnImage(
+  imageSize: IntSize,
+  displayImageSize: IntSize,
+  blockData: MutableState<BlockPosition>
 ) {
-  val x
-    get() = offsetX.value.toInt()
-  val y
-    get() = offsetY.value.toInt()
-
-  constructor(offsetX: Float, offsetY: Float, sizeX: Int, sizeY: Int) : this(
-    mutableStateOf(offsetX),
-    mutableStateOf(offsetY),
-    mutableStateOf(sizeX),
-    mutableStateOf(sizeY)
+  fun scaleFromDisplayToOrigin(): Double = max(
+    imageSize.width.toDouble() / displayImageSize.width,
+    imageSize.height.toDouble() / displayImageSize.height
   )
 
-  fun isLeftUpCorner(x: Int, y: Int): Boolean =
-    isTwoPointsNear(x, y, this.x, this.y)
+  fun scaleFromOriginToDisplay(): Double = min(
+    displayImageSize.width.toDouble() / imageSize.width,
+    displayImageSize.height.toDouble() / imageSize.height
+  )
 
-  fun isLeftDownCorner(x: Int, y: Int): Boolean =
-    isTwoPointsNear(x, y, this.x, this.y + this.sizeY.value)
+  fun Double.convertToLocal(): Double = this * scaleFromOriginToDisplay()
+  fun Double.convertToGlobal(): Double = this * scaleFromDisplayToOrigin()
 
-  fun isRightUpCorner(x: Int, y: Int): Boolean =
-    isTwoPointsNear(x, y, this.x + this.sizeX.value, this.y)
+  val x: Double = blockData.value.x.convertToLocal()
+  val y: Double = blockData.value.y.convertToLocal()
+  val sizeX: Double = blockData.value.width.convertToLocal()
+  val sizeY: Double = blockData.value.height.convertToLocal()
 
-  fun isRightDownCorner(x: Int, y: Int): Boolean =
-    isTwoPointsNear(x, y, this.x + this.sizeX.value, this.y + this.sizeY.value)
+  val rectangle = BlockPositionRectangle(blockData, imageSize)
 
-  fun isLeftBorder(x: Int, y: Int): Boolean =
-    insideRectangle(this.x - HANDLE_SIZE, this.y - HANDLE_SIZE, this.x + HANDLE_SIZE, this.y + this.sizeY.value + HANDLE_SIZE, x, y)
+  Box(
+    modifier = Modifier
+      .offset(x.dp, y.dp)
+      .background(Color(Color.Blue.red, Color.Blue.green, Color.Blue.blue, 0.3f))
+      .size(sizeX.dp, sizeY.dp)
+      .pointerInputForBox(rectangle = rectangle, convertToGlobal = { convertToGlobal() })
+  )
+}
 
-  fun isUpBorder(x: Int, y: Int): Boolean =
-    insideRectangle(this.x - HANDLE_SIZE, this.y - HANDLE_SIZE, this.x + this.sizeX.value + HANDLE_SIZE, this.y + HANDLE_SIZE, x, y)
+interface AbstractRectangle {
+  var x: Double
+  var y: Double
+  var width: Double
+  var height: Double
+}
 
-  fun isRightBorder(x: Int, y: Int): Boolean =
-    insideRectangle(this.x + this.sizeX.value - HANDLE_SIZE, this.y - HANDLE_SIZE, this.x + this.sizeX.value + HANDLE_SIZE, this.y + this.sizeY.value + HANDLE_SIZE, x, y)
+class BlockDataRectangle(private val mutableState: MutableState<BlockData>, private val imageSize: IntSize): AbstractRectangle {
+  override var x: Double
+    get() = mutableState.value.blockPosition.x
+    set(value) { mutableState.changeType { copy(x = value) } }
+  override var y: Double
+    get() = mutableState.value.blockPosition.y
+    set(value) { mutableState.changeType { copy(y = value)} }
+  override var width: Double
+    get() = mutableState.value.blockPosition.width
+    set(value) { mutableState.changeType { copy(width = value) } }
+  override var height: Double
+    get() = mutableState.value.blockPosition.height
+    set(value) { mutableState.changeType { copy(height = value)} }
 
-  fun isDownBorder(x: Int, y: Int): Boolean =
-    insideRectangle(this.x - HANDLE_SIZE, this.y + this.sizeY.value - HANDLE_SIZE, this.x + this.sizeX.value + HANDLE_SIZE, this.y + this.sizeY.value + HANDLE_SIZE, x, y)
+  private fun MutableState<BlockData>.changeData(block: BlockData.() -> BlockData) {
+    this.value = block(this.value)
+  }
 
-  fun isNearOrInRectangle(x: Int, y: Int): Boolean =
-    insideRectangle(this.x - HANDLE_SIZE, this.y - HANDLE_SIZE, this.x + this.sizeX.value + HANDLE_SIZE, this.y + this.sizeY.value + HANDLE_SIZE, x, y)
-
-  fun imageCorrection(imageSize: State<IntSize>) {
-    if (this.x + sizeX.value > imageSize.value.width) {
-      sizeX.value = imageSize.value.width - this.x
-    }
-    if (this.y + sizeY.value > imageSize.value.height) {
-      sizeY.value = imageSize.value.height - this.y
-    }
-    if (this.x < 0) {
-      this.offsetX.value = 0f
-    }
-    if (this.y < 0) {
-      this.offsetY.value = 0f
+  private fun MutableState<BlockData>.changeType(block: BlockPosition.() -> BlockPosition) {
+    changeData {
+      copy(blockPosition = block(blockPosition).imageCorrection(imageSize))
     }
   }
+}
+
+class BlockPositionRectangle(private val mutableState: MutableState<BlockPosition>, private val imageSize: IntSize): AbstractRectangle {
+  private fun MutableState<BlockPosition>.changeType(block: BlockPosition.() -> BlockPosition) {
+    this.value = block(this.value).imageCorrection(imageSize)
+  }
+
+  override var x: Double
+    get() = mutableState.value.x
+    set(value) { mutableState.changeType { copy(x = value) } }
+  override var y: Double
+    get() = mutableState.value.y
+    set(value) { mutableState.changeType { copy(y = value)} }
+  override var width: Double
+    get() = mutableState.value.width
+    set(value) { mutableState.changeType { copy(width = value) } }
+  override var height: Double
+    get() = mutableState.value.height
+    set(value) { mutableState.changeType { copy(height = value)} }
+
+}
+private fun BlockPosition.imageCorrection(imageSize: IntSize): BlockPosition {
+  var sizeX = this.width
+  var sizeY = this.height
+  var x = this.x
+  var y = this.y
+  if (this.x + this.width > imageSize.width) {
+    sizeX = imageSize.width - this.x
+  }
+  if (this.y + this.height > imageSize.height) {
+    sizeY = imageSize.height - this.y
+  }
+  if (this.x < 0) {
+    sizeX += this.x
+    x = .0
+  }
+  if (this.y < 0) {
+    sizeY += this.y
+    y = .0
+  }
+  return copy(
+    x = x,
+    y = y,
+    width = sizeX,
+    height = sizeY
+  )
 }

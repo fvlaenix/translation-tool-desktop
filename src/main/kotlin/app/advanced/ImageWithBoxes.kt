@@ -2,10 +2,12 @@ package app.advanced
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -17,14 +19,17 @@ import androidx.compose.ui.graphics.Color.Companion.Magenta
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
+import bean.BlockPosition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import utils.ClipboardUtils.getClipboardImage
+import utils.FollowableMutableState
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -32,9 +37,9 @@ import javax.imageio.ImageIO
 @Composable
 fun ImageWithBoxes(
   image: MutableState<ImageBitmap?>,
-  boxes: MutableState<List<BoxOnImageData>>,
+  boxes: SnapshotStateList<BlockPosition>,
   isEnabled: MutableState<Boolean>,
-  currentSize: MutableState<IntSize>
+  currentSize: FollowableMutableState<IntSize>
 ) {
   val requester = remember { FocusRequester() }
   val emptyText = remember { mutableStateOf("Press CTRL+V to insert image\nThen press CTRL+N to create box to translate,\nDelete to delete previous box") }
@@ -64,11 +69,11 @@ fun ImageWithBoxes(
         }
         if (keyEvent.isCtrlPressed && keyEvent.key == Key.N) {
           if (image.value != null) {
-            boxes.value += BoxOnImageData(0.0f, 0.0f, currentSize.value.width / 10, currentSize.value.height / 10)
+            boxes += BlockPosition(.0, .0, image.value!!.width.toDouble() / 10, image.value!!.height.toDouble() / 10, BlockPosition.Shape.Rectangle)
           }
         }
         if (keyEvent.key == Key.Delete) {
-          if (boxes.value.isNotEmpty()) boxes.value = boxes.value.dropLast(1)
+          if (boxes.isNotEmpty()) boxes.dropLast(1)
         }
         false
       }
@@ -76,14 +81,25 @@ fun ImageWithBoxes(
       .focusable()
   ) {
     val imageNotNull = image.value
-    if (imageNotNull!= null) {
-      Image(
-        bitmap = imageNotNull,
-        contentDescription = null,
-        modifier = Modifier.fillMaxSize()
-          .onSizeChanged { size -> currentSize.value = size },
-        alignment = Alignment.TopStart
-      )
+    if (imageNotNull != null) {
+      val imageOriginalSize = IntSize(imageNotNull.width, imageNotNull.height)
+
+      Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+          bitmap = imageNotNull,
+          contentDescription = null,
+          modifier = Modifier.fillMaxSize()
+            .onSizeChanged { size -> currentSize.value = size },
+          alignment = Alignment.TopStart
+        )
+        boxes.forEachIndexed { index, box ->
+          val boxFollowable = remember { FollowableMutableState(mutableStateOf(box)) }
+          boxFollowable.follow { _, after ->
+            boxes[index] = after
+          }
+          BoxOnImage(imageOriginalSize, currentSize.value, boxFollowable)
+        }
+      }
     } else {
       val gradientColors = listOf(Cyan, Gray, Magenta)
       Text(
@@ -101,8 +117,5 @@ fun ImageWithBoxes(
   }
   LaunchedEffect(Unit) {
     requester.requestFocus()
-  }
-  boxes.value.forEach { box ->
-    BoxOnImage(box, currentSize)
   }
 }

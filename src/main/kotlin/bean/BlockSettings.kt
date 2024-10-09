@@ -7,7 +7,7 @@ import java.awt.Font
 
 @Serializable
 data class BlockSettings(
-  val fontName: String = "default",
+  val fontName: String,
   val fontSize: Int = 10,
   val fontColor: BeanColor = BeanColor.BLACK,
   val outlineColor: BeanColor = BeanColor.WHITE,

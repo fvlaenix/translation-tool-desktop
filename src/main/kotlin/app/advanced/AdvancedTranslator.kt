@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomAppBar
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toAwtImage
@@ -21,18 +18,19 @@ import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.TopBar
 import app.advanced.steps.TranslationStep
+import bean.BlockPosition
+import utils.FollowableMutableState
 import java.awt.image.BufferedImage
-import kotlin.math.max
 
 @Composable
 fun AdvancedTranslator(mutableState: MutableState<AppStateEnum>) {
   val currentSize = remember { mutableStateOf(IntSize.Zero) }
 
   val imageBuffered = remember { mutableStateOf<ImageBitmap?>(null) }
-  val boxes = remember { mutableStateOf<List<BoxOnImageData>>(emptyList()) }
+  val boxes = remember { mutableStateListOf<BlockPosition>() }
   val translationInfos = remember { mutableStateOf<List<TranslationInfo>>(emptyList()) }
   val isEnabled = remember { mutableStateOf(false) }
-  val imageSize = remember { mutableStateOf(IntSize.Zero) }
+  val imageSize = remember { FollowableMutableState(mutableStateOf(IntSize.Zero)) }
 
   val currentState = remember { mutableStateOf(AdvancedTranslatorState.INITIAL_IMAGE) }
 
@@ -56,11 +54,8 @@ fun AdvancedTranslator(mutableState: MutableState<AppStateEnum>) {
 
               val fullBufferedImage = imageBuffered.value!!.toAwtImage()
 
-              val scale = max(fullBufferedImage.width / imageSize.value.width.toDouble(), fullBufferedImage.height / imageSize.value.height.toDouble())
-
-              translationInfos.value = boxes.value.map { boxData ->
-                fun Int.scale(): Int = (this * scale).toInt()
-                val subImage = fullBufferedImage.getSubimage(boxData.x.scale(), boxData.y.scale(), boxData.sizeX.value.scale(), boxData.sizeY.value.scale())
+              translationInfos.value = boxes.map { boxData ->
+                val subImage = fullBufferedImage.getSubimage(boxData.x.toInt(), boxData.y.toInt(), boxData.width.toInt(), boxData.height.toInt())
                 TranslationInfo(subImage)
               }
               if (translationInfos.value.isEmpty()) {

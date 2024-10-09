@@ -1,10 +1,12 @@
 package bean
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Immutable
 data class BlockData(
-  val blockType: BlockType,
+  val blockPosition: BlockPosition,
   val text: String,
   val settings: BlockSettings? = null
 )
