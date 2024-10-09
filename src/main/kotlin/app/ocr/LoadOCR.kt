@@ -1,4 +1,4 @@
-package app.translation
+package app.ocr
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,7 +9,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import app.AppStateEnum
 import app.TopBar
-import app.ocr.OCRService
 import app.utils.openFileDialog
 import bean.WorkData
 import kotlinx.coroutines.Dispatchers
