@@ -14,9 +14,11 @@ import app.editor.EditCreator
 import app.fonts.FontsSettings
 import app.main.MainMenu
 import app.ocr.OCRCreator
+import app.project.NewProjectPanel
 import app.settings.Settings
 import app.simple.SimpleTranslator
-import app.translation.LoadOCR
+import app.ocr.LoadOCR
+import app.project.ProjectPanel
 import app.translation.TranslationCreator
 import utils.AnimatedContentUtils.horizontalSpec
 
@@ -44,6 +46,9 @@ fun App() {
         AppStateEnum.TRANSLATION_CREATOR -> TranslationCreator(state)
         AppStateEnum.EDIT_CREATOR -> EditCreator(state)
 
+        AppStateEnum.NEW_PROJECT -> NewProjectPanel(state)
+        AppStateEnum.PROJECT -> ProjectPanel(state)
+
         AppStateEnum.SETTINGS -> Settings(state)
         AppStateEnum.FONT_SETTINGS -> FontsSettings(state)
       }
@@ -53,8 +58,12 @@ fun App() {
 
 enum class AppStateEnum {
   MAIN_MENU,
+
   SIMPLE_VERSION,
   ADVANCED_VERSION,
   BATCH_CREATOR, OCR_CREATOR, LOAD_OCR_CREATOR, TRANSLATION_CREATOR, EDIT_CREATOR,
+
+  NEW_PROJECT, PROJECT,
+
   SETTINGS, FONT_SETTINGS
 }
