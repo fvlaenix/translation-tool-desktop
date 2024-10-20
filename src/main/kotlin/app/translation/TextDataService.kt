@@ -16,11 +16,9 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 class TextDataService private constructor(val project: Project, language: String) {
-  private var imagesProjectData: ImagesProjectData = project.data as ImagesProjectData
   private val loaded = CompletableDeferred<Unit>()
 
-  // TODO remove postfixTextDataFileName obsolete
-  val workDataPath: Path = project.path.resolve(language + imagesProjectData.postfixTextDataFileName)
+  val workDataPath: Path = project.path.resolve("$language-text.json")
 
   init {
     CoroutineServiceScope.scope.launch {
@@ -34,7 +32,6 @@ class TextDataService private constructor(val project: Project, language: String
     }
   }
 
-  // TODO use it
   suspend fun waitUntilLoaded() = loaded.await()
 
   var workData: WorkData? = null
