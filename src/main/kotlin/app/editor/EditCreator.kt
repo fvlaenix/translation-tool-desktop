@@ -210,7 +210,11 @@ private fun EditCreatorFinal(
       Button(onClick = {
         scope.launch(Dispatchers.IO) {
           if (project != null) {
-            TextDataService.getInstance(project, TextDataService.TRANSLATED).save()
+            val translatedDataService = TextDataService.getInstance(project, TextDataService.TRANSLATED)
+            translatedDataService.workData = translatedDataService.workData!!.copy(
+              imagesData = cleanedImages.map { it.imageData }
+            )
+            translatedDataService.save()
           }
 
           val path = Path.of(savePath.value)
