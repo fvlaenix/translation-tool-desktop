@@ -10,7 +10,11 @@ import app.AppStateEnum
 import project.Project
 
 @Composable
-fun ImagesProjectPanelMenu(appState: MutableState<AppStateEnum>, projectState: MutableState<ImageProjectPanelState>, project: Project) {
+fun ImagesProjectPanelMenu(
+  appState: MutableState<AppStateEnum>,
+  projectState: MutableState<ImageProjectPanelState>,
+  project: Project
+) {
   Column {
     Text(project.name, style = MaterialTheme.typography.h3)
 

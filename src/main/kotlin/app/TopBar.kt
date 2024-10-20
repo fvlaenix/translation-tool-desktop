@@ -20,17 +20,22 @@ fun TopBar(
     topBar = {
       TopAppBar(
         title = { Text(text) },
-        navigationIcon = if (!isMainMenu) { {
-          IconButton(onClick = { mutableState.value = AppStateEnum.MAIN_MENU }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
-          } } } else null,
-        actions = { if (isMainMenu) {
-          IconButton(onClick = { mutableState.value = AppStateEnum.FONT_SETTINGS }) {
-            Text("F")
+        navigationIcon = if (!isMainMenu) {
+          {
+            IconButton(onClick = { mutableState.value = AppStateEnum.MAIN_MENU }) {
+              Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
+            }
           }
-          IconButton(onClick = { mutableState.value = AppStateEnum.SETTINGS }) {
-            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Settings")
-          } }
+        } else null,
+        actions = {
+          if (isMainMenu) {
+            IconButton(onClick = { mutableState.value = AppStateEnum.FONT_SETTINGS }) {
+              Text("F")
+            }
+            IconButton(onClick = { mutableState.value = AppStateEnum.SETTINGS }) {
+              Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Settings")
+            }
+          }
         }
       )
     },

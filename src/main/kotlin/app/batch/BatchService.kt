@@ -14,7 +14,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.nameWithoutExtension
 
 // TODO remove project, obsolete
-class BatchService private constructor(val project: Project?): ImagesService {
+class BatchService private constructor(val project: Project?) : ImagesService {
   private val imagesProjectData: ImagesProjectData? = project?.data as ImagesProjectData?
   private val loaded = CompletableDeferred<Unit>()
 
@@ -82,6 +82,7 @@ class BatchService private constructor(val project: Project?): ImagesService {
     private val PROJECTS: MutableMap<Project, BatchService> = mutableMapOf()
 
     fun getInstance(): BatchService = DEFAULT
+
     @Deprecated(message = "Use ImageDatService instead")
     fun getInstance(project: Project): BatchService = PROJECTS.getOrPut(project) { BatchService(project) }
   }

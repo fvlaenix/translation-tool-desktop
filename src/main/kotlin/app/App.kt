@@ -1,6 +1,6 @@
 package app
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
@@ -13,12 +13,12 @@ import app.batch.ImageDataCreator
 import app.editor.EditCreator
 import app.fonts.FontsSettings
 import app.main.MainMenu
+import app.ocr.LoadOCR
 import app.ocr.OCRCreator
 import app.project.NewProjectPanel
+import app.project.ProjectPanel
 import app.settings.Settings
 import app.simple.SimpleTranslator
-import app.ocr.LoadOCR
-import app.project.ProjectPanel
 import app.translation.TranslationCreator
 import utils.AnimatedContentUtils.horizontalSpec
 

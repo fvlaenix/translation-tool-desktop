@@ -13,7 +13,7 @@ import app.AppStateEnum
 
 @Composable
 fun Settings(mutableState: MutableState<AppStateEnum>) {
-  var ocrServiceHostname by remember { mutableStateOf(SettingsState.DEFAULT.proxyServiceHostname)}
+  var ocrServiceHostname by remember { mutableStateOf(SettingsState.DEFAULT.proxyServiceHostname) }
   var port by remember { mutableStateOf(SettingsState.DEFAULT.proxyServicePort) }
   var apiKey by remember { mutableStateOf(SettingsState.DEFAULT.apiKey) }
 
@@ -24,7 +24,8 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
         navigationIcon = {
           IconButton(onClick = { mutableState.value = AppStateEnum.MAIN_MENU }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
-          } }
+          }
+        }
       )
     },
     bottomBar = {
@@ -60,7 +61,7 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
         TextField(
           singleLine = true,
           value = apiKey,
-          onValueChange = { apiKey = it}
+          onValueChange = { apiKey = it }
         )
       }
     }

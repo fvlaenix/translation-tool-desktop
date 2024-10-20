@@ -8,11 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
@@ -38,7 +34,8 @@ fun FontsSettings(state: MutableState<AppStateEnum>) {
         navigationIcon = {
           IconButton(onClick = { state.value = AppStateEnum.MAIN_MENU }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
-          } }
+          }
+        }
       )
     }
   ) {

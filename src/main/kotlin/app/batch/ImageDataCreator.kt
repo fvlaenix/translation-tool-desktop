@@ -30,7 +30,11 @@ import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 @Composable
-fun ImageDataCreator(state: MutableState<AppStateEnum>, projectState: MutableState<ImageProjectPanelState>? = null, project: Project? = null) {
+fun ImageDataCreator(
+  state: MutableState<AppStateEnum>,
+  projectState: MutableState<ImageProjectPanelState>? = null,
+  project: Project? = null
+) {
   val parent = remember { ComposeWindow(null) }
   var isLoading by remember { mutableStateOf(false) }
   var progress by remember { mutableStateOf(0f) }

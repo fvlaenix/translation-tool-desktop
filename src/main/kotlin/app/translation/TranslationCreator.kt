@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
@@ -41,7 +44,8 @@ fun TranslationCreator(state: MutableState<AppStateEnum>, project: Project? = nu
       val workData = if (project == null) {
         OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
       } else {
-        TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData ?: throw IllegalStateException("Work data is null")
+        TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData
+          ?: throw IllegalStateException("Work data is null")
       }
       workData.imagesData.map { imageData: ImageData ->
         TranslationData(

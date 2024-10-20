@@ -15,8 +15,9 @@ data class BlockPosition(
   @Serializable
   sealed interface Shape {
     @Serializable
-    data object Rectangle: Shape
+    data object Rectangle : Shape
+
     @Serializable
-    data object Oval: Shape
+    data object Oval : Shape
   }
 }

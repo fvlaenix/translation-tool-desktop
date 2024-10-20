@@ -28,12 +28,12 @@ fun LoadOCR(state: MutableState<AppStateEnum>) {
 
   val file = remember { mutableStateOf("") }
   val error = remember { mutableStateOf<String?>(null) }
-  
+
   TopBar(state, "Load OCR",
     bottomBar = {
       BottomAppBar {
         Row {
-          Button(onClick = { 
+          Button(onClick = {
             isLoading = true
             error.value = null
             scope.launch(Dispatchers.IO) {
@@ -100,6 +100,5 @@ fun LoadOCR(state: MutableState<AppStateEnum>) {
         }
       }
     }
-    
   }
 }

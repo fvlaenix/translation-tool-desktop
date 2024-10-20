@@ -6,7 +6,7 @@ class FollowableMutableList<T>(private val delegate: MutableList<T>) : MutableLi
   fun follow(block: (List<T>) -> Unit) {
     followers.add(block)
   }
-  
+
   private fun notifyFollowers() {
     followers.forEach { it(delegate) }
   }

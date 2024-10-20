@@ -7,4 +7,4 @@ data class ImagesProjectData(
   val uneditedImagesFolderName: String = "unedited",
   val postfixTextDataFileName: String = "-text.json",
   val cleanImagesFolderName: String = "cleaned"
-): ProjectData
+) : ProjectData

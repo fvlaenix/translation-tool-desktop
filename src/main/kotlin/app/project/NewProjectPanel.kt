@@ -15,8 +15,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
-import project.ImagesProjectData
 import project.BaseProjectData
+import project.ImagesProjectData
 import project.ProjectsInfoService
 import utils.JSON
 import java.nio.file.Path

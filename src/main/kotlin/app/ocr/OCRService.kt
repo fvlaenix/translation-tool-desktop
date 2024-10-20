@@ -2,7 +2,7 @@ package app.ocr
 
 import bean.WorkData
 
-class OCRService private constructor(){
+class OCRService private constructor() {
   var workData: WorkData? = null
 
   companion object {

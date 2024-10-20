@@ -71,7 +71,7 @@ class ProjectsInfoService(private val path: Path) {
     val stringPath: String
   ) {
     val path: Path
-    get() = Path.of(stringPath)
+      get() = Path.of(stringPath)
 
     val exists: Boolean
       get() = path.exists()

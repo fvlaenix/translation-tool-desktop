@@ -1,8 +1,8 @@
 package utils
 
 import bean.BlockData
-import bean.BlockSettings
 import bean.BlockPosition
+import bean.BlockSettings
 import java.awt.BasicStroke
 import java.awt.FontMetrics
 import java.awt.RenderingHints

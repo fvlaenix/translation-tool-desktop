@@ -175,7 +175,10 @@ fun BlockOnImage(
         .offset(x.dp, y.dp)
         .size(sizeX.dp, sizeY.dp)
         .applyIf(index == selectedBoxIndex.value) { it.border(2.dp, if (isImageFit.value) Color.Blue else Color.Red) }
-        .pointerInputForBox(rectangle = rectangle, convertToGlobal = { convertToGlobal() }, onClick = { selectedBoxIndex.value = index }),
+        .pointerInputForBox(
+          rectangle = rectangle,
+          convertToGlobal = { convertToGlobal() },
+          onClick = { selectedBoxIndex.value = index }),
       image = image
     )
   }
@@ -223,19 +226,30 @@ interface AbstractRectangle {
   var height: Double
 }
 
-class BlockDataRectangle(private val mutableState: MutableState<BlockData>, private val imageSize: IntSize): AbstractRectangle {
+class BlockDataRectangle(
+  private val mutableState: MutableState<BlockData>,
+  private val imageSize: IntSize
+) : AbstractRectangle {
   override var x: Double
     get() = mutableState.value.blockPosition.x
-    set(value) { mutableState.changeType { copy(x = value) } }
+    set(value) {
+      mutableState.changeType { copy(x = value) }
+    }
   override var y: Double
     get() = mutableState.value.blockPosition.y
-    set(value) { mutableState.changeType { copy(y = value)} }
+    set(value) {
+      mutableState.changeType { copy(y = value) }
+    }
   override var width: Double
     get() = mutableState.value.blockPosition.width
-    set(value) { mutableState.changeType { copy(width = value) } }
+    set(value) {
+      mutableState.changeType { copy(width = value) }
+    }
   override var height: Double
     get() = mutableState.value.blockPosition.height
-    set(value) { mutableState.changeType { copy(height = value)} }
+    set(value) {
+      mutableState.changeType { copy(height = value) }
+    }
 
   private fun MutableState<BlockData>.changeData(block: BlockData.() -> BlockData) {
     this.value = block(this.value)
@@ -248,25 +262,37 @@ class BlockDataRectangle(private val mutableState: MutableState<BlockData>, priv
   }
 }
 
-class BlockPositionRectangle(private val mutableState: MutableState<BlockPosition>, private val imageSize: IntSize): AbstractRectangle {
+class BlockPositionRectangle(
+  private val mutableState: MutableState<BlockPosition>,
+  private val imageSize: IntSize
+) : AbstractRectangle {
   private fun MutableState<BlockPosition>.changeType(block: BlockPosition.() -> BlockPosition) {
     this.value = block(this.value).imageCorrection(imageSize)
   }
 
   override var x: Double
     get() = mutableState.value.x
-    set(value) { mutableState.changeType { copy(x = value) } }
+    set(value) {
+      mutableState.changeType { copy(x = value) }
+    }
   override var y: Double
     get() = mutableState.value.y
-    set(value) { mutableState.changeType { copy(y = value)} }
+    set(value) {
+      mutableState.changeType { copy(y = value) }
+    }
   override var width: Double
     get() = mutableState.value.width
-    set(value) { mutableState.changeType { copy(width = value) } }
+    set(value) {
+      mutableState.changeType { copy(width = value) }
+    }
   override var height: Double
     get() = mutableState.value.height
-    set(value) { mutableState.changeType { copy(height = value)} }
+    set(value) {
+      mutableState.changeType { copy(height = value) }
+    }
 
 }
+
 private fun BlockPosition.imageCorrection(imageSize: IntSize): BlockPosition {
   var sizeX = this.width
   var sizeY = this.height

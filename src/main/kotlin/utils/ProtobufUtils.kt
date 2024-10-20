@@ -34,9 +34,9 @@ object ProtobufUtils {
         SettingsState.DEFAULT.proxyServiceHostname,
         SettingsState.DEFAULT.proxyServicePort
       )
-          .usePlaintext()
-          .maxInboundMessageSize(50 * 1024 * 1024)
-          .build()
+        .usePlaintext()
+        .maxInboundMessageSize(50 * 1024 * 1024)
+        .build()
       try {
         val proxyService = ProxyServiceGrpcKt.ProxyServiceCoroutineStub(channel)
         return@runBlocking body(proxyService)
