@@ -13,7 +13,7 @@ import javax.imageio.ImageIO
 import kotlin.io.path.createDirectories
 import kotlin.io.path.nameWithoutExtension
 
-class ImageDataService private constructor(val project: Project, val folderName: String) : ImagesService {
+class ImageDataService private constructor(val project: Project, folderName: String) : ImagesService {
   private val loaded = CompletableDeferred<Unit>()
 
   val workDataPath: Path = project.path.resolve(folderName)

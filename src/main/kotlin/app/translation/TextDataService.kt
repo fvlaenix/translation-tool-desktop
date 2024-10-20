@@ -15,7 +15,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-class TextDataService private constructor(val project: Project, val language: String) {
+class TextDataService private constructor(val project: Project, language: String) {
   private var imagesProjectData: ImagesProjectData = project.data as ImagesProjectData
   private val loaded = CompletableDeferred<Unit>()
 
