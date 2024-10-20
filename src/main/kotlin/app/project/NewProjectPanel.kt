@@ -17,7 +17,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import project.ImagesProjectData
 import project.BaseProjectData
-import project.ProjectsService
+import project.ProjectsInfoService
 import utils.JSON
 import java.nio.file.Path
 import kotlin.io.path.*
@@ -77,16 +77,16 @@ fun NewProjectPanel(state: MutableState<AppStateEnum>) {
         onClick = {
           val projectPath = Path.of(pathString, projectFolderName)
           projectPath.createDirectories()
-          val projectInfo = ProjectsService.ProjectInfoData(projectName, projectPath.absolutePathString())
-          val imagesProjectData = ImagesProjectData(projectName)
+          val projectInfo = ProjectsInfoService.ProjectInfoData(projectName, projectPath.absolutePathString())
+          val imagesProjectData = ImagesProjectData()
           val projectData = BaseProjectData(projectName, imagesProjectData)
           runBlocking {
             // TODO make indicator
-            ProjectsService.getInstance().add(projectInfo)
+            ProjectsInfoService.getInstance().add(projectInfo)
           }
           val projectFile = projectPath.resolve("project.json")
           projectFile.writeText(JSON.encodeToString<BaseProjectData>(projectData))
-          ProjectsService.getInstance().selectedProjectInfo = projectInfo
+          ProjectsInfoService.getInstance().selectedProjectInfo = projectInfo
           state.value = AppStateEnum.PROJECT
         },
         enabled = isDoneUnlocked

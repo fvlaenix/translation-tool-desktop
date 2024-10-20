@@ -14,27 +14,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import project.BaseProjectData
 import project.ImagesProjectData
-import project.ProjectsService
+import project.Project
+import project.ProjectsInfoService
 import utils.JSON
 import kotlin.io.path.readText
 
 @Composable
 fun ProjectPanel(state: MutableState<AppStateEnum>) {
-  val mutableSelectedProjectData: MutableState<BaseProjectData?> = remember { mutableStateOf(null) }
+  val mutableSelectedProjectData: MutableState<Project?> = remember { mutableStateOf(null) }
 
   val scope = rememberCoroutineScope()
 
   LaunchedEffect(Unit) {
     scope.launch(Dispatchers.IO) {
-      val currentProjectInfo = ProjectsService.getInstance().selectedProjectInfo ?: TODO()
+      val currentProjectInfo = ProjectsInfoService.getInstance().selectedProjectInfo ?: TODO()
       if (!currentProjectInfo.exists) {
         TODO()
       }
       val path = currentProjectInfo.path
       val projectFile = path.resolve("project.json")
       try {
-        val project = JSON.decodeFromString<BaseProjectData>(projectFile.readText())
-        mutableSelectedProjectData.value = project
+        val projectBase = JSON.decodeFromString<BaseProjectData>(projectFile.readText())
+        mutableSelectedProjectData.value = Project(projectBase.name, currentProjectInfo.stringPath, projectBase.data)
       } catch (_: Exception) {
         TODO()
       }
@@ -50,10 +51,10 @@ fun ProjectPanel(state: MutableState<AppStateEnum>) {
 }
 
 @Composable
-private fun ProjectPanel(state: MutableState<AppStateEnum>, baseProjectData: BaseProjectData) {
-  when (baseProjectData.data) {
+private fun ProjectPanel(state: MutableState<AppStateEnum>, project: Project) {
+  when (project.data) {
     is ImagesProjectData -> {
-      ImagesProjectPanel(state, baseProjectData)
+      ImagesProjectPanel(state, project)
     }
   }
 }

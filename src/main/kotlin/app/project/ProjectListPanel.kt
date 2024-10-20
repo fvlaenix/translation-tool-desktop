@@ -20,7 +20,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
-import project.ProjectsService
+import project.ProjectsInfoService
 import utils.KotlinUtils.applyIf
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -28,7 +28,7 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun ProjectListPanel(state: MutableState<AppStateEnum>) {
-  val projectsService = remember { ProjectsService.getInstance() }
+  val projectsService = remember { ProjectsInfoService.getInstance() }
   val fullSize = remember { mutableStateOf(IntSize.Zero) }
 
   Column(
@@ -64,7 +64,7 @@ fun ProjectListPanel(state: MutableState<AppStateEnum>) {
 }
 
 @Composable
-private fun ProjectPreviewPanel(baseProjectData: ProjectsService.ProjectInfoData) {
+private fun ProjectPreviewPanel(baseProjectData: ProjectsInfoService.ProjectInfoData) {
   Column(
     modifier = Modifier
       .padding(10.dp)

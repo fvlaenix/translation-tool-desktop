@@ -20,21 +20,31 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.TopBar
+import app.project.images.ImageProjectPanelState
 import app.utils.openFileDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import project.Project
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 @Composable
-fun BatchCreator(state: MutableState<AppStateEnum>) {
+fun ImageDataCreator(state: MutableState<AppStateEnum>, projectState: MutableState<ImageProjectPanelState>? = null, project: Project? = null) {
   val parent = remember { ComposeWindow(null) }
   var isLoading by remember { mutableStateOf(false) }
   var progress by remember { mutableStateOf(0f) }
 
   val parentSize = remember { mutableStateOf(IntSize.Zero) }
-  val batchService = BatchService.getInstance()
+  val imagesService: ImagesService = if (project == null) {
+    BatchService.getInstance()
+  } else {
+    when (projectState!!.value) {
+      ImageProjectPanelState.UNTRANSLATED_IMAGES_CREATOR -> ImageDataService.getInstance(project, ImageDataService.UNTRANSLATED)
+      ImageProjectPanelState.CLEANED_IMAGES_CREATOR -> ImageDataService.getInstance(project, ImageDataService.CLEANED)
+      else -> throw IllegalStateException()
+    }
+  }
   val scope = rememberCoroutineScope()
 
   TopBar(state, "Batch Creator") {
@@ -60,8 +70,9 @@ fun BatchCreator(state: MutableState<AppStateEnum>) {
                 files.forEachIndexed { index, file ->
                   progress = index.toFloat() / files.size
                   val image = ImageIO.read(file)
-                  batchService.add(ImagePathInfo(image, file.toPath()))
+                  imagesService.add(ImagePathInfo(image, file.nameWithoutExtension))
                 }
+                imagesService.saveIfRequired()
                 isLoading = false
               }
             },
@@ -71,7 +82,7 @@ fun BatchCreator(state: MutableState<AppStateEnum>) {
           }
           Button(
             onClick = {
-              batchService.clear()
+              imagesService.clear()
             }
           ) {
             Text("Delete Files")
@@ -85,7 +96,7 @@ fun BatchCreator(state: MutableState<AppStateEnum>) {
           )
         }
 
-        val images = BatchService.getInstance().get()
+        val images = imagesService.get()
 
         for (image in images) {
           Row(

@@ -14,7 +14,7 @@ import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-class ProjectsService(private val path: Path) {
+class ProjectsInfoService(private val path: Path) {
   private val projects: MutableList<ProjectInfoData> = mutableListOf()
   var selectedProjectInfo: ProjectInfoData? = null
 
@@ -60,9 +60,9 @@ class ProjectsService(private val path: Path) {
   companion object {
     private val DEFAULT_PATH = Path.of("projects.json")
 
-    private val INSTANCE = ProjectsService(DEFAULT_PATH)
+    private val INSTANCE = ProjectsInfoService(DEFAULT_PATH)
 
-    fun getInstance(): ProjectsService = INSTANCE
+    fun getInstance(): ProjectsInfoService = INSTANCE
   }
 
   @Serializable

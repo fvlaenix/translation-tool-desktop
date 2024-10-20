@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import app.advanced.AdvancedTranslator
-import app.batch.BatchCreator
+import app.batch.ImageDataCreator
 import app.editor.EditCreator
 import app.fonts.FontsSettings
 import app.main.MainMenu
@@ -40,7 +40,7 @@ fun App() {
 
         AppStateEnum.ADVANCED_VERSION -> AdvancedTranslator(state)
 
-        AppStateEnum.BATCH_CREATOR -> BatchCreator(state)
+        AppStateEnum.BATCH_CREATOR -> ImageDataCreator(state)
         AppStateEnum.OCR_CREATOR -> OCRCreator(state)
         AppStateEnum.LOAD_OCR_CREATOR -> LoadOCR(state)
         AppStateEnum.TRANSLATION_CREATOR -> TranslationCreator(state)

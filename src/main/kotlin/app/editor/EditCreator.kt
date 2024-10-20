@@ -1,6 +1,5 @@
 package app.editor
 
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,13 +11,14 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.awt.ComposeWindow
 import app.AppStateEnum
 import app.batch.BatchService
+import app.batch.ImageDataService
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanel
 import app.block.SimpleLoadedImageDisplayer
 import app.ocr.OCRService
+import app.translation.TextDataService
 import app.utils.PagesPanel
 import bean.BlockSettings
 import bean.ImageData
@@ -27,34 +27,42 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import project.Project
 import utils.FollowableMutableState
+import utils.ImageUtils.deepCopy
 import utils.Text2ImageUtils
 import java.awt.image.BufferedImage
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import javax.imageio.ImageIO
-import javax.swing.text.StyleConstants.Orientation
 import kotlin.concurrent.withLock
+import kotlin.io.path.createDirectories
 import kotlin.io.path.isDirectory
 
 @Composable
-fun EditCreator(state: MutableState<AppStateEnum>) {
+fun EditCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
   PagesPanel(
     name = "Edit Creator",
     state = state,
     dataExtractor = {
-      val cleanedImages = BatchService.getInstance().get().toList()
-      val imagesData = OCRService.getInstance().workData!!.imagesData.toMutableList()
+      val (cleanedImages, imagesData) = if (project == null) {
+        BatchService.getInstance().get().toList() to
+            OCRService.getInstance().workData!!.imagesData.toMutableList()
+      } else {
+        ImageDataService.getInstance(project, ImageDataService.CLEANED).get().toList() to
+            TextDataService.getInstance(project, TextDataService.TRANSLATED).workData!!.imagesData.toMutableList()
+      }
       check(cleanedImages.size == imagesData.size)
 
-      cleanedImages.zip(imagesData).map { (imagePathInfo, imageData) -> CleanedImageWithBlock(imagePathInfo, imageData) }
+      cleanedImages.zip(imagesData)
+        .map { (imagePathInfo, imageData) -> CleanedImageWithBlock(imagePathInfo, imageData) }
     },
     stepWindow = { jobCounter, data ->
       EditCreatorStep(jobCounter, data)
     },
     finalWindow = { dataList ->
-      EditCreatorFinal(state, dataList)
+      EditCreatorFinal(state, dataList, project)
     }
   )
 }
@@ -111,7 +119,8 @@ private fun EditCreatorStep(
 
     if (index == null) {
       val currentImageValue = currentImage.value!!
-      currentImage.value = currentImageValue.copy(imageData = currentImageValue.imageData.copy(settings = settings.value))
+      currentImage.value =
+        currentImageValue.copy(imageData = currentImageValue.imageData.copy(settings = settings.value))
     } else {
       val box = boxes.value[index]
       boxes.value = boxes.value.toMutableList().apply { set(index, box.copy(settings = settings.value)) }
@@ -159,9 +168,17 @@ private fun EditCreatorStep(
 @Composable
 private fun EditCreatorFinal(
   state: MutableState<AppStateEnum>,
-  cleanedImages: List<CleanedImageWithBlock>
+  cleanedImages: List<CleanedImageWithBlock>,
+  project: Project?
 ) {
-  val savePath: MutableState<String> = remember { mutableStateOf("") }
+  val savePath: MutableState<String> = remember {
+    val path: String = if (project != null) {
+      ImageDataService.getInstance(project, ImageDataService.EDITED).workDataPath.toAbsolutePath().toString()
+    } else {
+      ""
+    }
+    mutableStateOf(path)
+  }
   val progressLock: ReentrantLock = remember { ReentrantLock() }
   var progress by remember { mutableStateOf(0f) }
 
@@ -175,6 +192,7 @@ private fun EditCreatorFinal(
       TextField(
         value = savePath.value,
         onValueChange = { savePath.value = it },
+        enabled = project == null
       )
       Button(
         onClick = {
@@ -182,7 +200,8 @@ private fun EditCreatorFinal(
             val files = FileKit.pickDirectory("Directory to save")
             savePath.value = files?.file?.absolutePath ?: return@launch
           }
-        }
+        },
+        enabled = project == null
       ) {
         Text("Select output")
       }
@@ -190,31 +209,45 @@ private fun EditCreatorFinal(
     Row {
       Button(onClick = {
         scope.launch(Dispatchers.IO) {
+          if (project != null) {
+            TextDataService.getInstance(project, TextDataService.TRANSLATED).save()
+          }
+
           val path = Path.of(savePath.value)
+          path.createDirectories()
           check(path.isDirectory())
           progress = 0.0f
           val part = 1.0 / cleanedImages.size.toFloat()
-          cleanedImages.mapIndexed { index, (imagePathInfo, imageData) ->
+          cleanedImages.map { (imagePathInfo, imageData) ->
             async {
-              val image = imagePathInfo.image
+              val image = imagePathInfo.image.deepCopy()
               val blocksImages = imageData.blockData.map { blockData ->
                 val settings = blockData.settings ?: imageData.settings
-                async { blockData to Text2ImageUtils.textToImage(settings, blockData.copy(
-                  blockPosition = blockData.blockPosition.copy(
-                    x = .0,
-                    y = .0
+                async {
+                  blockData to Text2ImageUtils.textToImage(
+                    settings, blockData.copy(
+                      blockPosition = blockData.blockPosition.copy(
+                        x = .0,
+                        y = .0
+                      )
+                    )
                   )
-                )) }
+                }
               }.awaitAll()
               val graphics = image.createGraphics()
               blocksImages.forEach { (blockData, image) ->
-                graphics.drawImage(image.image, blockData.blockPosition.x.toInt(), blockData.blockPosition.y.toInt(), null)
+                graphics.drawImage(
+                  image.image,
+                  blockData.blockPosition.x.toInt(),
+                  blockData.blockPosition.y.toInt(),
+                  null
+                )
               }
               progressLock.withLock {
                 progress += part.toFloat()
                 progress = progress.coerceIn(0.0f, 1.0f)
               }
-              val imagePath = path.resolve(imageData.imageName)
+              val imagePath = path.resolve(imageData.imageName + ".png")
               ImageIO.write(image, "PNG", imagePath.toFile())
             }
           }.awaitAll()
