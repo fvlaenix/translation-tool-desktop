@@ -14,20 +14,20 @@ data class SettingsState(
   val apiKey: String = "TEST_API_KEY"
 ) {
   companion object {
-    private const val path = "settings.json"
+    private const val PATH = "settings.json"
 
     var DEFAULT = load()
 
     fun save(proxyServiceHostname: String, port: Int, apiKey: String) {
       DEFAULT = SettingsState(proxyServiceHostname, port, apiKey)
-      Path(path).writeText(
+      Path(PATH).writeText(
         Json { prettyPrint = true }.encodeToString(DEFAULT)
       )
     }
 
     private fun load(): SettingsState {
       val value = runCatching {
-        val text = Path(path).readText()
+        val text = Path(PATH).readText()
         Json.decodeFromString<SettingsState>(text)
       }.getOrNull()
       return value ?: SettingsState()
