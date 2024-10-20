@@ -18,40 +18,8 @@ import utils.AnimatedContentUtils.horizontalSpec
 
 @Composable
 fun ImagesProjectPanel(state: MutableState<AppStateEnum>, project: Project) {
-  val scope = rememberCoroutineScope()
   val projectState = remember { mutableStateOf(ImageProjectPanelState.MAIN_MENU) }
-
   val imagesProjectData = project.data as ImagesProjectData
-
-  val untranslatedImagesDataService = remember { ImageDataService.getInstance(project, ImageDataService.UNTRANSLATED) }
-  val untranslatedTextDataService = remember { TextDataService.getInstance(project, TextDataService.UNTRANSLATED) }
-  val translatedTextDataService = remember { TextDataService.getInstance(project, TextDataService.TRANSLATED) }
-  val cleanImagesDataService = remember { ImageDataService.getInstance(project, ImageDataService.CLEANED) }
-
-  // TODO make them useful
-  val untranslatedImagesDataServiceLoaded = remember { mutableStateOf(false) }
-  val untranslatedTextDataServiceLoaded = remember { mutableStateOf(false) }
-  val translatedTextDataServiceLoaded = remember { mutableStateOf(false) }
-  val cleanImagesDataServiceLoaded = remember { mutableStateOf(false) }
-
-  LaunchedEffect(Unit) {
-    scope.launch {
-      untranslatedImagesDataService.waitUntilLoaded()
-      untranslatedImagesDataServiceLoaded.value = true
-    }
-    scope.launch {
-      untranslatedTextDataService.waitUntilLoaded()
-      untranslatedTextDataServiceLoaded.value = true
-    }
-    scope.launch {
-      translatedTextDataService.waitUntilLoaded()
-      translatedTextDataServiceLoaded.value = true
-    }
-    scope.launch {
-      cleanImagesDataService.waitUntilLoaded()
-      cleanImagesDataServiceLoaded.value = true
-    }
-  }
 
   AnimatedContent(
     targetState = projectState.value,
