@@ -28,25 +28,23 @@ object ProtobufUtils {
     }
   }
 
-  private fun <T> getDataFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> T): T {
-    return runBlocking {
-      val channel = ManagedChannelBuilder.forAddress(
-        SettingsState.DEFAULT.proxyServiceHostname,
-        SettingsState.DEFAULT.proxyServicePort
-      )
-        .usePlaintext()
-        .maxInboundMessageSize(50 * 1024 * 1024)
-        .build()
-      try {
-        val proxyService = ProxyServiceGrpcKt.ProxyServiceCoroutineStub(channel)
-        return@runBlocking body(proxyService)
-      } finally {
-        channel.shutdown()
-      }
+  private suspend fun <T> getDataFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> T): T {
+    val channel = ManagedChannelBuilder.forAddress(
+      SettingsState.DEFAULT.proxyServiceHostname,
+      SettingsState.DEFAULT.proxyServicePort
+    )
+      .usePlaintext()
+      .maxInboundMessageSize(50 * 1024 * 1024)
+      .build()
+    try {
+      val proxyService = ProxyServiceGrpcKt.ProxyServiceCoroutineStub(channel)
+      return body(proxyService)
+    } finally {
+      channel.shutdown()
     }
   }
 
-  private fun getStringFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> String): String {
+  private suspend fun getStringFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> String): String {
     return try {
       getDataFromChannel(body)
     } catch (e: Exception) {
@@ -54,7 +52,7 @@ object ProtobufUtils {
     }
   }
 
-  fun getOCR(image: BufferedImage): String {
+  suspend fun getOCR(image: BufferedImage): String {
     return getStringFromChannel { proxyStub ->
       val metadata = Metadata()
       metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
@@ -67,7 +65,7 @@ object ProtobufUtils {
     }
   }
 
-  fun getBoxedOCR(image: BufferedImage): List<OCRBoxData> {
+  suspend fun getBoxedOCR(image: BufferedImage): List<OCRBoxData> {
     return getDataFromChannel { proxyStub ->
       val metadata = Metadata()
       metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
@@ -93,7 +91,7 @@ object ProtobufUtils {
     }
   }
 
-  fun getTranslation(text: String): String {
+  suspend fun getTranslation(text: String): String {
     return getStringFromChannel { proxyStub ->
       val metadata = Metadata()
       metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
