@@ -36,7 +36,6 @@ class ImageDataService private constructor(val project: Project, folderName: Str
     }
   }
 
-  // TODO call it
   suspend fun waitUntilLoaded() = loaded.await()
 
   override fun clear() {
