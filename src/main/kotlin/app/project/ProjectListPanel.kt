@@ -75,9 +75,13 @@ private fun ProjectPreviewPanel(baseProjectData: ProjectsInfoService.ProjectInfo
       style = MaterialTheme.typography.h6
     )
 
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val localDateTime = LocalDateTime.ofInstant(baseProjectData.lastTimeChange.toInstant(), ZoneId.systemDefault())
-    val formattedTime = localDateTime.format(formatter)
+    val formattedTime = if (baseProjectData.lastTimeChange == null) {
+      "????-??-?? ??:??:??"
+    } else {
+      val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+      val localDateTime = LocalDateTime.ofInstant(baseProjectData.lastTimeChange!!.toInstant(), ZoneId.systemDefault())
+      localDateTime.format(formatter)
+    }
 
     Text(
       text = "Last changed: $formattedTime",

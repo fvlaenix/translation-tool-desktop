@@ -76,7 +76,7 @@ class ProjectsInfoService(private val path: Path) {
     val exists: Boolean
       get() = path.exists()
 
-    val lastTimeChange: FileTime
-      get() = path.getLastModifiedTime()
+    val lastTimeChange: FileTime?
+      get() = if (exists) path.getLastModifiedTime() else null
   }
 }
