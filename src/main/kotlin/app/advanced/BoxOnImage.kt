@@ -18,7 +18,6 @@ import bean.BlockData
 import bean.BlockPosition
 import bean.BlockSettings
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import utils.KotlinUtils.applyIf
 import utils.PreemptiveCoroutineScope
 import utils.Text2ImageUtils
@@ -42,12 +41,14 @@ private fun Modifier.pointerInputForBox(
   return with(rectangle) {
     this@pointerInputForBox
       .pointerInput(Unit) {
-        detectTapGestures { offset ->
+        detectTapGestures {
           onClick()
         }
       }
       .pointerInput(Unit) {
-        detectDragGestures { change, dragAmount ->
+        detectDragGestures(onDragEnd = {
+          heavyChange()
+        }) { change, dragAmount ->
           val touchX = change.previousPosition.x.toDouble().convertToGlobal().toFloat()
           val touchY = change.previousPosition.y.toDouble().convertToGlobal().toFloat()
 
@@ -124,15 +125,10 @@ fun BlockOnImage(
 
   val realSettings = blockData.value.settings ?: basicSettings
 
-  LaunchedEffect(
-    realSettings,
-    blockData.value.blockPosition,
-    blockData.value.text
-  ) {
+  fun redrawImage() {
     jobCounter.incrementAndGet()
 
     preemptiveCoroutineScope.launch(Dispatchers.IO) {
-      delay(100)
       image.value = null
       val (resultImage, resultIsImageFit) = Text2ImageUtils.textToImage(
         realSettings,
@@ -147,6 +143,19 @@ fun BlockOnImage(
       isImageFit.value = resultIsImageFit
       jobCounter.decrementAndGet()
     }
+  }
+
+  blockData.value.blockPosition.heavyChangeListener = object : BlockPosition.HeavyChangeListener {
+    override fun onChange() {
+      redrawImage()
+    }
+  }
+
+  LaunchedEffect(
+    realSettings,
+    blockData.value.text
+  ) {
+    redrawImage()
   }
 
   if (image.value != null) {
@@ -224,6 +233,8 @@ interface AbstractRectangle {
   var y: Double
   var width: Double
   var height: Double
+
+  fun heavyChange()
 }
 
 class BlockDataRectangle(
@@ -260,6 +271,10 @@ class BlockDataRectangle(
       copy(blockPosition = block(blockPosition).imageCorrection(imageSize))
     }
   }
+
+  override fun heavyChange() {
+    mutableState.value.blockPosition.heavyChangeListener?.onChange()
+  }
 }
 
 class BlockPositionRectangle(
@@ -291,6 +306,9 @@ class BlockPositionRectangle(
       mutableState.changeType { copy(height = value) }
     }
 
+  override fun heavyChange() {
+    mutableState.value.heavyChangeListener?.onChange()
+  }
 }
 
 private fun BlockPosition.imageCorrection(imageSize: IntSize): BlockPosition {
