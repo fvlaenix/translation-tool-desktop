@@ -1,11 +1,6 @@
 package utils
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.*
 
 object AnimatedContentUtils {
   fun <T : Enum<T>> horizontalSpec(): AnimatedContentTransitionScope<T>.() -> ContentTransform = {

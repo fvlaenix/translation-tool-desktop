@@ -3,9 +3,9 @@ package app.simple
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
@@ -71,7 +71,11 @@ fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
 }
 
 @Composable
-private fun InsideSimpleTranslator(imageBuffered: MutableState<BufferedImage?>, imagePaster: MutableState<ImageBitmap?>, currentSize: MutableState<IntSize>) {
+private fun InsideSimpleTranslator(
+  imageBuffered: MutableState<BufferedImage?>,
+  imagePaster: MutableState<ImageBitmap?>,
+  currentSize: MutableState<IntSize>
+) {
 
 
   var ocrText by remember { mutableStateOf("") }
@@ -80,9 +84,10 @@ private fun InsideSimpleTranslator(imageBuffered: MutableState<BufferedImage?>, 
   val scope = rememberCoroutineScope()
 
 
-  Row(modifier = Modifier
-    .size(width = currentSize.value.width.dp / 3, height = currentSize.value.height.dp / 3)
-    .focusable()
+  Row(
+    modifier = Modifier
+      .size(width = currentSize.value.width.dp / 3, height = currentSize.value.height.dp / 3)
+      .focusable()
   ) {
     if (imagePaster.value != null) {
       Image(

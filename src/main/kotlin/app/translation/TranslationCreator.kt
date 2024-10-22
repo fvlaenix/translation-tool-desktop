@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
@@ -19,9 +22,11 @@ import app.utils.PagesPanel
 import app.utils.openFileDialog
 import bean.BlockData
 import bean.ImageData
+import bean.WorkData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import project.Project
 import utils.JSON
 import utils.ProtobufUtils
 import java.awt.FileDialog
@@ -31,12 +36,17 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.writeText
 
 @Composable
-fun TranslationCreator(state: MutableState<AppStateEnum>) {
+fun TranslationCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
   PagesPanel<TranslationData>(
     name = "Translation creator",
     state = state,
     dataExtractor = {
-      val workData = OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
+      val workData = if (project == null) {
+        OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
+      } else {
+        TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData
+          ?: throw IllegalStateException("Work data is null")
+      }
       workData.imagesData.map { imageData: ImageData ->
         TranslationData(
           untranslatedData = imageData,
@@ -54,7 +64,7 @@ fun TranslationCreator(state: MutableState<AppStateEnum>) {
       TranslatorCreatorStep(jobCounter, data)
     },
     finalWindow = { translatedImageDatas ->
-      TranslatorCreatorFinal(state, translatedImageDatas)
+      TranslatorCreatorFinal(state, translatedImageDatas, project)
     },
   )
 }
@@ -129,8 +139,16 @@ private fun TranslatorCreatorStep(
 private fun TranslatorCreatorFinal(
   state: MutableState<AppStateEnum>,
   translationData: SnapshotStateList<TranslationData>,
+  project: Project?
 ) {
-  val savePath: MutableState<String> = remember { mutableStateOf("") }
+  val savePath: MutableState<String> = remember {
+    val path: String = if (project != null) {
+      TextDataService.getInstance(project, TextDataService.TRANSLATED).workDataPath.toAbsolutePath().toString()
+    } else {
+      ""
+    }
+    mutableStateOf(path)
+  }
 
   val parent = remember { ComposeWindow(null) }
   val scope = rememberCoroutineScope()
@@ -143,6 +161,7 @@ private fun TranslatorCreatorFinal(
       TextField(
         value = savePath.value,
         onValueChange = { savePath.value = it },
+        enabled = project == null
       )
       Button(
         onClick = {
@@ -150,17 +169,29 @@ private fun TranslatorCreatorFinal(
             val files = openFileDialog(parent, "Files to add", false, FileDialog.SAVE)
             savePath.value = files.single().absolutePath
           }
-        }
+        },
+        enabled = project == null,
       ) {
         Text("Select output")
       }
     }
     Button(onClick = {
-      val service = OCRService.getInstance()
-      val newWorkData = OCRService.getInstance().workData!!.copy(
-        imagesData = translationData.map { it.translatedData }
-      )
-      service.workData = newWorkData
+      val newWorkData: WorkData = if (project == null) {
+        val service = OCRService.getInstance()
+        val newWorkData = service.workData!!.copy(
+          imagesData = translationData.map { it.translatedData }
+        )
+        service.workData = newWorkData
+        newWorkData
+      } else {
+        val service = TextDataService.getInstance(project, TextDataService.UNTRANSLATED)
+        val newWorkData = service.workData!!.copy(
+          imagesData = translationData.map { it.translatedData }
+        )
+        service.workData = newWorkData
+        newWorkData
+      }
+
       try {
         val path = Path.of(savePath.value)
         path.writeText(JSON.encodeToString(newWorkData))

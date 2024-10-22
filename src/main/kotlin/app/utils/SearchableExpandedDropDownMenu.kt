@@ -175,9 +175,6 @@ fun <T> SearchableExpandedDropDownMenu(
                 )
               }.toMutableList()
             },
-/*            leadingIcon = {
-              Icon(imageVector = Icons.Outlined.Search, contentDescription = null)
-            },*/
             placeholder = {
               Text(text = "Search")
             },

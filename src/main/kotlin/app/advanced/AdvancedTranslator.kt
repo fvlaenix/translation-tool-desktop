@@ -55,7 +55,12 @@ fun AdvancedTranslator(mutableState: MutableState<AppStateEnum>) {
               val fullBufferedImage = imageBuffered.value!!.toAwtImage()
 
               translationInfos.value = boxes.map { boxData ->
-                val subImage = fullBufferedImage.getSubimage(boxData.x.toInt(), boxData.y.toInt(), boxData.width.toInt(), boxData.height.toInt())
+                val subImage = fullBufferedImage.getSubimage(
+                  boxData.x.toInt(),
+                  boxData.y.toInt(),
+                  boxData.width.toInt(),
+                  boxData.height.toInt()
+                )
                 TranslationInfo(subImage)
               }
               if (translationInfos.value.isEmpty()) {

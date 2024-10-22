@@ -8,15 +8,15 @@ import kotlin.concurrent.withLock
 import kotlin.coroutines.CoroutineContext
 
 class PreemptiveCoroutineScope(private val coroutineScope: CoroutineScope) {
-    private var currentJob: Job? = null
-    private val lock = ReentrantLock()
+  private var currentJob: Job? = null
+  private val lock = ReentrantLock()
 
-    fun launch(coroutineContext: CoroutineContext, block: suspend CoroutineScope.() -> Unit) {
-        lock.withLock {
-            currentJob?.cancel()
-            currentJob = coroutineScope.launch(coroutineContext) {
-                block()
-            }
-        }
+  fun launch(coroutineContext: CoroutineContext, block: suspend CoroutineScope.() -> Unit) {
+    lock.withLock {
+      currentJob?.cancel()
+      currentJob = coroutineScope.launch(coroutineContext) {
+        block()
+      }
     }
+  }
 }

@@ -73,8 +73,8 @@ private fun FontBlockSettingsPanel(settings: MutableState<BlockSettings>) {
       listOfItems = fonts,
       dropdownItem = { name -> Text(name.name) },
       textFromItem = { font -> font.name },
-      defaultItem = {  },
-      onSearchTextFieldClicked = {  },
+      defaultItem = { },
+      onSearchTextFieldClicked = { },
       onDropDownItemSelected = { changeFont(it.name) }
     )
 

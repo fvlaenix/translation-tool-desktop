@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.Color.Companion.Magenta
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -69,7 +68,13 @@ fun ImageWithBoxes(
         }
         if (keyEvent.isCtrlPressed && keyEvent.key == Key.N) {
           if (image.value != null) {
-            boxes += BlockPosition(.0, .0, image.value!!.width.toDouble() / 10, image.value!!.height.toDouble() / 10, BlockPosition.Shape.Rectangle)
+            boxes += BlockPosition(
+              x = .0,
+              y = .0,
+              width = image.value!!.width.toDouble() / 10,
+              height = image.value!!.height.toDouble() / 10,
+              shape = BlockPosition.Shape.Rectangle
+            )
           }
         }
         if (keyEvent.key == Key.Delete) {

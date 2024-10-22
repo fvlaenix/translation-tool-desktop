@@ -1,13 +1,12 @@
 package app.ocr
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
@@ -16,15 +15,18 @@ import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.batch.BatchService
+import app.batch.ImageDataService
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanelWithPreview
 import app.block.SimpleLoadedImageDisplayer
+import app.translation.TextDataService
 import app.utils.PagesPanel
 import app.utils.openFileDialog
 import bean.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import project.Project
 import utils.FollowableMutableList
 import utils.FontService
 import utils.JSON
@@ -34,16 +36,19 @@ import java.awt.image.BufferedImage
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.io.path.name
 import kotlin.io.path.writeText
 
 @Composable
-fun OCRCreator(state: MutableState<AppStateEnum>) {
+fun OCRCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
   PagesPanel<ImageInfoWithBox>(
     name = "OCR Creator",
     state = state,
     dataExtractor = {
-      val images = BatchService.getInstance().get().toList()
+      val images = if (project == null) {
+        BatchService.getInstance().get().toList()
+      } else {
+        ImageDataService.getInstance(project, ImageDataService.UNTRANSLATED).get().toList()
+      }
       images.map { imagePathInfo ->
         ImageInfoWithBox(
           imagePathInfo = imagePathInfo,
@@ -55,7 +60,7 @@ fun OCRCreator(state: MutableState<AppStateEnum>) {
       OCRCreatorStep(counter, data)
     },
     finalWindow = { dataList ->
-      OCRCreatorFinal(state, dataList)
+      OCRCreatorFinal(state, dataList, project)
     }
   )
 }
@@ -132,13 +137,22 @@ private fun OCRCreatorStep(
 @Composable
 private fun OCRCreatorFinal(
   state: MutableState<AppStateEnum>,
-  dataList: List<ImageInfoWithBox>
+  dataList: List<ImageInfoWithBox>,
+  project: Project?
 ) {
   val image: MutableState<BufferedImage?> = remember { mutableStateOf(null) }
   // TODO make font take better
-  val settings: MutableState<BlockSettings> = remember { mutableStateOf(BlockSettings(FontService.getInstance().getDefaultFont())) }
+  val settings: MutableState<BlockSettings> =
+    remember { mutableStateOf(BlockSettings(FontService.getInstance().getDefaultFont())) }
   val author: MutableState<String> = remember { mutableStateOf("") }
-  val savePath: MutableState<String> = remember { mutableStateOf("") }
+  val savePath: MutableState<String> = remember {
+    val path: String = if (project != null) {
+      TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workDataPath.toAbsolutePath().toString()
+    } else {
+      ""
+    }
+    mutableStateOf(path)
+  }
 
   val parent = remember { ComposeWindow(null) }
   val scope = rememberCoroutineScope()
@@ -164,6 +178,7 @@ private fun OCRCreatorFinal(
       TextField(
         value = savePath.value,
         onValueChange = { savePath.value = it },
+        enabled = project == null
       )
       Button(
         onClick = {
@@ -171,26 +186,31 @@ private fun OCRCreatorFinal(
             val files = openFileDialog(parent, "Files to add", false, FileDialog.SAVE)
             savePath.value = files.single().absolutePath
           }
-        }
+        },
+        enabled = project == null
       ) {
         Text("Select output")
       }
     }
 
     Button(onClick = {
-      val service = OCRService.getInstance()
-
       val workData = WorkData(
         1,
         author.value,
         dataList.mapIndexed { index, (imagePathInfo, imageBoxes) ->
           ImageData(
             index = index,
-            imageName = imagePathInfo.path.name,
+            imageName = imagePathInfo.name,
             image = null,
             blockData = imageBoxes.map { box ->
               BlockData(
-                blockPosition = BlockPosition(box.box.x, box.box.y, box.box.width, box.box.height, BlockPosition.Shape.Rectangle),
+                blockPosition = BlockPosition(
+                  box.box.x,
+                  box.box.y,
+                  box.box.width,
+                  box.box.height,
+                  BlockPosition.Shape.Rectangle
+                ),
                 text = box.text,
                 settings = null
               )
@@ -200,7 +220,11 @@ private fun OCRCreatorFinal(
         }
       )
 
-      service.workData = workData
+      if (project == null) {
+        OCRService.getInstance().workData = workData
+      } else {
+        TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData = workData
+      }
       try {
         val path = Path.of(savePath.value)
         path.writeText(JSON.encodeToString(workData))

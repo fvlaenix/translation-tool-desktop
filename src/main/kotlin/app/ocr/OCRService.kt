@@ -1,12 +1,8 @@
 package app.ocr
 
-import app.batch.ImagePathInfo
-import bean.BlockSettings
-import bean.ImageData
 import bean.WorkData
-import kotlin.io.path.name
 
-class OCRService {
+class OCRService private constructor() {
   var workData: WorkData? = null
 
   companion object {

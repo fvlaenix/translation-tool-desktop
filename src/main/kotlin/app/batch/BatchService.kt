@@ -1,17 +1,15 @@
 package app.batch
 
-import java.awt.image.BufferedImage
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class BatchService {
-
+class BatchService private constructor() : ImagesService {
   private val mutableList: ConcurrentLinkedQueue<ImagePathInfo> = ConcurrentLinkedQueue()
 
-  fun clear() {
+  override fun clear() {
     mutableList.clear()
   }
 
-  fun add(image: ImagePathInfo) {
+  override fun add(image: ImagePathInfo) {
     mutableList.add(image)
   }
 
@@ -19,7 +17,9 @@ class BatchService {
     mutableList.addAll(list)
   }
 
-  fun get(): ConcurrentLinkedQueue<ImagePathInfo> = mutableList
+  override fun get(): ConcurrentLinkedQueue<ImagePathInfo> = mutableList
+
+  override suspend fun saveIfRequired() {}
 
   companion object {
     private val DEFAULT = BatchService()

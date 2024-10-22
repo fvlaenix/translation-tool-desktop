@@ -49,7 +49,10 @@ fun <T> PagesPanel(
     bottomBar = {
       Row {
         Button(onClick = { setIndex(index - 1) }, enabled = index > 0 && !isWorkInProgress()) { Text("Previous") }
-        Button(onClick = { setIndex(index + 1) }, enabled = index + 1 < data.size && !isWorkInProgress()) { Text("Next") }
+        Button(
+          onClick = { setIndex(index + 1) },
+          enabled = index + 1 < data.size && !isWorkInProgress()
+        ) { Text("Next") }
         Button(onClick = { setIndex(data.size) }, enabled = index != data.size && !isWorkInProgress()) { Text("Done") }
       }
     }
