@@ -158,7 +158,7 @@ private fun BorderSize(settings: MutableState<BlockSettings>) {
 
 @Composable
 private fun SizeOfSomething(name: String?, defaultValue: Int, getter: () -> Int, setter: (Int) -> Unit) {
-  val size = remember { mutableStateOf(getter()) }
+  val size = getter()
 
   NumberField(
     name = name,
@@ -170,26 +170,26 @@ private fun SizeOfSomething(name: String?, defaultValue: Int, getter: () -> Int,
 
 @Composable
 private fun BeanColor(getter: () -> BeanColor, setter: (BeanColor) -> Unit) {
-  val r = remember { mutableStateOf(getter().r) }
-  val g = remember { mutableStateOf(getter().g) }
-  val b = remember { mutableStateOf(getter().b) }
-  val a = remember { mutableStateOf(getter().a) }
+  val r = getter().r
+  val g = getter().g
+  val b = getter().b
+  val a = getter().a
 
   Row(modifier = Modifier.fillMaxWidth()) {
-    ColorComponentController("Red", r) { setter.invoke(BeanColor(r.value, g.value, b.value, a.value)) }
-    ColorComponentController("Green", g) { setter.invoke(BeanColor(r.value, g.value, b.value, a.value)) }
-    ColorComponentController("Blue", b) { setter.invoke(BeanColor(r.value, g.value, b.value, a.value)) }
-    ColorComponentController("Alpha", a) { setter.invoke(BeanColor(r.value, g.value, b.value, a.value)) }
+    ColorComponentController("Red", r) { setter.invoke(BeanColor(it, g, b, a)) }
+    ColorComponentController("Green", g) { setter.invoke(BeanColor(r, it, b, a)) }
+    ColorComponentController("Blue", b) { setter.invoke(BeanColor(r, g, it, a)) }
+    ColorComponentController("Alpha", a) { setter.invoke(BeanColor(r, g, b, it)) }
     Box(
       modifier = Modifier
         .size(50.dp)
-        .background(Color(r.value, g.value, b.value, a.value))
+        .background(Color(r, g, b, a))
     )
   }
 }
 
 @Composable
-private fun ColorComponentController(name: String, color: MutableState<Int>, setter: (Int) -> Unit) {
+private fun ColorComponentController(name: String, color: Int, setter: (Int) -> Unit) {
   fun convertColor(it: Int?): Int {
     return max(0, min(255, it ?: 0))
   }
