@@ -11,6 +11,9 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import app.AppStateEnum
 import app.batch.BatchService
 import app.batch.ImageDataService
@@ -135,7 +138,13 @@ private fun EditCreatorStep(
     currentSettings()
   }
 
-  Row {
+  Row(modifier = Modifier
+    .onKeyEvent { keyEvent ->
+      if (keyEvent.key != Key.Escape) return@onKeyEvent true
+      selectedBoxIndex.value = null
+      false
+    }
+  ) {
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
       SimpleLoadedImageDisplayer(
         imageEditsCounter,
