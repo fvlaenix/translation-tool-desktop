@@ -22,7 +22,9 @@ import app.block.BlockSettingsPanel
 import app.block.SimpleLoadedImageDisplayer
 import app.ocr.OCRService
 import app.translation.TextDataService
+import app.utils.ChipSelector
 import app.utils.PagesPanel
+import bean.BlockPosition
 import bean.BlockSettings
 import bean.ImageData
 import io.github.vinceglb.filekit.core.FileKit
@@ -114,7 +116,21 @@ private fun EditCreatorStep(
       }
     }
 
+  fun currentShape(): BlockPosition.Shape? =
+    if (selectedBoxIndex.value == null) {
+      null
+    } else {
+      val boxIndex = selectedBoxIndex.value!!
+      if (boxes.value.indices.contains(boxIndex)) {
+        boxes.value[boxIndex].blockPosition.shape
+      } else {
+        selectedBoxIndex.value = null
+        null
+      }
+    }
+
   val settings = remember { mutableStateOf(currentSettings()) }
+  val boxType = remember { mutableStateOf(currentShape()) }
   val image = remember { mutableStateOf<BufferedImage?>(currentImage.value!!.imagePathInfo.image) }
 
   LaunchedEffect(settings.value) {
@@ -130,12 +146,24 @@ private fun EditCreatorStep(
     }
   }
 
+  LaunchedEffect(boxType.value) {
+    val index = selectedBoxIndex.value
+    val boxTypeValue = boxType.value
+
+    if (index != null && boxTypeValue != null) {
+      val box = boxes.value[index]
+      boxes.value = boxes.value.toMutableList().apply { set(index, box.copy(blockPosition = box.blockPosition.copy(shape = boxTypeValue))) }
+    }
+  }
+
   LaunchedEffect(selectedBoxIndex.value) {
     settings.value = currentSettings()
+    boxType.value = currentShape()
   }
 
   LaunchedEffect(boxes.value) {
-    currentSettings()
+    settings.value = currentSettings()
+    boxType.value = currentShape()
   }
 
   Row(modifier = Modifier
@@ -170,6 +198,20 @@ private fun EditCreatorStep(
         )
       }
       BlockSettingsPanel(settings)
+      if (selectedBoxIndex.value != null && boxType.value != null) {
+        val types = listOf("Rectangle", "Oval")
+        val selectedType = when (boxType.value!!) {
+          is BlockPosition.Shape.Rectangle -> "Rectangle"
+          is BlockPosition.Shape.Oval -> "Oval"
+        }
+        val chipsState = ChipSelector.rememberChipSelectorState(types, listOf(selectedType)) { boxType.value = when (it) {
+          "Rectangle" -> BlockPosition.Shape.Rectangle
+          "Oval" -> BlockPosition.Shape.Oval
+          else -> throw IllegalStateException("Unknown type $it")
+        } }
+        chipsState.selectedChips
+        ChipSelector.ChipsSelector(chipsState, modifier = Modifier.fillMaxWidth())
+      }
     }
   }
 }
