@@ -28,7 +28,7 @@ object ClipboardUtils {
     }
   }
 
-  fun getImage(image: Image?): BufferedImage? {
+  private fun getImage(image: Image?): BufferedImage? {
     if (image == null) return null
     if (image is BufferedImage) return image
     val lock: Lock = ReentrantLock()

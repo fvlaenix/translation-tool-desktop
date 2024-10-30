@@ -1,11 +1,8 @@
 package app.batch
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CutCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Text
@@ -13,7 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
@@ -25,6 +25,7 @@ import app.utils.openFileDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import project.Project
+import utils.ClipboardUtils.getClipboardImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -50,6 +51,7 @@ fun ImageDataCreator(
     }
   }
   val scope = rememberCoroutineScope()
+  val requester = remember { FocusRequester() }
 
   TopBar(state, "Batch Creator") {
     Column(
@@ -64,6 +66,28 @@ fun ImageDataCreator(
         Row(
           modifier = Modifier
             .fillMaxWidth()
+            .focusRequester(requester)
+            .focusable()
+            .onKeyEvent { keyEvent ->
+              if (keyEvent.type.toString() != "KeyUp") return@onKeyEvent true
+              if (keyEvent.isCtrlPressed && keyEvent.key == Key.V) {
+                // TODO make it parallel with UI
+                scope.launch(Dispatchers.IO) {
+                  isLoading = true
+                  progress = 0f
+                  val clipboardImage = getClipboardImage()
+                  if (clipboardImage == null) {
+                    // TODO make progress somehow
+                  } else {
+                    progress = 0.5f
+                    imagesService.add(ImagePathInfo(clipboardImage, "clipboard-image"))
+                  }
+                  imagesService.saveIfRequired()
+                  isLoading = false
+                }
+              }
+              false
+            }
         ) {
           Button(
             onClick = {
@@ -125,5 +149,9 @@ fun ImageDataCreator(
         }
       }
     }
+  }
+
+  LaunchedEffect(Unit) {
+    requester.requestFocus()
   }
 }
