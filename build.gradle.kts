@@ -61,6 +61,9 @@ dependencies {
 
   // file chooser
   implementation("io.github.vinceglb:filekit-compose:0.8.3")
+
+  // logging
+  implementation("org.slf4j:slf4j-simple:2.0.16")
 }
 
 compose.desktop {
