@@ -22,7 +22,7 @@ class ProjectsInfoService(private val path: Path) {
     projects.clear()
     val newProjects: List<ProjectInfoData> = withContext(Dispatchers.IO) {
       try {
-        JSON.decodeFromString(path.readText())
+        JSON.decodeFromString<List<ProjectInfoData>>(path.readText()).sortedByDescending { it.lastTimeChange }
       } catch (_: SerializationException) {
         // TODO
         emptyList()
