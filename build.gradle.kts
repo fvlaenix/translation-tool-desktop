@@ -45,8 +45,8 @@ dependencies {
 
   // grpc
   implementation("io.grpc:grpc-kotlin-stub:1.4.0")
-  implementation("com.google.protobuf:protobuf-java:3.16.3")
-  implementation("com.google.protobuf:protobuf-kotlin:3.24.4")
+  implementation("com.google.protobuf:protobuf-java:4.28.2")
+  implementation("com.google.protobuf:protobuf-kotlin:4.28.2")
   runtimeOnly("io.grpc:grpc-netty-shaded:1.59.0")
   implementation("io.grpc:grpc-protobuf:1.59.0")
   implementation("io.grpc:grpc-stub:1.59.0")
