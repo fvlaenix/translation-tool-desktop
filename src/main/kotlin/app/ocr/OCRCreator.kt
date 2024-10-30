@@ -76,8 +76,8 @@ private fun OCRCreatorStep(
   imageInfoWithBox: MutableState<ImageInfoWithBox?>
 ) {
   val coroutineScope = rememberCoroutineScope()
-  val image = remember { mutableStateOf<BufferedImage?>(imageInfoWithBox.value!!.imagePathInfo.image) }
-  val boxes = remember {
+  val image = mutableStateOf<BufferedImage?>(imageInfoWithBox.value!!.imagePathInfo.image)
+  val boxes =
     FollowableMutableList(mutableStateListOf<OCRBoxData>())
       .apply {
         follow { newList ->
@@ -85,7 +85,6 @@ private fun OCRCreatorStep(
         }
       }
       .apply { addAll(imageInfoWithBox.value!!.box) }
-  }
 
   Row(
     modifier = Modifier
