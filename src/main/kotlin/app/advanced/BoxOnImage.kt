@@ -153,7 +153,8 @@ fun BlockOnImage(
 
   LaunchedEffect(
     realSettings,
-    blockData.value.text
+    blockData.value.text,
+    blockData.value.blockPosition.shape
   ) {
     redrawImage()
   }
