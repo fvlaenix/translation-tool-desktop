@@ -1,5 +1,6 @@
 package utils
 
+import bean.Alignment
 import bean.BlockData
 import bean.BlockPosition
 import bean.BlockSettings
@@ -130,7 +131,11 @@ object Text2ImageUtils {
       graphics2D.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
 
       val currentTextWidth = fontMetrics.stringWidth(line)
-      val startX = textX + (textWidth - currentTextWidth) / 2
+      val startX = when (settings.alignment) {
+        Alignment.LEFT -> textX
+        Alignment.CENTER -> textX + (textWidth - currentTextWidth) / 2
+        Alignment.RIGHT -> textX + textWidth - currentTextWidth
+      }
 
       // get the shape object
       val textShape = glyphVector.getOutline(startX.toFloat(), startY.toFloat())
