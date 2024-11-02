@@ -176,7 +176,7 @@ private fun EditCreatorStep(
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
       SimpleLoadedImageDisplayer(
         imageEditsCounter,
-        settings.value,
+        currentImage.value!!.imageData.settings,
         image,
         boxes,
         selectedBoxIndex
