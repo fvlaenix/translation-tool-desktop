@@ -7,11 +7,13 @@ import com.fvlaenix.image.protobuf.image
 import com.fvlaenix.ocr.protobuf.OcrImageRequest
 import com.fvlaenix.ocr.protobuf.ocrImageRequest
 import com.fvlaenix.proxy.protobuf.ProxyServiceGrpcKt
+import com.fvlaenix.translation.protobuf.translationBlock
+import com.fvlaenix.translation.protobuf.translationFile
+import com.fvlaenix.translation.protobuf.translationFilesRequest
 import com.fvlaenix.translation.protobuf.translationRequest
 import com.google.protobuf.kotlin.toByteString
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
-import kotlinx.coroutines.runBlocking
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -101,6 +103,21 @@ object ProtobufUtils {
       } else {
         response.text
       }
+    }
+  }
+
+  suspend fun getTranslation(text: List<String>): List<String> {
+    return getDataFromChannel { proxyStub ->
+      val metadata = Metadata()
+      metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
+      val request = translationFilesRequest {
+        this.requests.add(translationFile {
+          this.fileName = "translation.txt"
+          this.blocks.addAll(text.map { translationBlock { this.text = it } })
+        })
+      }
+      val response = proxyStub.translationFile(request, metadata)
+      response.responseList[0].blocksList.map { it.translation }
     }
   }
 }

@@ -94,6 +94,27 @@ private fun TranslatorCreatorStep(
   Column {
     val currentData = translationData.value!!.untranslatedData.blockData
       .zip(translationData.value!!.translatedData.blockData)
+    Button(
+      onClick = {
+        ocrCounter.incrementAndGet()
+        coroutineScope.launch(Dispatchers.IO) {
+          try {
+            val translation = ProtobufUtils.getTranslation(currentData.map { it.first.text })
+            translationData.value = translationData.value!!.copy(
+              translatedData = translationData.value!!.translatedData.copy(
+                blockData = translationData.value!!.translatedData.blockData.zip(translation).map { (block, translation) ->
+                  block.copy(text = translation)
+                }
+              )
+            )
+          } finally {
+            ocrCounter.decrementAndGet()
+          }
+        }
+      }
+    ) {
+      Text("Translate All")
+    }
     currentData.forEachIndexed { index, (untranslatedData, translatedData) ->
       Row(
         modifier = Modifier
