@@ -8,8 +8,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import app.utils.ChipSelector
 import app.utils.NumberField
 import app.utils.SearchableExpandedDropDownMenu
+import bean.Alignment
 import bean.BeanColor
 import bean.BlockSettings
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +53,7 @@ fun BlockSettingsPanel(settings: MutableState<BlockSettings>) {
     OutlineSize(settings)
     BackgroundColor(settings)
     BorderSize(settings)
+    Alignment(settings)
   }
 }
 
@@ -153,6 +156,16 @@ private fun BorderSize(settings: MutableState<BlockSettings>) {
       getter = { settings.value.border },
       setter = { settings.value = settings.value.copy(border = it) }
     )
+  }
+}
+
+@Composable
+private fun Alignment(settings: MutableState<BlockSettings>) {
+  Row {
+    val chipState = ChipSelector.rememberChipSelectorState(Alignment.entries.map { it.name }, listOf(settings.value.alignment.name)) {
+      settings.value = settings.value.copy(alignment = Alignment.valueOf(it))
+    }
+    ChipSelector.ChipsSelector(chipState, modifier = Modifier.fillMaxWidth())
   }
 }
 

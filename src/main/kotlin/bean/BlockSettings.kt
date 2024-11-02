@@ -10,6 +10,7 @@ data class BlockSettings(
   val fontName: String,
   val fontSize: Int = 10,
   val fontColor: BeanColor = BeanColor.BLACK,
+  val alignment: Alignment = Alignment.CENTER,
   val outlineColor: BeanColor = BeanColor.WHITE,
   val outlineSize: Double = 5.0,
   val backgroundColor: BeanColor = BeanColor.TRANSPARENT,
