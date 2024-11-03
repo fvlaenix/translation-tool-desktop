@@ -278,7 +278,7 @@ private fun EditCreatorFinal(
           check(path.isDirectory())
           progress = 0.0f
           val part = 1.0 / cleanedImages.size.toFloat()
-          cleanedImages.map { (imagePathInfo, imageData) ->
+          cleanedImages.mapIndexed { index, (imagePathInfo, imageData) ->
             async {
               val image = imagePathInfo.image.deepCopy()
               val blocksImages = imageData.blockData.map { blockData ->
@@ -307,7 +307,7 @@ private fun EditCreatorFinal(
                 progress += part.toFloat()
                 progress = progress.coerceIn(0.0f, 1.0f)
               }
-              val imagePath = path.resolve(imageData.imageName + ".png")
+              val imagePath = path.resolve("${(index + 1).toString().padStart(cleanedImages.size.toString().length + 1, '0')}.png")
               ImageIO.write(image, "PNG", imagePath.toFile())
             }
           }.awaitAll()
