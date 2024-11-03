@@ -133,6 +133,21 @@ private fun EditCreatorStep(
   val boxType = remember { mutableStateOf(currentShape()) }
   val image = remember { mutableStateOf<BufferedImage?>(currentImage.value!!.imagePathInfo.image) }
 
+  LaunchedEffect(currentImage.value) {
+    boxes.value = currentImage.value!!.imageData.blockData
+    image.value = currentImage.value!!.imagePathInfo.image
+  }
+
+  LaunchedEffect(selectedBoxIndex.value) {
+    settings.value = currentSettings()
+    boxType.value = currentShape()
+  }
+
+  LaunchedEffect(boxes.value) {
+    settings.value = currentSettings()
+    boxType.value = currentShape()
+  }
+
   LaunchedEffect(settings.value) {
     val index = selectedBoxIndex.value
 
@@ -154,16 +169,6 @@ private fun EditCreatorStep(
       val box = boxes.value[index]
       boxes.value = boxes.value.toMutableList().apply { set(index, box.copy(blockPosition = box.blockPosition.copy(shape = boxTypeValue))) }
     }
-  }
-
-  LaunchedEffect(selectedBoxIndex.value) {
-    settings.value = currentSettings()
-    boxType.value = currentShape()
-  }
-
-  LaunchedEffect(boxes.value) {
-    settings.value = currentSettings()
-    boxType.value = currentShape()
   }
 
   Row(modifier = Modifier
