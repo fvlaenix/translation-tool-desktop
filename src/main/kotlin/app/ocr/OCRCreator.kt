@@ -1,5 +1,8 @@
 package app.ocr
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -12,6 +15,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.batch.BatchService
@@ -30,6 +34,7 @@ import project.Project
 import utils.FollowableMutableList
 import utils.FontService
 import utils.JSON
+import utils.KotlinUtils.applyIf
 import utils.ProtobufUtils
 import java.awt.FileDialog
 import java.awt.image.BufferedImage
@@ -77,6 +82,8 @@ private fun OCRCreatorStep(
 ) {
   val coroutineScope = rememberCoroutineScope()
   val image = mutableStateOf<BufferedImage?>(imageInfoWithBox.value!!.imagePathInfo.image)
+  val selectedBoxIndex = remember { mutableStateOf<Int?>(null) }
+
   val boxes =
     FollowableMutableList(mutableStateListOf<OCRBoxData>())
       .apply {
@@ -90,7 +97,7 @@ private fun OCRCreatorStep(
     modifier = Modifier
   ) {
     Column(modifier = Modifier.fillMaxWidth(0.7f)) {
-      SimpleLoadedImageDisplayer(Modifier.fillMaxSize(0.9f), image, boxes)
+      SimpleLoadedImageDisplayer(Modifier.fillMaxSize(0.9f), image, boxes, selectedBoxIndex)
     }
     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
       Row(modifier = Modifier.fillMaxWidth()) {
@@ -115,11 +122,16 @@ private fun OCRCreatorStep(
         }
       }
       boxes.forEachIndexed { index, box ->
-        Row(modifier = Modifier.fillMaxWidth()) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val isFocused by interactionSource.collectIsFocusedAsState()
+        if (isFocused) selectedBoxIndex.value = index
+
+        Row(modifier = Modifier.fillMaxWidth().applyIf(selectedBoxIndex.value == index) { it.border(1.dp, Color.Cyan) }) {
           TextField(
             value = box.text,
             modifier = Modifier.fillMaxSize(0.9f).padding(10.dp),
-            onValueChange = { boxes[index] = box.copy(text = it) }
+            onValueChange = { boxes[index] = box.copy(text = it) },
+            interactionSource = interactionSource
           )
           Button(onClick = { boxes.removeAt(index) }, enabled = jobCounter.get() == 0) {
             Icon(

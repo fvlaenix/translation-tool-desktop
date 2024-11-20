@@ -42,6 +42,7 @@ fun ImageWithBoxes(
 ) {
   val requester = remember { FocusRequester() }
   val emptyText = remember { mutableStateOf("Press CTRL+V to insert image\nThen press CTRL+N to create box to translate,\nDelete to delete previous box") }
+  val selectedBoxIndex = remember { mutableStateOf<Int?>(null) }
 
   isEnabled.value = image.value != null
 
@@ -102,7 +103,7 @@ fun ImageWithBoxes(
           boxFollowable.follow { _, after ->
             boxes[index] = after
           }
-          BoxOnImage(imageOriginalSize, currentSize.value, boxFollowable)
+          BoxOnImage(index, imageOriginalSize, currentSize.value, boxFollowable, selectedBoxIndex)
         }
       }
     } else {

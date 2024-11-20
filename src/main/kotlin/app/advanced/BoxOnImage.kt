@@ -2,13 +2,16 @@ package app.advanced
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntSize
@@ -28,6 +31,7 @@ import kotlin.math.min
 
 private const val HANDLE_SIZE = 16
 
+@Composable
 private fun Modifier.pointerInputForBox(
   rectangle: AbstractRectangle,
   convertToGlobal: Double.() -> Double,
@@ -38,13 +42,13 @@ private fun Modifier.pointerInputForBox(
   fun isRightBorder(x: Float): Boolean = x > rectangle.width - HANDLE_SIZE
   fun isDownBorder(y: Float): Boolean = y > rectangle.height - HANDLE_SIZE
 
+  val focusRequester = remember { FocusRequester() }
+
   return with(rectangle) {
     this@pointerInputForBox
-      .pointerInput(Unit) {
-        detectTapGestures {
-          onClick()
-        }
-      }
+      .focusRequester(focusRequester)
+      .clickable { onClick(); focusRequester.requestFocus() }
+      .focusable()
       .pointerInput(Unit) {
         detectDragGestures(onDragEnd = {
           heavyChange()
@@ -196,9 +200,11 @@ fun BlockOnImage(
 
 @Composable
 fun BoxOnImage(
+  index: Int,
   imageSize: IntSize,
   displayImageSize: IntSize,
-  blockData: MutableState<BlockPosition>
+  blockData: MutableState<BlockPosition>,
+  selectedBoxIndex: MutableState<Int?>
 ) {
   fun scaleFromDisplayToOrigin(): Double = max(
     imageSize.width.toDouble() / displayImageSize.width,
@@ -223,9 +229,13 @@ fun BoxOnImage(
   Box(
     modifier = Modifier
       .offset(x.dp, y.dp)
-      .background(Color(Color.Blue.red, Color.Blue.green, Color.Blue.blue, 0.3f))
+      .background(Color(Color.Blue.red, Color.Blue.green, Color.Blue.blue, if (selectedBoxIndex.value == index) 0.5f else 0.3f))
       .size(sizeX.dp, sizeY.dp)
-      .pointerInputForBox(rectangle = rectangle, convertToGlobal = { convertToGlobal() })
+      .pointerInputForBox(
+        rectangle = rectangle,
+        convertToGlobal = { convertToGlobal() },
+        onClick = { selectedBoxIndex.value = index }
+      )
   )
 }
 

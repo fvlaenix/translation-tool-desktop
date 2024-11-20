@@ -70,7 +70,8 @@ fun SimpleLoadedImageDisplayer(
 fun SimpleLoadedImageDisplayer(
   modifier: Modifier = Modifier,
   image: MutableState<BufferedImage?>,
-  boxes: MutableList<OCRBoxData>
+  boxes: MutableList<OCRBoxData>,
+  selectedBoxIndex: MutableState<Int?>
 ) {
   SimpleLoadedImageDisplayer(
     modifier = modifier,
@@ -82,7 +83,7 @@ fun SimpleLoadedImageDisplayer(
         boxFollowable.follow { _, after ->
           boxes[index] = boxes[index].copy(box = after)
         }
-        BoxOnImage(imageOriginalSize, imageSize.value, boxFollowable)
+        BoxOnImage(index, imageOriginalSize, imageSize.value, boxFollowable, selectedBoxIndex)
       }
     }
   )
