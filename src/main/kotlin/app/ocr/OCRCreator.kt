@@ -49,16 +49,24 @@ fun OCRCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
     name = "OCR Creator",
     state = state,
     dataExtractor = {
-      val images = if (project == null) {
-        BatchService.getInstance().get().toList()
+      if (project == null) {
+        val images = BatchService.getInstance().get().toList()
+        val texts = OCRService.getInstance().workData!!.imagesData.toMutableList()
+        images.mapIndexed { index, image ->
+          ImageInfoWithBox(
+            imagePathInfo = image,
+            box = texts.getOrNull(index)?.blockData?.map { block -> OCRBoxData(block.blockPosition, block.text) } ?: emptyList()
+          )
+        }
       } else {
-        ImageDataService.getInstance(project, ImageDataService.UNTRANSLATED).get().toList()
-      }
-      images.map { imagePathInfo ->
-        ImageInfoWithBox(
-          imagePathInfo = imagePathInfo,
-          box = emptyList()
-        )
+        val images = ImageDataService.getInstance(project, ImageDataService.UNTRANSLATED).get().toList()
+        val texts = TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData!!.imagesData.toMutableList()
+        images.mapIndexed { index, image ->
+          ImageInfoWithBox(
+            imagePathInfo = image,
+            box = texts.getOrNull(index)?.blockData?.map { block -> OCRBoxData(block.blockPosition, block.text) } ?: emptyList()
+          )
+        }
       }
     },
     stepWindow = { counter, data ->
