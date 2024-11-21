@@ -1,20 +1,20 @@
 package app.ocr
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
@@ -30,6 +30,10 @@ import bean.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import org.burnoutcrew.reorderable.ReorderableItem
+import org.burnoutcrew.reorderable.detectReorderAfterLongPress
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
+import org.burnoutcrew.reorderable.reorderable
 import project.Project
 import utils.FollowableMutableList
 import utils.FontService
@@ -101,51 +105,72 @@ private fun OCRCreatorStep(
       }
       .apply { addAll(imageInfoWithBox.value!!.box) }
 
+  val lazyListState = rememberReorderableLazyListState(onMove = { from, to ->
+    if (from.index == 0) return@rememberReorderableLazyListState
+    boxes.add(to.index - 1, boxes.removeAt(from.index - 1))
+  })
+
   Row(
     modifier = Modifier
   ) {
     Column(modifier = Modifier.fillMaxWidth(0.7f)) {
       SimpleLoadedImageDisplayer(Modifier.fillMaxSize(0.9f), image, boxes, selectedBoxIndex)
     }
-    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-      Row(modifier = Modifier.fillMaxWidth()) {
-        Button(
-          onClick = {
-            jobCounter.incrementAndGet()
-            coroutineScope.launch(Dispatchers.IO) {
-              try {
-                val currentOcrBoxes = ProtobufUtils.getBoxedOCR(imageInfoWithBox.value!!.imagePathInfo.image)
-                boxes.clear()
-                boxes.addAll(currentOcrBoxes)
+    LazyColumn(
+      state = lazyListState.listState,
+      modifier = Modifier
+        .fillMaxWidth()
+        .reorderable(lazyListState)
+        .detectReorderAfterLongPress(lazyListState)
+    ) {
+      item {
+        Row(modifier = Modifier.fillMaxWidth()) {
+          Button(
+            onClick = {
+              jobCounter.incrementAndGet()
+              coroutineScope.launch(Dispatchers.IO) {
+                try {
+                  val currentOcrBoxes = ProtobufUtils.getBoxedOCR(imageInfoWithBox.value!!.imagePathInfo.image)
+                  boxes.clear()
+                  boxes.addAll(currentOcrBoxes)
 
-              } finally {
-                jobCounter.decrementAndGet()
+                } finally {
+                  jobCounter.decrementAndGet()
+                }
               }
-            }
-          },
-          enabled = jobCounter.get() == 0,
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Text("Try OCR")
+            },
+            enabled = jobCounter.get() == 0,
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Text("Try OCR")
+          }
         }
       }
-      boxes.forEachIndexed { index, box ->
-        val interactionSource = remember { MutableInteractionSource() }
-        val isFocused by interactionSource.collectIsFocusedAsState()
-        if (isFocused) selectedBoxIndex.value = index
+      items(boxes.size, { it }) { index ->
+        ReorderableItem(lazyListState, key = index) { isDragging ->
+          val elevation = animateDpAsState(if (isDragging) 16.dp else 0.dp)
+          val box = boxes[index]
+          val interactionSource = remember { MutableInteractionSource() }
+          val isFocused by interactionSource.collectIsFocusedAsState()
+          if (isFocused) selectedBoxIndex.value = index
 
-        Row(modifier = Modifier.fillMaxWidth().applyIf(selectedBoxIndex.value == index) { it.border(1.dp, Color.Cyan) }) {
-          TextField(
-            value = box.text,
-            modifier = Modifier.fillMaxSize(0.9f).padding(10.dp),
-            onValueChange = { boxes[index] = box.copy(text = it) },
-            interactionSource = interactionSource
-          )
-          Button(onClick = { boxes.removeAt(index) }, enabled = jobCounter.get() == 0) {
-            Icon(
-              imageVector = Icons.Default.Delete,
-              contentDescription = "Trash"
+          Row(modifier = Modifier
+            .fillMaxWidth()
+            .applyIf(selectedBoxIndex.value == index) { it.border(1.dp, Color.Cyan) }
+            .shadow(elevation.value)
+          ) {
+            TextField(
+              value = box.text,
+              modifier = Modifier.fillMaxSize(0.9f).padding(10.dp),
+              onValueChange = { boxes[index] = box.copy(text = it) },
+              interactionSource = interactionSource
             )
+            Button(onClick = { boxes.removeAt(index) }, enabled = jobCounter.get() == 0) {
+              Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Trash"
+              )
+            }
           }
         }
       }

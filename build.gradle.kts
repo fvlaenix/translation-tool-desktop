@@ -64,6 +64,9 @@ dependencies {
 
   // logging
   implementation("org.slf4j:slf4j-simple:2.0.16")
+
+  // reordable list
+  implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
 }
 
 compose.desktop {
