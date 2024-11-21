@@ -130,6 +130,7 @@ fun <T> SimpleLoadedImageDisplayer(
         alignment = Alignment.TopStart
       )
       // TODO deal with displayKey!!
+      if (imageSize.value.width == 0 || imageSize.value.height == 0) return@Box
       if (displayableOnImage != null) displayableOnImage(imageSize, imageOriginalSize, displayableKey!!)
     }
   } else {
