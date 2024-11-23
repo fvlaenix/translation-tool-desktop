@@ -80,7 +80,7 @@ fun SimpleLoadedImageDisplayer(
     displayableKey = boxes,
     displayableOnImage = { imageSize, imageOriginalSize, boxes ->
       boxes.forEachIndexed { index, box ->
-        key(Pair(operationNumber.value, index)) {
+        key(Triple(image.value?.hashCode(), operationNumber.value, index)) {
           val boxFollowable = FollowableMutableState(mutableStateOf(box.box))
           boxFollowable.follow { _, after ->
             boxes[index] = boxes[index].copy(box = after)
