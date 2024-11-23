@@ -71,6 +71,7 @@ fun SimpleLoadedImageDisplayer(
   modifier: Modifier = Modifier,
   image: MutableState<BufferedImage?>,
   boxes: MutableList<OCRBoxData>,
+  operationNumber: MutableState<Int>,
   selectedBoxIndex: MutableState<Int?>
 ) {
   SimpleLoadedImageDisplayer(
@@ -79,11 +80,13 @@ fun SimpleLoadedImageDisplayer(
     displayableKey = boxes,
     displayableOnImage = { imageSize, imageOriginalSize, boxes ->
       boxes.forEachIndexed { index, box ->
-        val boxFollowable = remember { FollowableMutableState(mutableStateOf(box.box)) }
-        boxFollowable.follow { _, after ->
-          boxes[index] = boxes[index].copy(box = after)
+        key(Pair(operationNumber.value, index)) {
+          val boxFollowable = FollowableMutableState(mutableStateOf(box.box))
+          boxFollowable.follow { _, after ->
+            boxes[index] = boxes[index].copy(box = after)
+          }
+          BoxOnImage(index, imageOriginalSize, imageSize.value, boxFollowable, selectedBoxIndex)
         }
-        BoxOnImage(index, imageOriginalSize, imageSize.value, boxFollowable, selectedBoxIndex)
       }
     }
   )

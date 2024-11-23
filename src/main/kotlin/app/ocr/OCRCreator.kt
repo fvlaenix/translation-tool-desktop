@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
@@ -59,16 +62,19 @@ fun OCRCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
         images.mapIndexed { index, image ->
           ImageInfoWithBox(
             imagePathInfo = image,
-            box = texts.getOrNull(index)?.blockData?.map { block -> OCRBoxData(block.blockPosition, block.text) } ?: emptyList()
+            box = texts.getOrNull(index)?.blockData?.map { block -> OCRBoxData(block.blockPosition, block.text) }
+              ?: emptyList()
           )
         }
       } else {
         val images = ImageDataService.getInstance(project, ImageDataService.UNTRANSLATED).get().toList()
-        val texts = TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData!!.imagesData.toMutableList()
+        val texts =
+          TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData!!.imagesData.toMutableList()
         images.mapIndexed { index, image ->
           ImageInfoWithBox(
             imagePathInfo = image,
-            box = texts.getOrNull(index)?.blockData?.map { block -> OCRBoxData(block.blockPosition, block.text) } ?: emptyList()
+            box = texts.getOrNull(index)?.blockData?.map { block -> OCRBoxData(block.blockPosition, block.text) }
+              ?: emptyList()
           )
         }
       }
@@ -95,6 +101,7 @@ private fun OCRCreatorStep(
   val coroutineScope = rememberCoroutineScope()
   val image = mutableStateOf<BufferedImage?>(imageInfoWithBox.value!!.imagePathInfo.image)
   val selectedBoxIndex = remember { mutableStateOf<Int?>(null) }
+  val operationNumber = remember { mutableStateOf<Int>(0) }
 
   val boxes =
     FollowableMutableList(mutableStateListOf<OCRBoxData>())
@@ -108,13 +115,20 @@ private fun OCRCreatorStep(
   val lazyListState = rememberReorderableLazyListState(onMove = { from, to ->
     if (from.index == 0) return@rememberReorderableLazyListState
     boxes.add(to.index - 1, boxes.removeAt(from.index - 1))
+    operationNumber.value += 1
   })
 
   Row(
     modifier = Modifier
   ) {
     Column(modifier = Modifier.fillMaxWidth(0.7f)) {
-      SimpleLoadedImageDisplayer(Modifier.fillMaxSize(0.9f), image, boxes, selectedBoxIndex)
+      SimpleLoadedImageDisplayer(
+        modifier = Modifier.fillMaxSize(0.9f),
+        image = image,
+        boxes = boxes,
+        operationNumber = operationNumber,
+        selectedBoxIndex = selectedBoxIndex
+      )
     }
     LazyColumn(
       state = lazyListState.listState,
@@ -133,7 +147,7 @@ private fun OCRCreatorStep(
                   val currentOcrBoxes = ProtobufUtils.getBoxedOCR(imageInfoWithBox.value!!.imagePathInfo.image)
                   boxes.clear()
                   boxes.addAll(currentOcrBoxes)
-
+                  operationNumber.value += 1
                 } finally {
                   jobCounter.decrementAndGet()
                 }
@@ -154,18 +168,47 @@ private fun OCRCreatorStep(
           val isFocused by interactionSource.collectIsFocusedAsState()
           if (isFocused) selectedBoxIndex.value = index
 
-          Row(modifier = Modifier
-            .fillMaxWidth()
-            .applyIf(selectedBoxIndex.value == index) { it.border(1.dp, Color.Cyan) }
-            .shadow(elevation.value)
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .applyIf(selectedBoxIndex.value == index) { it.border(1.dp, Color.Cyan) }
+              .shadow(elevation.value)
           ) {
+            Button(onClick = {
+              val currentBox = boxes[index]
+              val nextBox = boxes[index + 1]
+              val minX = minOf(currentBox.box.x, nextBox.box.x)
+              val minY = minOf(currentBox.box.y, nextBox.box.y)
+              val maxX = maxOf(currentBox.box.x + currentBox.box.width, nextBox.box.x + nextBox.box.width)
+              val maxY = maxOf(currentBox.box.y + currentBox.box.height, nextBox.box.y + nextBox.box.height)
+              val newBox = OCRBoxData(
+                box = BlockPosition(
+                  x = minX,
+                  y = minY,
+                  width = maxX - minX,
+                  height = maxY - minY,
+                  shape = BlockPosition.Shape.Rectangle
+                ),
+                text = currentBox.text + " " + nextBox.text
+              )
+              boxes[index] = newBox
+              boxes.removeAt(index + 1)
+              operationNumber.value += 1
+            }, enabled = jobCounter.get() == 0 && index < boxes.size - 1) {
+              Text("Merge Down")
+            }
             TextField(
               value = box.text,
               modifier = Modifier.fillMaxSize(0.9f).padding(10.dp),
               onValueChange = { boxes[index] = box.copy(text = it) },
               interactionSource = interactionSource
             )
-            Button(onClick = { boxes.removeAt(index) }, enabled = jobCounter.get() == 0) {
+            Button(
+              onClick = {
+                boxes.removeAt(index)
+                operationNumber.value += 1
+              }, enabled = jobCounter.get() == 0
+            ) {
               Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = "Trash"

@@ -99,7 +99,7 @@ fun ImageWithBoxes(
           alignment = Alignment.TopStart
         )
         boxes.forEachIndexed { index, box ->
-          val boxFollowable = remember { FollowableMutableState(mutableStateOf(box)) }
+          val boxFollowable = FollowableMutableState(mutableStateOf(box))
           boxFollowable.follow { _, after ->
             boxes[index] = after
           }
