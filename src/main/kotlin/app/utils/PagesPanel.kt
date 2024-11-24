@@ -21,6 +21,7 @@ fun <T> PagesPanel(
   val jobCounter = remember { AtomicInteger(0) }
 
   var index by remember { mutableIntStateOf(-1) }
+  var searchIndex by remember { mutableIntStateOf(1) }
 
   val data = remember { mutableStateListOf<T>().apply { addAll(dataExtractor()) } }
 
@@ -54,6 +55,11 @@ fun <T> PagesPanel(
           enabled = index + 1 < data.size && !isWorkInProgress()
         ) { Text("Next") }
         Button(onClick = { setIndex(data.size) }, enabled = index != data.size && !isWorkInProgress()) { Text("Done") }
+        NumberField("Page Number", searchIndex, { searchIndex = it })
+        Button(
+          onClick = { setIndex(searchIndex) },
+          enabled = searchIndex in data.indices && !isWorkInProgress()
+        ) { Text("Go") }
       }
     }
   ) {
