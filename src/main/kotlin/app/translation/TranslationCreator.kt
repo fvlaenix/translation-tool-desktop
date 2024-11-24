@@ -41,23 +41,31 @@ fun TranslationCreator(state: MutableState<AppStateEnum>, project: Project? = nu
     name = "Translation creator",
     state = state,
     dataExtractor = {
-      val workData = if (project == null) {
-        OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
-      } else {
-        TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData
-          ?: throw IllegalStateException("Work data is null")
-      }
-      workData.imagesData.map { imageData: ImageData ->
-        TranslationData(
-          untranslatedData = imageData,
-          translatedData = imageData.copy(
-            blockData = imageData.blockData.map { blockData: BlockData ->
-              blockData.copy(
-                text = ""
-              )
-            }
+      if (project == null) {
+        val workData = OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
+        workData.imagesData.map { imageData: ImageData ->
+          TranslationData(
+            untranslatedData = imageData,
+            translatedData = imageData.copy(
+              blockData = imageData.blockData.map { blockData: BlockData ->
+                blockData.copy(
+                  text = ""
+                )
+              }
+            )
           )
-        )
+        }
+      } else {
+        val untranslated = TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData
+          ?: throw IllegalStateException("Work data is null")
+        val translated = TextDataService.getInstance(project, TextDataService.TRANSLATED).workData
+          ?: throw IllegalStateException("Work data is null")
+        untranslated.imagesData.zip(translated.imagesData).map { (untranslatedImageData, translatedImageData) ->
+          TranslationData(
+            untranslatedData = untranslatedImageData,
+            translatedData = translatedImageData
+          )
+        }
       }
     },
     stepWindow = { jobCounter, data ->
