@@ -69,7 +69,8 @@ fun OCRCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
       } else {
         val images = ImageDataService.getInstance(project, ImageDataService.UNTRANSLATED).get().toList()
         val texts =
-          TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData!!.imagesData.toMutableList()
+          TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData?.imagesData?.toMutableList()
+            ?: mutableListOf()
         images.mapIndexed { index, image ->
           ImageInfoWithBox(
             imagePathInfo = image,

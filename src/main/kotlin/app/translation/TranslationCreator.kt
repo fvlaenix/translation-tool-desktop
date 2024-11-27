@@ -58,12 +58,16 @@ fun TranslationCreator(state: MutableState<AppStateEnum>, project: Project? = nu
       } else {
         val untranslated = TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData
           ?: throw IllegalStateException("Work data is null")
-        val translated = TextDataService.getInstance(project, TextDataService.TRANSLATED).workData
-          ?: throw IllegalStateException("Work data is null")
-        untranslated.imagesData.zip(translated.imagesData).map { (untranslatedImageData, translatedImageData) ->
+        val translatedImagesData = TextDataService.getInstance(project, TextDataService.TRANSLATED).workData?.imagesData
+          ?: MutableList(untranslated.imagesData.size) { null }
+        untranslated.imagesData.zip(translatedImagesData).map { (untranslatedImageData, translatedImageData) ->
           TranslationData(
             untranslatedData = untranslatedImageData,
-            translatedData = translatedImageData
+            translatedData = translatedImageData ?: untranslatedImageData.copy(
+              blockData = untranslatedImageData.blockData.map { blockData ->
+                blockData.copy(text = "")
+              }
+            )
           )
         }
       }
