@@ -32,6 +32,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import project.Project
 import utils.FollowableMutableState
 import utils.ImageUtils.deepCopy
@@ -278,37 +280,41 @@ private fun EditCreatorFinal(
           check(path.isDirectory())
           progress = 0.0f
           val part = 1.0 / cleanedImages.size.toFloat()
+          val semaphore = Semaphore(4)
           cleanedImages.mapIndexed { index, (imagePathInfo, imageData) ->
             async {
-              val image = imagePathInfo.image.deepCopy()
-              val blocksImages = imageData.blockData.map { blockData ->
-                val settings = blockData.settings ?: imageData.settings
-                async {
-                  blockData to Text2ImageUtils.textToImage(
-                    settings, blockData.copy(
-                      blockPosition = blockData.blockPosition.copy(
-                        x = .0,
-                        y = .0
+              semaphore.withPermit {
+                val image = imagePathInfo.image.deepCopy()
+                val blocksImages = imageData.blockData.map { blockData ->
+                  val settings = blockData.settings ?: imageData.settings
+                  async {
+                    blockData to Text2ImageUtils.textToImage(
+                      settings, blockData.copy(
+                        blockPosition = blockData.blockPosition.copy(
+                          x = .0,
+                          y = .0
+                        )
                       )
                     )
+                  }
+                }.awaitAll()
+                val graphics = image.createGraphics()
+                blocksImages.forEach { (blockData, image) ->
+                  graphics.drawImage(
+                    image.image,
+                    blockData.blockPosition.x.toInt(),
+                    blockData.blockPosition.y.toInt(),
+                    null
                   )
                 }
-              }.awaitAll()
-              val graphics = image.createGraphics()
-              blocksImages.forEach { (blockData, image) ->
-                graphics.drawImage(
-                  image.image,
-                  blockData.blockPosition.x.toInt(),
-                  blockData.blockPosition.y.toInt(),
-                  null
-                )
+                progressLock.withLock {
+                  progress += part.toFloat()
+                  progress = progress.coerceIn(0.0f, 1.0f)
+                }
+                val imagePath =
+                  path.resolve("${(index + 1).toString().padStart(cleanedImages.size.toString().length + 1, '0')}.png")
+                ImageIO.write(image, "PNG", imagePath.toFile())
               }
-              progressLock.withLock {
-                progress += part.toFloat()
-                progress = progress.coerceIn(0.0f, 1.0f)
-              }
-              val imagePath = path.resolve("${(index + 1).toString().padStart(cleanedImages.size.toString().length + 1, '0')}.png")
-              ImageIO.write(image, "PNG", imagePath.toFile())
             }
           }.awaitAll()
           progress = 1.0f
