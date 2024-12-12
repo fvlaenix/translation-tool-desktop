@@ -30,6 +30,7 @@ fun SimpleLoadedImageDisplayer(
   baseSettings: BlockSettings,
   image: MutableState<BufferedImage?>,
   boxes: MutableState<List<BlockData>>,
+  operationNumber: MutableState<Int>,
   selectedBoxIndex: MutableState<Int?>
 ) {
   data class KeyClass(
@@ -46,21 +47,23 @@ fun SimpleLoadedImageDisplayer(
     displayableKey = key,
     displayableOnImage = { imageSize, imageOriginalSize, (baseSettings, boxes, selectedBoxIndex) ->
       boxes.value.forEachIndexed { index, box ->
-        val boxFollowable = FollowableMutableState(mutableStateOf(box))
-        boxFollowable.follow { _, after ->
-          boxes.value = boxes.value.toMutableList().apply {
-            this[index] = after
+        key(Triple(image.value?.hashCode(), operationNumber.value, index)) {
+          val boxFollowable = FollowableMutableState(mutableStateOf(box))
+          boxFollowable.follow { _, after ->
+            boxes.value = boxes.value.toMutableList().apply {
+              this[index] = after
+            }
           }
+          BlockOnImage(
+            jobCounter = jobCounter,
+            imageSize = imageOriginalSize,
+            displayImageSize = imageSize.value,
+            basicSettings = baseSettings,
+            blockData = boxFollowable,
+            index = index,
+            selectedBoxIndex = selectedBoxIndex
+          )
         }
-        BlockOnImage(
-          jobCounter = jobCounter,
-          imageSize = imageOriginalSize,
-          displayImageSize = imageSize.value,
-          basicSettings = baseSettings,
-          blockData = boxFollowable,
-          index = index,
-          selectedBoxIndex = selectedBoxIndex
-        )
       }
     }
   )

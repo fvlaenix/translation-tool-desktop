@@ -85,6 +85,7 @@ private fun EditCreatorStep(
   currentImage: MutableState<CleanedImageWithBlock?>
 ) {
   val selectedBoxIndex = remember { mutableStateOf<Int?>(null) }
+  val operationNumber = remember { mutableStateOf<Int>(0) }
 
   val boxes = remember {
     FollowableMutableState(mutableStateOf(currentImage.value!!.imageData.blockData)).apply {
@@ -186,6 +187,7 @@ private fun EditCreatorStep(
         currentImage.value!!.imageData.settings,
         image,
         boxes,
+        operationNumber,
         selectedBoxIndex
       )
     }
