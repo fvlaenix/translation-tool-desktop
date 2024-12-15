@@ -14,6 +14,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.block.SimpleLoadedImageDisplayer
@@ -43,6 +44,7 @@ private fun Modifier.pointerInputForBox(
   fun isDownBorder(y: Float): Boolean = y > rectangle.height - HANDLE_SIZE
 
   val focusRequester = remember { FocusRequester() }
+  val density = LocalDensity.current.density
 
   return with(rectangle) {
     this@pointerInputForBox
@@ -53,11 +55,11 @@ private fun Modifier.pointerInputForBox(
         detectDragGestures(onDragEnd = {
           heavyChange()
         }) { change, dragAmount ->
-          val touchX = change.previousPosition.x.toDouble().convertToGlobal().toFloat()
-          val touchY = change.previousPosition.y.toDouble().convertToGlobal().toFloat()
+          val touchX = change.previousPosition.x.toDouble().convertToGlobal().toFloat() / density
+          val touchY = change.previousPosition.y.toDouble().convertToGlobal().toFloat() / density
 
-          val changeX = dragAmount.x.toDouble().convertToGlobal()
-          val changeY = dragAmount.y.toDouble().convertToGlobal()
+          val changeX = dragAmount.x.toDouble().convertToGlobal() / density
+          val changeY = dragAmount.y.toDouble().convertToGlobal() / density
 
           change.consume()
 
@@ -126,6 +128,7 @@ fun BlockOnImage(
   val isImageFit = remember { mutableStateOf(true) }
   val coroutineScope = rememberCoroutineScope()
   val preemptiveCoroutineScope = remember { PreemptiveCoroutineScope(coroutineScope) }
+  val density = LocalDensity.current
 
   val realSettings = blockData.value.settings ?: basicSettings
 
@@ -174,8 +177,8 @@ fun BlockOnImage(
       displayImageSize.height.toDouble() / imageSize.height
     )
 
-    fun Double.convertToLocal(): Double = this * scaleFromOriginToDisplay()
-    fun Double.convertToGlobal(): Double = this * scaleFromDisplayToOrigin()
+    fun Double.convertToLocal(): Double = this * scaleFromOriginToDisplay() / density.density
+    fun Double.convertToGlobal(): Double = this * scaleFromDisplayToOrigin() * density.density
 
     val x: Double = blockData.value.blockPosition.x.convertToLocal()
     val y: Double = blockData.value.blockPosition.y.convertToLocal()
@@ -206,6 +209,8 @@ fun BoxOnImage(
   blockData: MutableState<BlockPosition>,
   selectedBoxIndex: MutableState<Int?>
 ) {
+  val density = LocalDensity.current.density
+
   fun scaleFromDisplayToOrigin(): Double = max(
     imageSize.width.toDouble() / displayImageSize.width,
     imageSize.height.toDouble() / displayImageSize.height
@@ -216,8 +221,8 @@ fun BoxOnImage(
     displayImageSize.height.toDouble() / imageSize.height
   )
 
-  fun Double.convertToLocal(): Double = this * scaleFromOriginToDisplay()
-  fun Double.convertToGlobal(): Double = this * scaleFromDisplayToOrigin()
+  fun Double.convertToLocal(): Double = this * scaleFromOriginToDisplay() / density
+  fun Double.convertToGlobal(): Double = this * scaleFromDisplayToOrigin() * density
 
   val x: Double = blockData.value.x.convertToLocal()
   val y: Double = blockData.value.y.convertToLocal()
