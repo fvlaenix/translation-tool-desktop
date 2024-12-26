@@ -25,7 +25,7 @@ import app.batch.BatchService
 import app.batch.ImageDataService
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanelWithPreview
-import app.block.SimpleLoadedImageDisplayer
+import app.block.SimpleLoadedImageDisplayerWithBoxes
 import app.translation.TextDataService
 import app.utils.PagesPanel
 import app.utils.openFileDialog
@@ -123,7 +123,7 @@ private fun OCRCreatorStep(
     modifier = Modifier
   ) {
     Column(modifier = Modifier.fillMaxWidth(0.7f)) {
-      SimpleLoadedImageDisplayer(
+      SimpleLoadedImageDisplayerWithBoxes(
         modifier = Modifier.fillMaxSize(0.9f),
         image = image,
         boxes = boxes,

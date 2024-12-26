@@ -19,7 +19,7 @@ import app.batch.BatchService
 import app.batch.ImageDataService
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanel
-import app.block.SimpleLoadedImageDisplayer
+import app.block.SimpleLoadedImageDisplayerWithBlocks
 import app.ocr.OCRService
 import app.translation.TextDataService
 import app.utils.ChipSelector
@@ -182,7 +182,7 @@ private fun EditCreatorStep(
     }
   ) {
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
-      SimpleLoadedImageDisplayer(
+      SimpleLoadedImageDisplayerWithBlocks(
         imageEditsCounter,
         currentImage.value!!.imageData.settings,
         image,

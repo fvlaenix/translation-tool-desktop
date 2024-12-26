@@ -25,7 +25,7 @@ import javax.imageio.ImageIO
 import kotlin.math.min
 
 @Composable
-fun SimpleLoadedImageDisplayer(
+fun SimpleLoadedImageDisplayerWithBlocks(
   jobCounter: AtomicInteger,
   baseSettings: BlockSettings,
   image: MutableState<BufferedImage?>,
@@ -70,7 +70,7 @@ fun SimpleLoadedImageDisplayer(
 }
 
 @Composable
-fun SimpleLoadedImageDisplayer(
+fun SimpleLoadedImageDisplayerWithBoxes(
   modifier: Modifier = Modifier,
   image: MutableState<BufferedImage?>,
   boxes: MutableList<OCRBoxData>,
