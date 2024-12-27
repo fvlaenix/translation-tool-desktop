@@ -256,7 +256,7 @@ fun BoxOnImage(
       .size(finalSizeX.dp, finalSizeY.dp)
       .pointerInputForBox(
         rectangle = rectangle,
-        convertToGlobal = { convertToGlobal() },
+        convertToGlobal = { convertToGlobal() * zoom },
         onClick = { selectedBoxIndex.value = index }
       )
   )

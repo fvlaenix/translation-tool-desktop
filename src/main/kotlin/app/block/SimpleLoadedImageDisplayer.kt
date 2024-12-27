@@ -47,12 +47,15 @@ fun SimpleLoadedImageDisplayerWithBlocks(
 
   val key = KeyClass(baseSettings, boxes, selectedBoxIndex)
 
+  val zoom = 1.0f
+  val offset = Offset(0f, 0f)
+
   SimpleLoadedImageDisplayer(
     modifier = Modifier.fillMaxSize(0.8f),
     image = image,
     displayableKey = key,
-    zoom = 1.0f,
-    offset = Offset(0f, 0f),
+    zoom = zoom,
+    offset = offset,
     displayableOnImage = { imageSize, imageOriginalSize, (baseSettings, boxes, selectedBoxIndex) ->
       boxes.value.forEachIndexed { index, box ->
         key(Triple(image.value?.hashCode(), operationNumber.value, index)) {
@@ -70,8 +73,8 @@ fun SimpleLoadedImageDisplayerWithBlocks(
             blockData = boxFollowable,
             index = index,
             selectedBoxIndex = selectedBoxIndex,
-            zoom = .5f,
-            offset = Offset(500f, 0f)
+            zoom = zoom,
+            offset = offset,
           )
         }
       }
@@ -87,7 +90,7 @@ fun SimpleLoadedImageDisplayerWithBoxes(
   operationNumber: MutableState<Int>,
   selectedBoxIndex: MutableState<Int?>
 ) {
-  val zoom = 1.0f
+  val zoom = 1f
   val offset = Offset(0f, 0f)
   SimpleLoadedImageDisplayer(
     modifier = modifier,
