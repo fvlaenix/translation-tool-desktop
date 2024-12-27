@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -31,6 +32,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 private const val HANDLE_SIZE = 16
+private const val MIN_ZOOM = 0.1f
+private const val MAX_ZOOM = 1.0f
 
 @Composable
 private fun Modifier.pointerInputForBox(
@@ -122,7 +125,9 @@ fun BlockOnImage(
   basicSettings: BlockSettings,
   blockData: MutableState<BlockData>,
   index: Int,
-  selectedBoxIndex: MutableState<Int?>
+  selectedBoxIndex: MutableState<Int?>,
+  zoom: Float,
+  offset: Offset
 ) {
   val image = remember { mutableStateOf<BufferedImage?>(null) }
   val isImageFit = remember { mutableStateOf(true) }
@@ -177,7 +182,7 @@ fun BlockOnImage(
       displayImageSize.height.toDouble() / imageSize.height
     )
 
-    fun Double.convertToLocal(): Double = this * scaleFromOriginToDisplay() / density.density
+    fun Double.convertToLocal(): Double = (this - offset.x) * scaleFromOriginToDisplay() / (density.density * zoom)
     fun Double.convertToGlobal(): Double = this * scaleFromDisplayToOrigin() * density.density
 
     val x: Double = blockData.value.blockPosition.x.convertToLocal()
@@ -195,8 +200,11 @@ fun BlockOnImage(
         .pointerInputForBox(
           rectangle = rectangle,
           convertToGlobal = { convertToGlobal() },
-          onClick = { selectedBoxIndex.value = index }),
-      image = image
+          onClick = { selectedBoxIndex.value = index }
+        ),
+      image = image,
+      zoom = zoom,
+      offset = offset
     )
   }
 }
@@ -207,7 +215,9 @@ fun BoxOnImage(
   imageSize: IntSize,
   displayImageSize: IntSize,
   blockData: MutableState<BlockPosition>,
-  selectedBoxIndex: MutableState<Int?>
+  selectedBoxIndex: MutableState<Int?>,
+  zoom: Float,
+  offset: Offset
 ) {
   val density = LocalDensity.current.density
 
@@ -224,18 +234,26 @@ fun BoxOnImage(
   fun Double.convertToLocal(): Double = this * scaleFromOriginToDisplay() / density
   fun Double.convertToGlobal(): Double = this * scaleFromDisplayToOrigin() * density
 
-  val x: Double = blockData.value.x.convertToLocal()
-  val y: Double = blockData.value.y.convertToLocal()
-  val sizeX: Double = blockData.value.width.convertToLocal()
-  val sizeY: Double = blockData.value.height.convertToLocal()
+  // Сначала вычисляем позицию в пространстве отображения
+  val displayX = (blockData.value.x - offset.x) * scaleFromOriginToDisplay() / zoom
+  val displayY = (blockData.value.y - offset.y) * scaleFromOriginToDisplay() / zoom
+  val displayWidth = blockData.value.width * scaleFromOriginToDisplay() / zoom
+  val displayHeight = blockData.value.height * scaleFromOriginToDisplay() / zoom
+
+  // Переводим в dp с учетом density
+  val finalX = displayX / density
+  val finalY = displayY / density
+  val finalSizeX = displayWidth / density
+  val finalSizeY = displayHeight / density
 
   val rectangle = BlockPositionRectangle(blockData, imageSize)
 
   Box(
     modifier = Modifier
-      .offset(x.dp, y.dp)
-      .background(Color(Color.Blue.red, Color.Blue.green, Color.Blue.blue, if (selectedBoxIndex.value == index) 0.5f else 0.3f))
-      .size(sizeX.dp, sizeY.dp)
+      .offset(finalX.dp, finalY.dp)
+      .background(Color(Color.Blue.red, Color.Blue.green, Color.Blue.blue,
+        if (selectedBoxIndex.value == index) 0.5f else 0.3f))
+      .size(finalSizeX.dp, finalSizeY.dp)
       .pointerInputForBox(
         rectangle = rectangle,
         convertToGlobal = { convertToGlobal() },

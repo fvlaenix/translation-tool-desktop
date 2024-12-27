@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color.Companion.Cyan
 import androidx.compose.ui.graphics.Color.Companion.Gray
@@ -103,7 +104,7 @@ fun ImageWithBoxes(
           boxFollowable.follow { _, after ->
             boxes[index] = after
           }
-          BoxOnImage(index, imageOriginalSize, currentSize.value, boxFollowable, selectedBoxIndex)
+          BoxOnImage(index, imageOriginalSize, currentSize.value, boxFollowable, selectedBoxIndex, .5f, Offset.Zero)
         }
       }
     } else {
