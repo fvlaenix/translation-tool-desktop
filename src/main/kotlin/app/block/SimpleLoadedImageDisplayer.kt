@@ -88,7 +88,13 @@ fun SimpleLoadedImageDisplayerWithBoxes(
           boxFollowable.follow { _, after ->
             boxes[index] = boxes[index].copy(box = after)
           }
-          BoxOnImage(index, imageOriginalSize, imageSize.value, boxFollowable, selectedBoxIndex)
+          BoxOnImage(
+            index = index,
+            imageSize = imageOriginalSize,
+            displayImageSize = imageSize.value,
+            blockData = boxFollowable,
+            selectedBoxIndex = selectedBoxIndex
+          )
         }
       }
     }
