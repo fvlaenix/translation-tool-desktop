@@ -16,7 +16,7 @@ import app.advanced.BoxOnImage
 import app.ocr.OCRBoxData
 import bean.BlockData
 import bean.BlockSettings
-import utils.FollowableMutableState
+import core.utils.FollowableMutableState
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream

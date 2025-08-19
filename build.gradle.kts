@@ -67,6 +67,10 @@ dependencies {
 
   // reordable list
   implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+
+  // koin
+  implementation("io.insert-koin:koin-core:4.1.0")
+  implementation("io.insert-koin:koin-compose:1.1.2")
 }
 
 compose.desktop {

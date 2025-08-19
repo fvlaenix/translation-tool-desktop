@@ -1,4 +1,4 @@
-package utils
+package core.utils
 
 import app.ocr.OCRBoxData
 import app.settings.SettingsState

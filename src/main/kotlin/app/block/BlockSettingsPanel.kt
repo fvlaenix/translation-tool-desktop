@@ -14,10 +14,10 @@ import app.utils.SearchableExpandedDropDownMenu
 import bean.Alignment
 import bean.BeanColor
 import bean.BlockSettings
+import core.utils.FontService
+import core.utils.Text2ImageUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import utils.FontService
-import utils.Text2ImageUtils
 import java.awt.image.BufferedImage
 import kotlin.math.max
 import kotlin.math.min
@@ -162,9 +162,10 @@ private fun BorderSize(settings: MutableState<BlockSettings>) {
 @Composable
 private fun Alignment(settings: MutableState<BlockSettings>) {
   Row {
-    val chipState = ChipSelector.rememberChipSelectorState(Alignment.entries.map { it.name }, listOf(settings.value.alignment.name)) {
-      settings.value = settings.value.copy(alignment = Alignment.valueOf(it))
-    }
+    val chipState =
+      ChipSelector.rememberChipSelectorState(Alignment.entries.map { it.name }, listOf(settings.value.alignment.name)) {
+        settings.value = settings.value.copy(alignment = Alignment.valueOf(it))
+      }
     ChipSelector.ChipsSelector(chipState, modifier = Modifier.fillMaxWidth())
   }
 }

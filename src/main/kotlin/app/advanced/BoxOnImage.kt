@@ -21,10 +21,10 @@ import app.block.SimpleLoadedImageDisplayer
 import bean.BlockData
 import bean.BlockPosition
 import bean.BlockSettings
+import core.utils.KotlinUtils.applyIf
+import core.utils.PreemptiveCoroutineScope
+import core.utils.Text2ImageUtils
 import kotlinx.coroutines.Dispatchers
-import utils.KotlinUtils.applyIf
-import utils.PreemptiveCoroutineScope
-import utils.Text2ImageUtils
 import java.awt.image.BufferedImage
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
@@ -234,7 +234,14 @@ fun BoxOnImage(
   Box(
     modifier = Modifier
       .offset(x.dp, y.dp)
-      .background(Color(Color.Blue.red, Color.Blue.green, Color.Blue.blue, if (selectedBoxIndex.value == index) 0.5f else 0.3f))
+      .background(
+        Color(
+          Color.Blue.red,
+          Color.Blue.green,
+          Color.Blue.blue,
+          if (selectedBoxIndex.value == index) 0.5f else 0.3f
+        )
+      )
       .size(sizeX.dp, sizeY.dp)
       .pointerInputForBox(
         rectangle = rectangle,

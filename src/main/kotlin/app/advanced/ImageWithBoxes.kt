@@ -25,10 +25,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
 import bean.BlockPosition
+import core.utils.ClipboardUtils.getClipboardImage
+import core.utils.FollowableMutableState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import utils.ClipboardUtils.getClipboardImage
-import utils.FollowableMutableState
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -41,7 +41,8 @@ fun ImageWithBoxes(
   currentSize: FollowableMutableState<IntSize>
 ) {
   val requester = remember { FocusRequester() }
-  val emptyText = remember { mutableStateOf("Press CTRL+V to insert image\nThen press CTRL+N to create box to translate,\nDelete to delete previous box") }
+  val emptyText =
+    remember { mutableStateOf("Press CTRL+V to insert image\nThen press CTRL+N to create box to translate,\nDelete to delete previous box") }
   val selectedBoxIndex = remember { mutableStateOf<Int?>(null) }
 
   isEnabled.value = image.value != null

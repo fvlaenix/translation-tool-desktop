@@ -1,15 +1,14 @@
 package app.translation
 
 import bean.WorkData
+import core.utils.JSON
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
-import project.ImagesProjectData
 import project.Project
 import service.CoroutineServiceScope
-import utils.JSON
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText

@@ -19,7 +19,7 @@ import app.AppStateEnum
 import app.TopBar
 import app.advanced.steps.TranslationStep
 import bean.BlockPosition
-import utils.FollowableMutableState
+import core.utils.FollowableMutableState
 import java.awt.image.BufferedImage
 
 @Composable
@@ -34,7 +34,8 @@ fun AdvancedTranslator(mutableState: MutableState<AppStateEnum>) {
 
   val currentState = remember { mutableStateOf(AdvancedTranslatorState.INITIAL_IMAGE) }
 
-  TopBar(mutableState, "Advanced Translator",
+  TopBar(
+    mutableState, "Advanced Translator",
     bottomBar = {
       BottomAppBar {
         Row {

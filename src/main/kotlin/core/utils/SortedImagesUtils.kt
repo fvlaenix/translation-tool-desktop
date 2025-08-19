@@ -1,4 +1,4 @@
-package utils
+package core.utils
 
 import java.nio.file.Path
 import kotlin.io.path.nameWithoutExtension

@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
+import core.utils.JSON
 import io.github.vinceglb.filekit.core.FileKit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,7 +19,6 @@ import kotlinx.serialization.encodeToString
 import project.BaseProjectData
 import project.ImagesProjectData
 import project.ProjectsInfoService
-import utils.JSON
 import java.nio.file.Path
 import kotlin.io.path.*
 

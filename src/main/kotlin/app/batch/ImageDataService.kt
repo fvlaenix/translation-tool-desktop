@@ -1,12 +1,12 @@
 package app.batch
 
+import core.utils.SortedImagesUtils.sortedByName
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import project.Project
 import service.CoroutineServiceScope
-import utils.SortedImagesUtils.sortedByName
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentLinkedQueue
 import javax.imageio.ImageIO

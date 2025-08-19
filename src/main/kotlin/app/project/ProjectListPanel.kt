@@ -20,8 +20,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
+import core.utils.KotlinUtils.applyIf
 import project.ProjectsInfoService
-import utils.KotlinUtils.applyIf
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

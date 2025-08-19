@@ -1,4 +1,4 @@
-package utils
+package core.utils
 
 class FollowableMutableList<T>(private val delegate: MutableList<T>) : MutableList<T> {
   private val followers = mutableListOf<(List<T>) -> Unit>()

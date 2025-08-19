@@ -14,9 +14,9 @@ import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.utils.openFileDialog
+import core.utils.AnimatedContentUtils.horizontalSpec
+import core.utils.FontService
 import kotlinx.coroutines.launch
-import utils.AnimatedContentUtils.horizontalSpec
-import utils.FontService
 import java.awt.Font
 import java.nio.file.Path
 

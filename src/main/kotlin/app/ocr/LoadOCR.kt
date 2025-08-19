@@ -11,9 +11,9 @@ import app.AppStateEnum
 import app.TopBar
 import app.utils.openFileDialog
 import bean.WorkData
+import core.utils.JSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import utils.JSON
 import java.io.IOException
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
@@ -29,7 +29,8 @@ fun LoadOCR(state: MutableState<AppStateEnum>) {
   val file = remember { mutableStateOf("") }
   val error = remember { mutableStateOf<String?>(null) }
 
-  TopBar(state, "Load OCR",
+  TopBar(
+    state, "Load OCR",
     bottomBar = {
       BottomAppBar {
         Row {

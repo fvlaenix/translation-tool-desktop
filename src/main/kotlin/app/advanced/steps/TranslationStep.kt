@@ -17,9 +17,9 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.advanced.TranslationInfo
+import core.utils.ProtobufUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import utils.ProtobufUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO

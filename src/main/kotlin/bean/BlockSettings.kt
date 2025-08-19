@@ -1,8 +1,8 @@
 package bean
 
+import core.utils.FontService
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import utils.FontService
 import java.awt.Font
 
 @Serializable

@@ -19,10 +19,10 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.TopBar
+import core.utils.ClipboardUtils.getClipboardImage
+import core.utils.ProtobufUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import utils.ClipboardUtils.getClipboardImage
-import utils.ProtobufUtils
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream

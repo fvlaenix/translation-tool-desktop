@@ -10,13 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import app.AppStateEnum
 import app.project.images.ImagesProjectPanel
+import core.utils.JSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import project.BaseProjectData
 import project.ImagesProjectData
 import project.Project
 import project.ProjectsInfoService
-import utils.JSON
 import kotlin.io.path.readText
 
 @Composable

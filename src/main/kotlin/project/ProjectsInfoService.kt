@@ -1,11 +1,11 @@
 package project
 
+import core.utils.JSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
-import utils.JSON
 import java.io.IOException
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime

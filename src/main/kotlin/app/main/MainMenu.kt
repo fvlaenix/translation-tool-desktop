@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.TopBar
 import app.project.ProjectListPanel
-import utils.FontService
+import core.utils.FontService
 
 @Composable
 fun MainMenu(mutableState: MutableState<AppStateEnum>) {

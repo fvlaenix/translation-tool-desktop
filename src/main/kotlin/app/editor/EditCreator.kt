@@ -27,6 +27,9 @@ import app.utils.PagesPanel
 import bean.BlockPosition
 import bean.BlockSettings
 import bean.ImageData
+import core.utils.FollowableMutableState
+import core.utils.ImageUtils.deepCopy
+import core.utils.Text2ImageUtils
 import io.github.vinceglb.filekit.core.FileKit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -35,9 +38,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import project.Project
-import utils.FollowableMutableState
-import utils.ImageUtils.deepCopy
-import utils.Text2ImageUtils
 import java.awt.image.BufferedImage
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
@@ -170,16 +170,18 @@ private fun EditCreatorStep(
 
     if (index != null && boxTypeValue != null) {
       val box = boxes.value[index]
-      boxes.value = boxes.value.toMutableList().apply { set(index, box.copy(blockPosition = box.blockPosition.copy(shape = boxTypeValue))) }
+      boxes.value = boxes.value.toMutableList()
+        .apply { set(index, box.copy(blockPosition = box.blockPosition.copy(shape = boxTypeValue))) }
     }
   }
 
-  Row(modifier = Modifier
-    .onKeyEvent { keyEvent ->
-      if (keyEvent.key != Key.Escape) return@onKeyEvent true
-      selectedBoxIndex.value = null
-      false
-    }
+  Row(
+    modifier = Modifier
+      .onKeyEvent { keyEvent ->
+        if (keyEvent.key != Key.Escape) return@onKeyEvent true
+        selectedBoxIndex.value = null
+        false
+      }
   ) {
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
       SimpleLoadedImageDisplayer(
@@ -213,11 +215,13 @@ private fun EditCreatorStep(
           is BlockPosition.Shape.Rectangle -> "Rectangle"
           is BlockPosition.Shape.Oval -> "Oval"
         }
-        val chipsState = ChipSelector.rememberChipSelectorState(types, listOf(selectedType)) { boxType.value = when (it) {
-          "Rectangle" -> BlockPosition.Shape.Rectangle
-          "Oval" -> BlockPosition.Shape.Oval
-          else -> throw IllegalStateException("Unknown type $it")
-        } }
+        val chipsState = ChipSelector.rememberChipSelectorState(types, listOf(selectedType)) {
+          boxType.value = when (it) {
+            "Rectangle" -> BlockPosition.Shape.Rectangle
+            "Oval" -> BlockPosition.Shape.Oval
+            else -> throw IllegalStateException("Unknown type $it")
+          }
+        }
         chipsState.selectedChips
         ChipSelector.ChipsSelector(chipsState, modifier = Modifier.fillMaxWidth())
       }

@@ -1,4 +1,4 @@
-package utils
+package core.utils
 
 import java.awt.Color
 import java.awt.Graphics2D

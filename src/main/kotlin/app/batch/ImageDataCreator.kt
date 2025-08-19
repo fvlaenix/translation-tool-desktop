@@ -22,10 +22,10 @@ import app.AppStateEnum
 import app.TopBar
 import app.project.images.ImageProjectPanelState
 import app.utils.openFileDialog
+import core.utils.ClipboardUtils.getClipboardImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import project.Project
-import utils.ClipboardUtils.getClipboardImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -45,7 +45,11 @@ fun ImageDataCreator(
     BatchService.getInstance()
   } else {
     when (projectState!!.value) {
-      ImageProjectPanelState.UNTRANSLATED_IMAGES_CREATOR -> ImageDataService.getInstance(project, ImageDataService.UNTRANSLATED)
+      ImageProjectPanelState.UNTRANSLATED_IMAGES_CREATOR -> ImageDataService.getInstance(
+        project,
+        ImageDataService.UNTRANSLATED
+      )
+
       ImageProjectPanelState.CLEANED_IMAGES_CREATOR -> ImageDataService.getInstance(project, ImageDataService.CLEANED)
       else -> throw IllegalStateException()
     }

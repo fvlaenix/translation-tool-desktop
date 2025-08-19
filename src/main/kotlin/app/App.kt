@@ -20,7 +20,7 @@ import app.project.ProjectPanel
 import app.settings.Settings
 import app.simple.SimpleTranslator
 import app.translation.TranslationCreator
-import utils.AnimatedContentUtils.horizontalSpec
+import core.utils.AnimatedContentUtils.horizontalSpec
 
 @Composable
 @Preview

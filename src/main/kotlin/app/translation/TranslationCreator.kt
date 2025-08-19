@@ -23,12 +23,12 @@ import app.utils.openFileDialog
 import bean.BlockData
 import bean.ImageData
 import bean.WorkData
+import core.utils.JSON
+import core.utils.ProtobufUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import project.Project
-import utils.JSON
-import utils.ProtobufUtils
 import java.awt.FileDialog
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
@@ -114,9 +114,10 @@ private fun TranslatorCreatorStep(
             val translation = ProtobufUtils.getTranslation(currentData.map { it.first.text })
             translationData.value = translationData.value!!.copy(
               translatedData = translationData.value!!.translatedData.copy(
-                blockData = translationData.value!!.translatedData.blockData.zip(translation).map { (block, translation) ->
-                  block.copy(text = translation)
-                }
+                blockData = translationData.value!!.translatedData.blockData.zip(translation)
+                  .map { (block, translation) ->
+                    block.copy(text = translation)
+                  }
               )
             )
           } finally {

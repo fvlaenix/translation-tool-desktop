@@ -46,7 +46,8 @@ fun <T> PagesPanel(
 
   fun isWorkInProgress(): Boolean = jobCounter.get() > 0
 
-  TopBar(state, name,
+  TopBar(
+    state, name,
     bottomBar = {
       Row {
         Button(onClick = { setIndex(index - 1) }, enabled = index > 0 && !isWorkInProgress()) { Text("Previous") }

@@ -30,6 +30,11 @@ import app.translation.TextDataService
 import app.utils.PagesPanel
 import app.utils.openFileDialog
 import bean.*
+import core.utils.FollowableMutableList
+import core.utils.FontService
+import core.utils.JSON
+import core.utils.KotlinUtils.applyIf
+import core.utils.ProtobufUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -38,11 +43,6 @@ import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import project.Project
-import utils.FollowableMutableList
-import utils.FontService
-import utils.JSON
-import utils.KotlinUtils.applyIf
-import utils.ProtobufUtils
 import java.awt.FileDialog
 import java.awt.image.BufferedImage
 import java.nio.file.InvalidPathException
