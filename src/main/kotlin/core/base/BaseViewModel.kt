@@ -6,10 +6,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.swing.Swing
 
 abstract class BaseViewModel {
   private val viewModelJob = SupervisorJob()
-  protected val viewModelScope = CoroutineScope(Dispatchers.Main + viewModelJob)
+  protected val viewModelScope = CoroutineScope(Dispatchers.Swing + viewModelJob)
 
   private val _isLoading = mutableStateOf(false)
   val isLoading: State<Boolean> = _isLoading

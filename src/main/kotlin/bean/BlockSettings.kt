@@ -1,6 +1,5 @@
 package bean
 
-import core.utils.FontService
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.awt.Font
@@ -17,5 +16,40 @@ data class BlockSettings(
   val border: Int = 5
 ) {
   @Transient
-  val font: Font = FontService.getInstance().getFontNotNull(fontName, fontSize.toFloat())
+  private var _font: Font? = null
+
+  // This will be set externally when the font is resolved
+  @Transient
+  var font: Font
+    get() = _font ?: Font("Arial", Font.PLAIN, fontSize) // fallback font
+    set(value) {
+      _font = value
+    }
+
+  companion object {
+    fun createWithFont(
+      fontName: String,
+      font: Font,
+      fontSize: Int = 10,
+      fontColor: BeanColor = BeanColor.BLACK,
+      alignment: Alignment = Alignment.CENTER,
+      outlineColor: BeanColor = BeanColor.WHITE,
+      outlineSize: Double = 5.0,
+      backgroundColor: BeanColor = BeanColor.TRANSPARENT,
+      border: Int = 5
+    ): BlockSettings {
+      return BlockSettings(
+        fontName = fontName,
+        fontSize = fontSize,
+        fontColor = fontColor,
+        alignment = alignment,
+        outlineColor = outlineColor,
+        outlineSize = outlineSize,
+        backgroundColor = backgroundColor,
+        border = border
+      ).apply {
+        this.font = font.deriveFont(fontSize.toFloat())
+      }
+    }
+  }
 }

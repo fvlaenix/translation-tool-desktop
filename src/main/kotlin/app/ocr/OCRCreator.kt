@@ -31,10 +31,10 @@ import app.utils.PagesPanel
 import app.utils.openFileDialog
 import bean.*
 import core.utils.FollowableMutableList
-import core.utils.FontService
 import core.utils.JSON
 import core.utils.KotlinUtils.applyIf
 import core.utils.ProtobufUtils
+import fonts.domain.FontResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -42,6 +42,7 @@ import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
+import org.koin.compose.koinInject
 import project.Project
 import java.awt.FileDialog
 import java.awt.image.BufferedImage
@@ -229,9 +230,18 @@ private fun OCRCreatorFinal(
   project: Project?
 ) {
   val image: MutableState<BufferedImage?> = remember { mutableStateOf(null) }
-  // TODO make font take better
-  val settings: MutableState<BlockSettings> =
-    remember { mutableStateOf(BlockSettings(FontService.getInstance().getDefaultFont())) }
+  val fontResolver: FontResolver = koinInject()
+
+  // Create default settings using FontResolver
+  val settings: MutableState<BlockSettings> = remember {
+    mutableStateOf(BlockSettings("Arial")) // temporary default
+  }
+
+  // Load default settings
+  LaunchedEffect(Unit) {
+    settings.value = fontResolver.createDefaultSettings()
+  }
+
   val author: MutableState<String> = remember { mutableStateOf("") }
   val savePath: MutableState<String> = remember {
     val path: String = if (project != null) {
@@ -282,48 +292,51 @@ private fun OCRCreatorFinal(
     }
 
     Button(onClick = {
-      val workData = WorkData(
-        1,
-        author.value,
-        dataList.mapIndexed { index, (imagePathInfo, imageBoxes) ->
-          ImageData(
-            index = index,
-            imageName = imagePathInfo.name,
-            image = null,
-            blockData = imageBoxes.map { box ->
-              BlockData(
-                blockPosition = BlockPosition(
-                  box.box.x,
-                  box.box.y,
-                  box.box.width,
-                  box.box.height,
-                  BlockPosition.Shape.Rectangle
-                ),
-                text = box.text,
-                settings = null
-              )
-            },
-            settings = settings.value,
-          )
-        }
-      )
+      scope.launch {
+        // Resolve font for the final settings
+        val resolvedSettings = fontResolver.resolveFont(settings.value)
 
-      if (project == null) {
-        OCRService.getInstance().workData = workData
-      } else {
-        TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData = workData
+        val workData = WorkData(
+          1,
+          author.value,
+          dataList.mapIndexed { index, (imagePathInfo, imageBoxes) ->
+            ImageData(
+              index = index,
+              imageName = imagePathInfo.name,
+              image = null,
+              blockData = imageBoxes.map { box ->
+                BlockData(
+                  blockPosition = BlockPosition(
+                    box.box.x,
+                    box.box.y,
+                    box.box.width,
+                    box.box.height,
+                    BlockPosition.Shape.Rectangle
+                  ),
+                  text = box.text,
+                  settings = null
+                )
+              },
+              settings = resolvedSettings,
+            )
+          }
+        )
+
+        if (project == null) {
+          OCRService.getInstance().workData = workData
+        } else {
+          TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData = workData
+        }
+        try {
+          val path = Path.of(savePath.value)
+          path.writeText(JSON.encodeToString(workData))
+        } catch (e: InvalidPathException) {
+          println(e)
+        }
+        state.value = AppStateEnum.MAIN_MENU
       }
-      try {
-        val path = Path.of(savePath.value)
-        path.writeText(JSON.encodeToString(workData))
-      } catch (e: InvalidPathException) {
-        println(e)
-      }
-      state.value = AppStateEnum.MAIN_MENU
     }) {
       Text("Done")
     }
   }
-
-
 }

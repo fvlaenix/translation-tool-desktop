@@ -15,22 +15,21 @@ import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.utils.openFileDialog
 import core.utils.AnimatedContentUtils.horizontalSpec
-import core.utils.FontService
+import fonts.domain.FontViewModel
 import kotlinx.coroutines.launch
-import java.awt.Font
+import org.koin.compose.koinInject
 import java.nio.file.Path
 
 @Composable
 fun FontsSettings(state: MutableState<AppStateEnum>) {
-  val fontService = FontService.getInstance()
+  val fontViewModel: FontViewModel = koinInject()
   val fontSettingsState = mutableStateOf(SettingsState.MAIN_MENU)
 
   Scaffold(
-    modifier = Modifier
-      .fillMaxSize(),
+    modifier = Modifier.fillMaxSize(),
     topBar = {
       TopAppBar(
-        title = { Text("Settings") },
+        title = { Text("Font Settings") },
         navigationIcon = {
           IconButton(onClick = { state.value = AppStateEnum.MAIN_MENU }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
@@ -45,100 +44,175 @@ fun FontsSettings(state: MutableState<AppStateEnum>) {
       transitionSpec = horizontalSpec<SettingsState>()
     ) { targetState ->
       when (targetState) {
-        SettingsState.MAIN_MENU -> MainSettings(fontSettingsState, fontService)
-        SettingsState.ADD_FONT -> AddFontSettings(fontSettingsState, fontService)
+        SettingsState.MAIN_MENU -> MainSettings(fontSettingsState, fontViewModel)
+        SettingsState.ADD_FONT -> AddFontSettings(fontSettingsState, fontViewModel)
       }
     }
   }
 }
 
 @Composable
-private fun MainSettings(state: MutableState<SettingsState>, fontsService: FontService) {
-  val fontsState = fontsService.getMutableState()
+private fun MainSettings(state: MutableState<SettingsState>, fontViewModel: FontViewModel) {
+  val availableFonts by fontViewModel.availableFonts
+  val isLoading by fontViewModel.isLoading
+  val error by fontViewModel.error
+
+  // Load fonts when this composable is first displayed
+  LaunchedEffect(Unit) {
+    fontViewModel.loadFonts()
+  }
 
   Column(
     modifier = Modifier.verticalScroll(rememberScrollState())
   ) {
-    fontsState
-      .forEach { (name: String, path: Path, font: Font) ->
+    if (isLoading) {
+      CircularProgressIndicator()
+      Text("Loading fonts...")
+    } else {
+      availableFonts.forEach { fontInfo ->
         Row(
-          modifier = Modifier.fillMaxWidth()
+          modifier = Modifier
+            .fillMaxWidth()
             .border(1.dp, MaterialTheme.colors.primary)
         ) {
           Column(
-            modifier = Modifier
-              .padding(10.dp)
+            modifier = Modifier.padding(10.dp)
           ) {
             Text(
-              text = "Name: $name",
+              text = "Name: ${fontInfo.name}",
               style = MaterialTheme.typography.h6
             )
             Text(
-              text = "Font Name: ${font.fontName}",
+              text = "Font Name: ${fontInfo.font.fontName}",
               style = MaterialTheme.typography.h6
             )
             Text(
-              text = "Path: $path",
+              text = "Path: ${fontInfo.path}",
               style = MaterialTheme.typography.body2
             )
           }
         }
       }
-    Button(onClick = {
-      state.value = SettingsState.ADD_FONT
-    }) {
-      Text("Add Font")
+
+      Button(onClick = {
+        state.value = SettingsState.ADD_FONT
+      }) {
+        Text("Add Font")
+      }
+
+      Button(onClick = {
+        fontViewModel.refreshFonts()
+      }) {
+        Text("Refresh Fonts")
+      }
+
+      error?.let { errorMessage ->
+        Text(
+          text = errorMessage,
+          color = MaterialTheme.colors.error,
+          modifier = Modifier.padding(top = 8.dp)
+        )
+      }
     }
   }
 }
 
 @Composable
-private fun AddFontSettings(state: MutableState<SettingsState>, fontsService: FontService) {
+private fun AddFontSettings(state: MutableState<SettingsState>, fontViewModel: FontViewModel) {
   val parent = remember { ComposeWindow(null) }
   val fontName = remember { mutableStateOf("") }
   val fontPath = remember { mutableStateOf("") }
+  val scope = rememberCoroutineScope()
 
-  val coroutineScope = rememberCoroutineScope()
-  val isFontAdding = remember { mutableStateOf(false) }
+  val isProcessing by fontViewModel.isProcessing
+  val validationErrors by fontViewModel.validationErrors
+  val error by fontViewModel.error
 
   Column {
     Row {
       Text("Name: ")
-      TextField(fontName.value, onValueChange = { fontName.value = it })
+      TextField(
+        value = fontName.value,
+        onValueChange = { fontName.value = it },
+        isError = validationErrors.containsKey("name"),
+        enabled = !isProcessing
+      )
     }
+
+    validationErrors["name"]?.let { errorMessage ->
+      Text(
+        text = errorMessage,
+        color = MaterialTheme.colors.error,
+        modifier = Modifier.padding(start = 8.dp)
+      )
+    }
+
     Row {
       Text("Path: ")
-      TextField(fontPath.value, onValueChange = { fontPath.value = it })
-      Button(onClick = {
-        val files = openFileDialog(parent, "Choose font", false)
-        val file = files.firstOrNull() ?: return@Button
-        fontPath.value = file.absolutePath
-      }, enabled = !isFontAdding.value) {
+      TextField(
+        value = fontPath.value,
+        onValueChange = { fontPath.value = it },
+        isError = validationErrors.containsKey("path"),
+        enabled = !isProcessing
+      )
+      Button(
+        onClick = {
+          val files = openFileDialog(parent, "Choose font", false)
+          val file = files.firstOrNull() ?: return@Button
+          fontPath.value = file.absolutePath
+        },
+        enabled = !isProcessing
+      ) {
         Text("Select")
       }
     }
-    if (isFontAdding.value) {
+
+    validationErrors["path"]?.let { errorMessage ->
+      Text(
+        text = errorMessage,
+        color = MaterialTheme.colors.error,
+        modifier = Modifier.padding(start = 8.dp)
+      )
+    }
+
+    if (isProcessing) {
       Row {
         CircularProgressIndicator()
-        Text("Loading...")
+        Text("Processing...")
       }
     }
+
     Row {
-      Button(onClick = {
-        isFontAdding.value = true
-        coroutineScope.launch {
-          fontsService.add(fontName.value, Path.of(fontPath.value))
-          isFontAdding.value = false
-          state.value = SettingsState.MAIN_MENU
-        }
-      }, enabled = !isFontAdding.value) {
+      Button(
+        onClick = {
+          scope.launch {
+            fontViewModel.addFont(fontName.value, Path.of(fontPath.value))
+            // If successful (no validation errors), go back to main menu
+            if (validationErrors.isEmpty() && error == null) {
+              state.value = SettingsState.MAIN_MENU
+            }
+          }
+        },
+        enabled = !isProcessing && fontName.value.isNotBlank() && fontPath.value.isNotBlank()
+      ) {
         Text("Add Font")
       }
-      Button(onClick = {
-        state.value = SettingsState.MAIN_MENU
-      }, enabled = !isFontAdding.value) {
+      Button(
+        onClick = {
+          state.value = SettingsState.MAIN_MENU
+        },
+        enabled = !isProcessing
+      ) {
         Text("Cancel")
       }
+    }
+
+    error?.let { errorMessage ->
+      Text(
+        text = errorMessage,
+        color = MaterialTheme.colors.error,
+        modifier = Modifier.padding(top = 8.dp)
+      )
     }
   }
 }

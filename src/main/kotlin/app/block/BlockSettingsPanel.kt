@@ -3,6 +3,7 @@ package app.block
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -14,10 +15,12 @@ import app.utils.SearchableExpandedDropDownMenu
 import bean.Alignment
 import bean.BeanColor
 import bean.BlockSettings
-import core.utils.FontService
 import core.utils.Text2ImageUtils
+import fonts.domain.FontResolver
+import fonts.domain.FontViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import java.awt.image.BufferedImage
 import kotlin.math.max
 import kotlin.math.min
@@ -25,6 +28,7 @@ import kotlin.math.min
 @Composable
 fun BlockSettingsPanelWithPreview(settings: MutableState<BlockSettings>, imageState: MutableState<BufferedImage?>) {
   val coroutineScope = rememberCoroutineScope()
+  val fontResolver: FontResolver = koinInject()
 
   Row {
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
@@ -36,7 +40,9 @@ fun BlockSettingsPanelWithPreview(settings: MutableState<BlockSettings>, imageSt
     LaunchedEffect(settings.value) {
       imageState.value = null
       coroutineScope.launch(Dispatchers.IO) {
-        val image = Text2ImageUtils.createSample(500, 500, settings.value)
+        // Resolve font before creating sample
+        val resolvedSettings = fontResolver.resolveFont(settings.value)
+        val image = Text2ImageUtils.createSample(500, 500, resolvedSettings)
         imageState.value = image
       }
     }
@@ -59,8 +65,14 @@ fun BlockSettingsPanel(settings: MutableState<BlockSettings>) {
 
 @Composable
 private fun FontBlockSettingsPanel(settings: MutableState<BlockSettings>) {
-  val fontService = FontService.getInstance()
-  val fonts = fontService.getMutableState()
+  val fontViewModel: FontViewModel = koinInject()
+  val availableFonts by fontViewModel.availableFonts
+  val isLoading by fontViewModel.isLoading
+
+  // Load fonts when this composable is first displayed
+  LaunchedEffect(Unit) {
+    fontViewModel.loadFonts()
+  }
 
   val expanded = remember { mutableStateOf(false) }
   val scrollState = rememberScrollState()
@@ -72,14 +84,18 @@ private fun FontBlockSettingsPanel(settings: MutableState<BlockSettings>) {
   Row {
     Text("Font: ")
 
-    SearchableExpandedDropDownMenu(
-      listOfItems = fonts,
-      dropdownItem = { name -> Text(name.name) },
-      textFromItem = { font -> font.name },
-      defaultItem = { },
-      onSearchTextFieldClicked = { },
-      onDropDownItemSelected = { changeFont(it.name) }
-    )
+    if (isLoading) {
+      CircularProgressIndicator(modifier = Modifier.size(24.dp))
+    } else {
+      SearchableExpandedDropDownMenu(
+        listOfItems = availableFonts,
+        dropdownItem = { fontInfo -> Text(fontInfo.name) },
+        textFromItem = { fontInfo -> fontInfo.name },
+        defaultItem = { },
+        onSearchTextFieldClicked = { },
+        onDropDownItemSelected = { changeFont(it.name) }
+      )
+    }
 
     LaunchedEffect(expanded.value) {
       if (expanded.value) {
@@ -87,7 +103,6 @@ private fun FontBlockSettingsPanel(settings: MutableState<BlockSettings>) {
       }
     }
   }
-
 }
 
 @Composable

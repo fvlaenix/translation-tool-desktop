@@ -2,7 +2,8 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import app.App
 import core.MangaTranslationApplication
-import core.utils.FontService
+import fonts.data.FontRepository
+import org.koin.core.context.GlobalContext
 import project.ProjectsInfoService
 
 suspend fun main() {
@@ -12,8 +13,13 @@ suspend fun main() {
     // Initialize DI first
     app.initialize()
 
-    // Then load services
-    FontService.getInstance().load()
+    // Load fonts through repository
+    val fontRepository = GlobalContext.get().get<FontRepository>()
+    fontRepository.loadFonts().getOrElse {
+      println("Failed to load fonts: ${it.message}")
+    }
+
+    // Load projects
     ProjectsInfoService.getInstance().load()
 
     application {

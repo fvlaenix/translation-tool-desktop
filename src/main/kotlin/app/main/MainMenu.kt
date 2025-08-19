@@ -6,17 +6,32 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.TopBar
 import app.project.ProjectListPanel
-import core.utils.FontService
+import fonts.data.FontRepository
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @Composable
 fun MainMenu(mutableState: MutableState<AppStateEnum>) {
+  val fontRepository: FontRepository = koinInject()
+  val scope = rememberCoroutineScope()
+
+  var isFontsAdded by remember { mutableStateOf(false) }
+
+  // Check fonts availability
+  LaunchedEffect(Unit) {
+    scope.launch {
+      fontRepository.isFontsAdded()
+        .onSuccess { hasFont -> isFontsAdded = hasFont }
+        .onFailure { isFontsAdded = false }
+    }
+  }
+
   TopBar(mutableState, "Main Menu", true) {
     Row(
       modifier = Modifier.padding(16.dp)
@@ -33,7 +48,7 @@ fun MainMenu(mutableState: MutableState<AppStateEnum>) {
         }
         Button(
           onClick = { mutableState.value = AppStateEnum.OCR_CREATOR },
-          enabled = FontService.getInstance().isFontsAdded()
+          enabled = isFontsAdded
         ) {
           Text("OCR Creator")
         }
