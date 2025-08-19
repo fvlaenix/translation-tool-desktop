@@ -1,7 +1,6 @@
 package core.utils
 
 import app.ocr.OCRBoxData
-import app.settings.SettingsState
 import bean.BlockPosition
 import com.fvlaenix.image.protobuf.image
 import com.fvlaenix.ocr.protobuf.OcrImageRequest
@@ -14,13 +13,25 @@ import com.fvlaenix.translation.protobuf.translationRequest
 import com.google.protobuf.kotlin.toByteString
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
+import kotlinx.coroutines.runBlocking
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import settings.data.SettingsRepository
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 private val AUTHORIZATION_KEY: Metadata.Key<String> = Metadata.Key.of("x-api-key", Metadata.ASCII_STRING_MARSHALLER)
 
-object ProtobufUtils {
+object ProtobufUtils : KoinComponent {
+  private val settingsRepository: SettingsRepository by inject()
+
+  private fun getSettings() = runBlocking {
+    settingsRepository.loadSettings().getOrElse {
+      settings.data.SettingsModel.DEFAULT
+    }
+  }
+
   private fun BufferedImage.getImageRequest(): OcrImageRequest = ocrImageRequest {
     this.image = image {
       this.fileName = "image.png"
@@ -31,9 +42,10 @@ object ProtobufUtils {
   }
 
   private suspend fun <T> getDataFromChannel(body: suspend (ProxyServiceGrpcKt.ProxyServiceCoroutineStub) -> T): T {
+    val settings = getSettings()
     val channel = ManagedChannelBuilder.forAddress(
-      SettingsState.DEFAULT.proxyServiceHostname,
-      SettingsState.DEFAULT.proxyServicePort
+      settings.proxyServiceHostname,
+      settings.proxyServicePort
     )
       .usePlaintext()
       .maxInboundMessageSize(50 * 1024 * 1024)
@@ -56,8 +68,9 @@ object ProtobufUtils {
 
   suspend fun getOCR(image: BufferedImage): String {
     return getStringFromChannel { proxyStub ->
+      val settings = getSettings()
       val metadata = Metadata()
-      metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
+      metadata.put(AUTHORIZATION_KEY, settings.apiKey)
       val response = proxyStub.ocrImage(image.getImageRequest(), metadata)
       if (response.hasError()) {
         response.error
@@ -69,8 +82,9 @@ object ProtobufUtils {
 
   suspend fun getBoxedOCR(image: BufferedImage): List<OCRBoxData> {
     return getDataFromChannel { proxyStub ->
+      val settings = getSettings()
       val metadata = Metadata()
-      metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
+      metadata.put(AUTHORIZATION_KEY, settings.apiKey)
       val response = proxyStub.ocrImage(image.getImageRequest(), metadata)
 
       if (response.hasError()) {
@@ -95,8 +109,9 @@ object ProtobufUtils {
 
   suspend fun getTranslation(text: String): String {
     return getStringFromChannel { proxyStub ->
+      val settings = getSettings()
       val metadata = Metadata()
-      metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
+      metadata.put(AUTHORIZATION_KEY, settings.apiKey)
       val response = proxyStub.translation(translationRequest { this.text = text }, metadata)
       if (response.hasError()) {
         response.error
@@ -108,8 +123,9 @@ object ProtobufUtils {
 
   suspend fun getTranslation(text: List<String>): List<String> {
     return getDataFromChannel { proxyStub ->
+      val settings = getSettings()
       val metadata = Metadata()
-      metadata.put(AUTHORIZATION_KEY, SettingsState.DEFAULT.apiKey)
+      metadata.put(AUTHORIZATION_KEY, settings.apiKey)
       val request = translationFilesRequest {
         this.requests.add(translationFile {
           this.fileName = "translation.txt"
