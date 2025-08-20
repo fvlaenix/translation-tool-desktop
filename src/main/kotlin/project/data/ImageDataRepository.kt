@@ -1,6 +1,7 @@
 package project.data
 
 import app.batch.ImagePathInfo
+import java.nio.file.Path
 
 interface ImageDataRepository {
   suspend fun loadImages(project: Project, imageType: ImageType): Result<List<ImagePathInfo>>
@@ -13,6 +14,8 @@ interface ImageDataRepository {
   suspend fun getBatchImages(): Result<List<ImagePathInfo>>
   suspend fun clearBatch(): Result<Unit>
   suspend fun addAllToBatch(images: List<ImagePathInfo>): Result<Unit>
+
+  suspend fun getWorkDataPath(project: Project, imageType: ImageType): Result<Path>
 }
 
 enum class ImageType(val folderName: String) {

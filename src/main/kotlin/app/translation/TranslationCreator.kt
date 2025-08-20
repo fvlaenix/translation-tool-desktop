@@ -16,7 +16,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
-import app.ocr.OCRService
 import app.utils.PagesPanel
 import app.utils.openFileDialog
 import core.navigation.NavigationController
@@ -26,10 +25,14 @@ import core.utils.ProtobufUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import org.koin.compose.koinInject
 import project.data.Project
+import project.data.TextDataRepository
+import project.data.TextType
 import translation.data.BlockData
 import translation.data.ImageData
 import translation.data.WorkData
+import translation.data.WorkDataRepository
 import java.awt.FileDialog
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
@@ -38,12 +41,16 @@ import kotlin.io.path.writeText
 
 @Composable
 fun TranslationCreator(navigationController: NavigationController, project: Project? = null) {
+  val workDataRepository: WorkDataRepository = koinInject()
+  val textDataRepository: TextDataRepository = koinInject()
+
   PagesPanel<TranslationData>(
     name = "Translation creator",
     navigationController = navigationController,
     dataExtractor = {
       if (project == null) {
-        val workData = OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
+        val workData = workDataRepository.getWorkData().getOrNull()
+          ?: throw IllegalStateException("Work data is null")
         workData.imagesData.map { imageData: ImageData ->
           TranslationData(
             untranslatedData = imageData,
@@ -57,11 +64,14 @@ fun TranslationCreator(navigationController: NavigationController, project: Proj
           )
         }
       } else {
-        val untranslated = TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData
-          ?: throw IllegalStateException("Work data is null")
-        val translatedImagesData = TextDataService.getInstance(project, TextDataService.TRANSLATED).workData?.imagesData
-          ?: MutableList(untranslated.imagesData.size) { null }
-        untranslated.imagesData.zip(translatedImagesData).map { (untranslatedImageData, translatedImageData) ->
+        val untranslatedWorkData = textDataRepository.loadWorkData(project, TextType.UNTRANSLATED).getOrNull()
+          ?: throw IllegalStateException("Untranslated work data is null")
+
+        val translatedWorkData = textDataRepository.loadWorkData(project, TextType.TRANSLATED).getOrNull()
+        val translatedImagesData =
+          translatedWorkData?.imagesData ?: MutableList(untranslatedWorkData.imagesData.size) { null }
+
+        untranslatedWorkData.imagesData.zip(translatedImagesData).map { (untranslatedImageData, translatedImageData) ->
           TranslationData(
             untranslatedData = untranslatedImageData,
             translatedData = translatedImageData ?: untranslatedImageData.copy(
@@ -176,13 +186,19 @@ private fun TranslatorCreatorFinal(
   translationData: SnapshotStateList<TranslationData>,
   project: Project?
 ) {
+  val workDataRepository: WorkDataRepository = koinInject()
+  val textDataRepository: TextDataRepository = koinInject()
+
   val savePath: MutableState<String> = remember {
-    val path: String = if (project != null) {
-      TextDataService.getInstance(project, TextDataService.TRANSLATED).workDataPath.toAbsolutePath().toString()
-    } else {
-      ""
+    mutableStateOf("")
+  }
+
+  LaunchedEffect(project) {
+    if (project != null) {
+      // TODO resolve getOrThrow somehow
+      val path = textDataRepository.getWorkDataPath(project, TextType.TRANSLATED).getOrThrow()
+      savePath.value = path.toAbsolutePath().toString()
     }
-    mutableStateOf(path)
   }
 
   val parent = remember { ComposeWindow(null) }
@@ -211,29 +227,48 @@ private fun TranslatorCreatorFinal(
       }
     }
     Button(onClick = {
-      val newWorkData: WorkData = if (project == null) {
-        val service = OCRService.getInstance()
-        val newWorkData = service.workData!!.copy(
-          imagesData = translationData.map { it.translatedData }
-        )
-        service.workData = newWorkData
-        newWorkData
-      } else {
-        val service = TextDataService.getInstance(project, TextDataService.UNTRANSLATED)
-        val newWorkData = service.workData!!.copy(
-          imagesData = translationData.map { it.translatedData }
-        )
-        service.workData = newWorkData
-        newWorkData
-      }
+      scope.launch {
+        val newWorkData: WorkData = if (project == null) {
+          val currentWorkData = workDataRepository.getWorkData().getOrNull()
+            ?: throw IllegalStateException("No work data found")
 
-      try {
-        val path = Path.of(savePath.value)
-        path.writeText(JSON.encodeToString(newWorkData))
-      } catch (e: InvalidPathException) {
-        println(e)
+          val updatedWorkData = currentWorkData.copy(
+            imagesData = translationData.map { it.translatedData }
+          )
+
+          workDataRepository.setWorkData(updatedWorkData).fold(
+            onSuccess = { /* Success */ },
+            onFailure = { exception ->
+              println("Error saving work data: ${exception.message}")
+            }
+          )
+          updatedWorkData
+        } else {
+          // Replace TextDataService with TextDataRepository
+          val untranslatedWorkData = textDataRepository.loadWorkData(project, TextType.UNTRANSLATED).getOrNull()
+            ?: throw IllegalStateException("No untranslated work data found")
+
+          val updatedWorkData = untranslatedWorkData.copy(
+            imagesData = translationData.map { it.translatedData }
+          )
+
+          textDataRepository.saveWorkData(project, TextType.TRANSLATED, updatedWorkData).fold(
+            onSuccess = { /* Success */ },
+            onFailure = { exception ->
+              println("Error saving translated work data: ${exception.message}")
+            }
+          )
+          updatedWorkData
+        }
+
+        try {
+          val path = Path.of(savePath.value)
+          path.writeText(JSON.encodeToString(newWorkData))
+        } catch (e: InvalidPathException) {
+          println(e)
+        }
+        navigationController.navigateTo(NavigationDestination.MainMenu)
       }
-      navigationController.navigateTo(NavigationDestination.MainMenu)
     }) {
       Text("Done")
     }

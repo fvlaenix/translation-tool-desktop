@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import translation.data.WorkData
+import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -141,5 +142,9 @@ class TextDataRepositoryImpl : TextDataRepository, Repository {
 
     saveWorkData(project, TextType.TRANSLATED, translatedWorkData).getOrThrow()
     translatedWorkData
+  }
+
+  override suspend fun getWorkDataPath(project: Project, textType: TextType): Result<Path> = safeCall {
+    project.path.resolve(textType.fileName)
   }
 }

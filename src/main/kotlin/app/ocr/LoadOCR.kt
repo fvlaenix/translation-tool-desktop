@@ -14,7 +14,9 @@ import core.navigation.NavigationDestination
 import core.utils.JSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import translation.data.WorkData
+import translation.data.WorkDataRepository
 import java.io.IOException
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
@@ -26,6 +28,7 @@ fun LoadOCR(navigationController: NavigationController) {
   val parent = remember { ComposeWindow(null) }
   val scope = rememberCoroutineScope()
   var isLoading by remember { mutableStateOf(false) }
+  val workDataRepository: WorkDataRepository = koinInject()
 
   val file = remember { mutableStateOf("") }
   val error = remember { mutableStateOf<String?>(null) }
@@ -66,9 +69,16 @@ fun LoadOCR(navigationController: NavigationController) {
                 isLoading = false
                 return@launch
               }
-              OCRService.getInstance().workData = workData
+
+              workDataRepository.setWorkData(workData).fold(
+                onSuccess = {
+                  navigationController.navigateTo(NavigationDestination.MainMenu)
+                },
+                onFailure = { exception ->
+                  error.value = "Error saving work data: ${exception.message}"
+                }
+              )
               isLoading = false
-              navigationController.navigateTo(NavigationDestination.MainMenu)
             }
           }, enabled = !isLoading) { Text("Load") }
         }

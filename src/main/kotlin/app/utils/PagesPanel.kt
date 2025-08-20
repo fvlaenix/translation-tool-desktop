@@ -2,6 +2,7 @@ package app.utils
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -13,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 fun <T> PagesPanel(
   name: String,
   navigationController: NavigationController,
-  dataExtractor: () -> List<T>,
+  dataExtractor: suspend () -> List<T>,
   startWindow: @Composable () -> Unit = { Text("Click next if you want to continue") },
   stepWindow: @Composable (AtomicInteger, MutableState<T?>) -> Unit,
   finalWindow: @Composable (SnapshotStateList<T>) -> Unit,
@@ -23,9 +24,24 @@ fun <T> PagesPanel(
   var index by remember { mutableIntStateOf(-1) }
   var searchIndex by remember { mutableIntStateOf(1) }
 
-  val data = remember { mutableStateListOf<T>().apply { addAll(dataExtractor()) } }
-
+  val data = remember { mutableStateListOf<T>() }
   val currentItem = remember { mutableStateOf<T?>(null) }
+  val isLoading = remember { mutableStateOf(false) }
+
+  // Load data with LaunchedEffect instead of direct call
+  LaunchedEffect(Unit) {
+    isLoading.value = true
+    try {
+      val extractedData = dataExtractor()
+      data.clear()
+      data.addAll(extractedData)
+    } catch (e: Exception) {
+      // Handle error appropriately
+      println("Error loading data: ${e.message}")
+    } finally {
+      isLoading.value = false
+    }
+  }
 
   fun setIndex(newIndex: Int) {
     // save result
@@ -64,10 +80,14 @@ fun <T> PagesPanel(
       }
     }
   ) {
-    when (index) {
-      -1 -> startWindow()
-      data.size -> finalWindow(data)
-      else -> stepWindow(jobCounter, currentItem)
+    if (isLoading.value) {
+      CircularProgressIndicator()
+    } else {
+      when (index) {
+        -1 -> startWindow()
+        data.size -> finalWindow(data)
+        else -> stepWindow(jobCounter, currentItem)
+      }
     }
   }
 }

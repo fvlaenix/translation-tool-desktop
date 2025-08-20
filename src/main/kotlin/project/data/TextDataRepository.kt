@@ -1,6 +1,7 @@
 package project.data
 
 import translation.data.WorkData
+import java.nio.file.Path
 
 interface TextDataRepository {
   suspend fun loadWorkData(project: Project, textType: TextType): Result<WorkData?>
@@ -35,6 +36,8 @@ interface TextDataRepository {
     project: Project,
     baseWorkData: WorkData
   ): Result<WorkData>
+
+  suspend fun getWorkDataPath(project: Project, textType: TextType): Result<Path>
 }
 
 enum class TextType(val fileName: String) {

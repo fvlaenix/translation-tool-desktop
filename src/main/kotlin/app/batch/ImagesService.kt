@@ -1,10 +1,9 @@
 package app.batch
 
-import java.util.concurrent.ConcurrentLinkedQueue
-
+@Deprecated("Make something else")
 interface ImagesService {
-  fun add(image: ImagePathInfo)
-  fun clear()
-  fun get(): ConcurrentLinkedQueue<ImagePathInfo>
+  suspend fun add(image: ImagePathInfo)
+  suspend fun clear()
+  suspend fun get(): List<ImagePathInfo>
   suspend fun saveIfRequired()
 }

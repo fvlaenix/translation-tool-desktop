@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.nio.file.Path
 import javax.imageio.ImageIO
 import kotlin.io.path.createDirectories
 import kotlin.io.path.nameWithoutExtension
@@ -86,5 +87,9 @@ class ImageDataRepositoryImpl : ImageDataRepository, Repository {
     batchMutex.withLock {
       batchImages.addAll(images)
     }
+  }
+
+  override suspend fun getWorkDataPath(project: Project, imageType: ImageType): Result<Path> = safeCall {
+    project.path.resolve(imageType.folderName)
   }
 }

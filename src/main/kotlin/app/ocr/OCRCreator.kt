@@ -17,12 +17,9 @@ import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import app.batch.BatchService
-import app.batch.ImageDataService
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanelWithPreview
 import app.block.SimpleLoadedImageDisplayer
-import app.translation.TextDataService
 import app.utils.PagesPanel
 import app.utils.openFileDialog
 import core.navigation.NavigationController
@@ -38,7 +35,7 @@ import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import org.koin.compose.koinInject
-import project.data.Project
+import project.data.*
 import translation.data.*
 import translation.domain.OCRCreatorViewModel
 import java.awt.FileDialog
@@ -50,13 +47,19 @@ import kotlin.io.path.writeText
 
 @Composable
 fun OCRCreator(navigationController: NavigationController, project: Project? = null) {
+  val imageDataRepository: ImageDataRepository = koinInject()
+  val workDataRepository: WorkDataRepository = koinInject()
+  val textDataRepository: TextDataRepository = koinInject()
+
   PagesPanel<ImageInfoWithBox>(
     name = "OCR Creator",
     navigationController = navigationController,
     dataExtractor = {
       if (project == null) {
-        val images = BatchService.getInstance().get().toList()
-        val texts = OCRService.getInstance().workData!!.imagesData.toMutableList()
+        val images = imageDataRepository.getBatchImages().getOrElse { emptyList() }
+        val workData = workDataRepository.getWorkData().getOrNull()
+        val texts = workData?.imagesData?.toMutableList() ?: mutableListOf()
+
         images.mapIndexed { index, image ->
           ImageInfoWithBox(
             imagePathInfo = image,
@@ -65,10 +68,10 @@ fun OCRCreator(navigationController: NavigationController, project: Project? = n
           )
         }
       } else {
-        val images = ImageDataService.getInstance(project, ImageDataService.UNTRANSLATED).get().toList()
-        val texts =
-          TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData?.imagesData?.toMutableList()
-            ?: mutableListOf()
+        val images = imageDataRepository.loadImages(project, ImageType.UNTRANSLATED).getOrElse { emptyList() }
+        val untranslatedWorkData = textDataRepository.loadWorkData(project, TextType.UNTRANSLATED).getOrNull()
+        val texts = untranslatedWorkData?.imagesData?.toMutableList() ?: mutableListOf()
+
         images.mapIndexed { index, image ->
           ImageInfoWithBox(
             imagePathInfo = image,
@@ -262,6 +265,8 @@ private fun OCRCreatorFinal(
 ) {
   val image: MutableState<BufferedImage?> = remember { mutableStateOf(null) }
   val fontResolver: FontResolver = koinInject()
+  val workDataRepository: WorkDataRepository = koinInject()
+  val textDataRepository: TextDataRepository = koinInject()
 
   // Create default settings using FontResolver
   val settings: MutableState<BlockSettings> = remember {
@@ -275,12 +280,16 @@ private fun OCRCreatorFinal(
 
   val author: MutableState<String> = remember { mutableStateOf("") }
   val savePath: MutableState<String> = remember {
-    val path: String = if (project != null) {
-      TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workDataPath.toAbsolutePath().toString()
-    } else {
-      ""
+    mutableStateOf("")
+  }
+
+  // Load the correct path using repository method
+  LaunchedEffect(project) {
+    if (project != null) {
+      // TODO resole nullability somehow
+      val path = textDataRepository.getWorkDataPath(project, TextType.UNTRANSLATED).getOrThrow()
+      savePath.value = path.toAbsolutePath().toString()
     }
-    mutableStateOf(path)
   }
 
   val parent = remember { ComposeWindow(null) }
@@ -354,10 +363,21 @@ private fun OCRCreatorFinal(
         )
 
         if (project == null) {
-          OCRService.getInstance().workData = workData
+          workDataRepository.setWorkData(workData).fold(
+            onSuccess = { /* Success handled below */ },
+            onFailure = { exception ->
+              println("Error saving work data: ${exception.message}")
+            }
+          )
         } else {
-          TextDataService.getInstance(project, TextDataService.UNTRANSLATED).workData = workData
+          textDataRepository.saveWorkData(project, TextType.UNTRANSLATED, workData).fold(
+            onSuccess = { /* Success */ },
+            onFailure = { exception ->
+              println("Error saving untranslated work data: ${exception.message}")
+            }
+          )
         }
+
         try {
           val path = Path.of(savePath.value)
           path.writeText(JSON.encodeToString(workData))

@@ -14,13 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import app.batch.BatchService
-import app.batch.ImageDataService
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanel
 import app.block.SimpleLoadedImageDisplayer
-import app.ocr.OCRService
-import app.translation.TextDataService
 import app.utils.ChipSelector
 import app.utils.PagesPanel
 import core.navigation.NavigationController
@@ -35,10 +31,12 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import project.data.Project
+import org.koin.compose.koinInject
+import project.data.*
 import translation.data.BlockPosition
 import translation.data.BlockSettings
 import translation.data.ImageData
+import translation.data.WorkDataRepository
 import java.awt.image.BufferedImage
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
@@ -50,16 +48,24 @@ import kotlin.io.path.isDirectory
 
 @Composable
 fun EditCreator(navigationController: NavigationController, project: Project? = null) {
+  val imageDataRepository: ImageDataRepository = koinInject()
+  val workDataRepository: WorkDataRepository = koinInject()
+  val textDataRepository: TextDataRepository = koinInject()
+
   PagesPanel(
     name = "Edit Creator",
     navigationController = navigationController,
     dataExtractor = {
       val (cleanedImages, imagesData) = if (project == null) {
-        BatchService.getInstance().get().toList() to
-            OCRService.getInstance().workData!!.imagesData.toMutableList()
+        val batchImages = imageDataRepository.getBatchImages().getOrElse { emptyList() }
+        val workData = workDataRepository.getWorkData().getOrNull()
+        batchImages to (workData?.imagesData?.toMutableList() ?: mutableListOf())
       } else {
-        ImageDataService.getInstance(project, ImageDataService.CLEANED).get().toList() to
-            TextDataService.getInstance(project, TextDataService.TRANSLATED).workData!!.imagesData.toMutableList()
+        val cleanedImages = imageDataRepository.loadImages(project, ImageType.CLEANED).getOrElse { emptyList() }
+        val translatedWorkData = textDataRepository.loadWorkData(project, TextType.TRANSLATED).getOrNull()
+        val imagesData = translatedWorkData?.imagesData?.toMutableList() ?: mutableListOf()
+
+        cleanedImages to imagesData
       }
       check(cleanedImages.size == imagesData.size)
 
@@ -236,14 +242,21 @@ private fun EditCreatorFinal(
   cleanedImages: List<CleanedImageWithBlock>,
   project: Project?
 ) {
+  val imageDataRepository: ImageDataRepository = koinInject()
+  val textDataRepository: TextDataRepository = koinInject()
+
   val savePath: MutableState<String> = remember {
-    val path: String = if (project != null) {
-      ImageDataService.getInstance(project, ImageDataService.EDITED).workDataPath.toAbsolutePath().toString()
-    } else {
-      ""
-    }
-    mutableStateOf(path)
+    mutableStateOf("")
   }
+
+  LaunchedEffect(project) {
+    if (project != null) {
+      // TODO remove getOrThrow
+      val path = imageDataRepository.getWorkDataPath(project, ImageType.EDITED).getOrThrow()
+      savePath.value = path.toAbsolutePath().toString()
+    }
+  }
+
   val progressLock: ReentrantLock = remember { ReentrantLock() }
   var progress by remember { mutableStateOf(0f) }
 
@@ -275,11 +288,18 @@ private fun EditCreatorFinal(
       Button(onClick = {
         scope.launch(Dispatchers.IO) {
           if (project != null) {
-            val translatedDataService = TextDataService.getInstance(project, TextDataService.TRANSLATED)
-            translatedDataService.workData = translatedDataService.workData!!.copy(
-              imagesData = cleanedImages.map { it.imageData }
-            )
-            translatedDataService.save()
+            val currentWorkData = textDataRepository.loadWorkData(project, TextType.TRANSLATED).getOrNull()
+            if (currentWorkData != null) {
+              val updatedWorkData = currentWorkData.copy(
+                imagesData = cleanedImages.map { it.imageData }
+              )
+              textDataRepository.saveWorkData(project, TextType.TRANSLATED, updatedWorkData).fold(
+                onSuccess = { /* Success */ },
+                onFailure = { exception ->
+                  println("Error saving translated work data: ${exception.message}")
+                }
+              )
+            }
           }
 
           val path = Path.of(savePath.value)
@@ -332,6 +352,5 @@ private fun EditCreatorFinal(
       }
       CircularProgressIndicator(progress)
     }
-
   }
 }
