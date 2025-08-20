@@ -3,6 +3,8 @@ package translation.domain
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import core.base.BaseViewModel
+import core.utils.ClipboardUtils.getClipboardImage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import translation.data.OCRRepository
 import translation.data.TranslationRepository
@@ -28,9 +30,31 @@ class SimpleTranslatorViewModel(
   private val _isTranslating = mutableStateOf(false)
   val isTranslating: State<Boolean> = _isTranslating
 
+  private val _statusMessage = mutableStateOf("Press CTRL+V for insert picture")
+  val statusMessage: State<String> = _statusMessage
+
   fun loadImage(image: BufferedImage) {
     _currentImage.value = image
+    _statusMessage.value = "Press CTRL+V for insert picture"
     clearError()
+  }
+
+  fun loadImageFromClipboard() {
+    _statusMessage.value = "Image is loading"
+    viewModelScope.launch(Dispatchers.IO) {
+      try {
+        val image = getClipboardImage()
+        if (image == null) {
+          _statusMessage.value = "Failed to get image from clipboard"
+        } else {
+          _currentImage.value = image
+          _statusMessage.value = "Press CTRL+V for insert picture"
+        }
+      } catch (e: Exception) {
+        setError("Failed to load image from clipboard: ${e.message}")
+        _statusMessage.value = "Failed to get image from clipboard"
+      }
+    }
   }
 
   fun processOCR() {
@@ -85,6 +109,7 @@ class SimpleTranslatorViewModel(
     _currentImage.value = null
     _ocrText.value = ""
     _translationText.value = ""
+    _statusMessage.value = "Press CTRL+V for insert picture"
     clearError()
   }
 }

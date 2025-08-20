@@ -16,10 +16,11 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
 import app.ocr.OCRService
 import app.utils.PagesPanel
 import app.utils.openFileDialog
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import core.utils.JSON
 import core.utils.ProtobufUtils
 import kotlinx.coroutines.Dispatchers
@@ -36,10 +37,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.writeText
 
 @Composable
-fun TranslationCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
+fun TranslationCreator(navigationController: NavigationController, project: Project? = null) {
   PagesPanel<TranslationData>(
     name = "Translation creator",
-    state = state,
+    navigationController = navigationController,
     dataExtractor = {
       if (project == null) {
         val workData = OCRService.getInstance().workData ?: throw IllegalStateException("Work data is null")
@@ -76,7 +77,7 @@ fun TranslationCreator(state: MutableState<AppStateEnum>, project: Project? = nu
       TranslatorCreatorStep(jobCounter, data)
     },
     finalWindow = { translatedImageDatas ->
-      TranslatorCreatorFinal(state, translatedImageDatas, project)
+      TranslatorCreatorFinal(navigationController, translatedImageDatas, project)
     },
   )
 }
@@ -171,7 +172,7 @@ private fun TranslatorCreatorStep(
 
 @Composable
 private fun TranslatorCreatorFinal(
-  state: MutableState<AppStateEnum>,
+  navigationController: NavigationController,
   translationData: SnapshotStateList<TranslationData>,
   project: Project?
 ) {
@@ -232,7 +233,7 @@ private fun TranslatorCreatorFinal(
       } catch (e: InvalidPathException) {
         println(e)
       }
-      state.value = AppStateEnum.MAIN_MENU
+      navigationController.navigateTo(NavigationDestination.MainMenu)
     }) {
       Text("Done")
     }

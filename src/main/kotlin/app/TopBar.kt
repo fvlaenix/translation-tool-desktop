@@ -6,11 +6,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 
 @Composable
 fun TopBar(
-  mutableState: MutableState<AppStateEnum>,
+  navigationController: NavigationController,
   text: String,
   isMainMenu: Boolean = false,
   bottomBar: @Composable () -> Unit = {},
@@ -22,17 +23,17 @@ fun TopBar(
         title = { Text(text) },
         navigationIcon = if (!isMainMenu) {
           {
-            IconButton(onClick = { mutableState.value = AppStateEnum.MAIN_MENU }) {
+            IconButton(onClick = { navigationController.navigateToMainMenu() }) {
               Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
             }
           }
         } else null,
         actions = {
           if (isMainMenu) {
-            IconButton(onClick = { mutableState.value = AppStateEnum.FONT_SETTINGS }) {
+            IconButton(onClick = { navigationController.navigateTo(NavigationDestination.FontSettings) }) {
               Text("F")
             }
-            IconButton(onClick = { mutableState.value = AppStateEnum.SETTINGS }) {
+            IconButton(onClick = { navigationController.navigateTo(NavigationDestination.Settings) }) {
               Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Settings")
             }
           }

@@ -10,14 +10,18 @@ import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import core.utils.KotlinUtils.applyIf
 import org.koin.compose.koinInject
 import project.data.ProjectInfo
@@ -27,7 +31,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun ProjectListPanel(state: MutableState<AppStateEnum>) {
+fun ProjectListPanel(navigationController: NavigationController) {
   val viewModel: ProjectListViewModel = koinInject()
 
   val projects by viewModel.projects
@@ -45,7 +49,7 @@ fun ProjectListPanel(state: MutableState<AppStateEnum>) {
   ) {
     Row(modifier = Modifier.fillMaxWidth()) {
       Button(onClick = {
-        state.value = AppStateEnum.NEW_PROJECT
+        navigationController.navigateTo(NavigationDestination.NewProject)
       }) {
         Text("Create new project")
       }
@@ -85,7 +89,7 @@ fun ProjectListPanel(state: MutableState<AppStateEnum>) {
           .pointerInput(Unit) {
             detectTapGestures {
               viewModel.selectProject(project)
-              state.value = AppStateEnum.PROJECT
+              navigationController.navigateTo(NavigationDestination.Project)
             }
           }
       ) {

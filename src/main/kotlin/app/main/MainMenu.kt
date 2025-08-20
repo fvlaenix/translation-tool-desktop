@@ -9,15 +9,16 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
 import app.TopBar
 import app.project.ProjectListPanel
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import fonts.data.FontRepository
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun MainMenu(mutableState: MutableState<AppStateEnum>) {
+fun MainMenu(navigationController: NavigationController) {
   val fontRepository: FontRepository = koinInject()
   val scope = rememberCoroutineScope()
 
@@ -32,44 +33,44 @@ fun MainMenu(mutableState: MutableState<AppStateEnum>) {
     }
   }
 
-  TopBar(mutableState, "Main Menu", true) {
+  TopBar(navigationController, "Main Menu", true) {
     Row(
       modifier = Modifier.padding(16.dp)
     ) {
       Column(modifier = Modifier.fillMaxWidth(0.5f)) {
-        Button(onClick = { mutableState.value = AppStateEnum.SIMPLE_VERSION }) {
+        Button(onClick = { navigationController.navigateTo(NavigationDestination.SimpleTranslator) }) {
           Text("Simple Translator")
         }
-        Button(onClick = { mutableState.value = AppStateEnum.ADVANCED_VERSION }) {
+        Button(onClick = { navigationController.navigateTo(NavigationDestination.AdvancedTranslator) }) {
           Text("Advanced Translator")
         }
-        Button(onClick = { mutableState.value = AppStateEnum.BATCH_CREATOR }) {
+        Button(onClick = { navigationController.navigateTo(NavigationDestination.BatchCreator) }) {
           Text("Batch Creator")
         }
         Button(
-          onClick = { mutableState.value = AppStateEnum.OCR_CREATOR },
+          onClick = { navigationController.navigateTo(NavigationDestination.OCRCreator) },
           enabled = isFontsAdded
         ) {
           Text("OCR Creator")
         }
         Button(
-          onClick = { mutableState.value = AppStateEnum.LOAD_OCR_CREATOR }
+          onClick = { navigationController.navigateTo(NavigationDestination.LoadOCRCreator) }
         ) {
           Text("Load OCR")
         }
         Button(
-          onClick = { mutableState.value = AppStateEnum.TRANSLATION_CREATOR }
+          onClick = { navigationController.navigateTo(NavigationDestination.TranslationCreator) }
         ) {
           Text("Translation Creator")
         }
         Button(
-          onClick = { mutableState.value = AppStateEnum.EDIT_CREATOR }
+          onClick = { navigationController.navigateTo(NavigationDestination.EditCreator) }
         ) {
           Text("Edit creator")
         }
       }
       Column {
-        ProjectListPanel(mutableState)
+        ProjectListPanel(navigationController)
       }
     }
   }

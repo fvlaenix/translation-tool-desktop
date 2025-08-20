@@ -12,8 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
 import app.utils.openFileDialog
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import core.utils.AnimatedContentUtils.horizontalSpec
 import fonts.domain.FontViewModel
 import kotlinx.coroutines.launch
@@ -21,7 +22,7 @@ import org.koin.compose.koinInject
 import java.nio.file.Path
 
 @Composable
-fun FontsSettings(state: MutableState<AppStateEnum>) {
+fun FontsSettings(navigationController: NavigationController) {
   val fontViewModel: FontViewModel = koinInject()
   val fontSettingsState = mutableStateOf(SettingsState.MAIN_MENU)
 
@@ -31,7 +32,7 @@ fun FontsSettings(state: MutableState<AppStateEnum>) {
       TopAppBar(
         title = { Text("Font Settings") },
         navigationIcon = {
-          IconButton(onClick = { state.value = AppStateEnum.MAIN_MENU }) {
+          IconButton(onClick = { navigationController.navigateTo(NavigationDestination.MainMenu) }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
           }
         }

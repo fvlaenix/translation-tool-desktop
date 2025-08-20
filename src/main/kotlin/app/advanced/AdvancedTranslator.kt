@@ -8,22 +8,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomAppBar
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
 import app.TopBar
 import app.advanced.steps.TranslationStep
+import core.navigation.NavigationController
 import core.utils.FollowableMutableState
 import translation.data.BlockPosition
 import java.awt.image.BufferedImage
 
 @Composable
-fun AdvancedTranslator(mutableState: MutableState<AppStateEnum>) {
+fun AdvancedTranslator(navigationController: NavigationController) {
   val currentSize = remember { mutableStateOf(IntSize.Zero) }
 
   val imageBuffered = remember { mutableStateOf<ImageBitmap?>(null) }
@@ -35,7 +38,7 @@ fun AdvancedTranslator(mutableState: MutableState<AppStateEnum>) {
   val currentState = remember { mutableStateOf(AdvancedTranslatorState.INITIAL_IMAGE) }
 
   TopBar(
-    mutableState, "Advanced Translator",
+    navigationController, "Advanced Translator",
     bottomBar = {
       BottomAppBar {
         Row {

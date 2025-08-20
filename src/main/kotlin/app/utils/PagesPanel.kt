@@ -5,14 +5,14 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import app.AppStateEnum
 import app.TopBar
+import core.navigation.NavigationController
 import java.util.concurrent.atomic.AtomicInteger
 
 @Composable
 fun <T> PagesPanel(
   name: String,
-  state: MutableState<AppStateEnum>,
+  navigationController: NavigationController,
   dataExtractor: () -> List<T>,
   startWindow: @Composable () -> Unit = { Text("Click next if you want to continue") },
   stepWindow: @Composable (AtomicInteger, MutableState<T?>) -> Unit,
@@ -47,7 +47,7 @@ fun <T> PagesPanel(
   fun isWorkInProgress(): Boolean = jobCounter.get() > 0
 
   TopBar(
-    state, name,
+    navigationController, name,
     bottomBar = {
       Row {
         Button(onClick = { setIndex(index - 1) }, enabled = index > 0 && !isWorkInProgress()) { Text("Previous") }

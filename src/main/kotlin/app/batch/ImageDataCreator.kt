@@ -18,10 +18,10 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
 import app.TopBar
 import app.project.images.ImageProjectPanelState
 import app.utils.openFileDialog
+import core.navigation.NavigationController
 import core.utils.ClipboardUtils.getClipboardImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,7 +32,7 @@ import javax.imageio.ImageIO
 
 @Composable
 fun ImageDataCreator(
-  state: MutableState<AppStateEnum>,
+  navigationController: NavigationController,
   projectState: MutableState<ImageProjectPanelState>? = null,
   project: Project? = null
 ) {
@@ -57,7 +57,7 @@ fun ImageDataCreator(
   val scope = rememberCoroutineScope()
   val requester = remember { FocusRequester() }
 
-  TopBar(state, "Batch Creator") {
+  TopBar(navigationController, "Batch Creator") {
     Column(
       modifier = Modifier
         .fillMaxSize()

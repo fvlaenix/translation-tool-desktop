@@ -5,8 +5,8 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import app.advanced.AdvancedTranslator
 import app.batch.ImageDataCreator
@@ -20,37 +20,53 @@ import app.project.ProjectPanel
 import app.settings.Settings
 import app.simple.SimpleTranslator
 import app.translation.TranslationCreator
+import core.error.ErrorHandler
+import core.error.ErrorOverlay
+import core.navigation.NavigationController
 import core.utils.AnimatedContentUtils.horizontalSpec
+import org.koin.compose.koinInject
 
 @Composable
 @Preview
 fun App() {
-  val state = remember { mutableStateOf(AppStateEnum.MAIN_MENU) }
+  val navigationController: NavigationController = koinInject()
+  val errorHandler: ErrorHandler = koinInject()
+
+  val currentAppState by navigationController.currentAppState
+
+  // Cleanup error handler when App is disposed
+  DisposableEffect(errorHandler) {
+    onDispose {
+      errorHandler.cleanup()
+    }
+  }
 
   MaterialTheme {
-    AnimatedContent(
-      targetState = state.value,
-      modifier = Modifier.fillMaxSize(),
-      transitionSpec = horizontalSpec<AppStateEnum>()
-    ) { targetState ->
-      when (targetState) {
-        AppStateEnum.MAIN_MENU -> MainMenu(state)
+    ErrorOverlay(errorHandler = errorHandler) {
+      AnimatedContent(
+        targetState = currentAppState,
+        modifier = Modifier.fillMaxSize(),
+        transitionSpec = horizontalSpec<AppStateEnum>()
+      ) { targetState ->
+        when (targetState) {
+          AppStateEnum.MAIN_MENU -> MainMenu(navigationController)
 
-        AppStateEnum.SIMPLE_VERSION -> SimpleTranslator(state)
+          AppStateEnum.SIMPLE_VERSION -> SimpleTranslator(navigationController)
 
-        AppStateEnum.ADVANCED_VERSION -> AdvancedTranslator(state)
+          AppStateEnum.ADVANCED_VERSION -> AdvancedTranslator(navigationController)
 
-        AppStateEnum.BATCH_CREATOR -> ImageDataCreator(state)
-        AppStateEnum.OCR_CREATOR -> OCRCreator(state)
-        AppStateEnum.LOAD_OCR_CREATOR -> LoadOCR(state)
-        AppStateEnum.TRANSLATION_CREATOR -> TranslationCreator(state)
-        AppStateEnum.EDIT_CREATOR -> EditCreator(state)
+          AppStateEnum.BATCH_CREATOR -> ImageDataCreator(navigationController)
+          AppStateEnum.OCR_CREATOR -> OCRCreator(navigationController)
+          AppStateEnum.LOAD_OCR_CREATOR -> LoadOCR(navigationController)
+          AppStateEnum.TRANSLATION_CREATOR -> TranslationCreator(navigationController)
+          AppStateEnum.EDIT_CREATOR -> EditCreator(navigationController)
 
-        AppStateEnum.NEW_PROJECT -> NewProjectPanel(state)
-        AppStateEnum.PROJECT -> ProjectPanel(state)
+          AppStateEnum.NEW_PROJECT -> NewProjectPanel(navigationController)
+          AppStateEnum.PROJECT -> ProjectPanel(navigationController)
 
-        AppStateEnum.SETTINGS -> Settings(state)
-        AppStateEnum.FONT_SETTINGS -> FontsSettings(state)
+          AppStateEnum.SETTINGS -> Settings(navigationController)
+          AppStateEnum.FONT_SETTINGS -> FontsSettings(navigationController)
+        }
       }
     }
   }

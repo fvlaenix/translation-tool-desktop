@@ -4,10 +4,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import io.github.vinceglb.filekit.core.FileKit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,7 +19,7 @@ import org.koin.compose.koinInject
 import project.domain.NewProjectViewModel
 
 @Composable
-fun NewProjectPanel(state: MutableState<AppStateEnum>) {
+fun NewProjectPanel(navigationController: NavigationController) {
   val viewModel: NewProjectViewModel = koinInject()
   val scope = rememberCoroutineScope()
 
@@ -29,7 +33,7 @@ fun NewProjectPanel(state: MutableState<AppStateEnum>) {
   // Navigate to project panel on successful creation
   LaunchedEffect(creationSuccess) {
     if (creationSuccess) {
-      state.value = AppStateEnum.PROJECT
+      navigationController.navigateTo(NavigationDestination.Project)
       viewModel.resetForm()
     }
   }
@@ -121,7 +125,7 @@ fun NewProjectPanel(state: MutableState<AppStateEnum>) {
       Button(
         onClick = {
           viewModel.resetForm()
-          state.value = AppStateEnum.MAIN_MENU
+          navigationController.navigateTo(NavigationDestination.MainMenu)
         },
         enabled = !isCreating
       ) {

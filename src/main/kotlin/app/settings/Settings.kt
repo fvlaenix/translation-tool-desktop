@@ -10,12 +10,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import org.koin.compose.koinInject
 import settings.domain.SettingsViewModel
 
 @Composable
-fun Settings(mutableState: MutableState<AppStateEnum>) {
+fun Settings(navigationController: NavigationController) {
   val viewModel: SettingsViewModel = koinInject()
 
   val currentSettings by viewModel.currentSettings
@@ -40,7 +41,7 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
       TopAppBar(
         title = { Text("Settings") },
         navigationIcon = {
-          IconButton(onClick = { mutableState.value = AppStateEnum.MAIN_MENU }) {
+          IconButton(onClick = { navigationController.navigateTo(NavigationDestination.MainMenu) }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Menu")
           }
         }
@@ -52,7 +53,7 @@ fun Settings(mutableState: MutableState<AppStateEnum>) {
           onClick = {
             viewModel.saveSettings()
             if (validationErrors.isEmpty()) {
-              mutableState.value = AppStateEnum.MAIN_MENU
+              navigationController.navigateTo(NavigationDestination.MainMenu)
             }
           },
           enabled = !isLoading && !isSaving

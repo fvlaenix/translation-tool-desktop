@@ -17,7 +17,6 @@ import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
 import app.batch.BatchService
 import app.batch.ImageDataService
 import app.batch.ImagePathInfo
@@ -26,6 +25,8 @@ import app.block.SimpleLoadedImageDisplayer
 import app.translation.TextDataService
 import app.utils.PagesPanel
 import app.utils.openFileDialog
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import core.utils.JSON
 import core.utils.KotlinUtils.applyIf
 import fonts.domain.FontResolver
@@ -48,10 +49,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.writeText
 
 @Composable
-fun OCRCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
+fun OCRCreator(navigationController: NavigationController, project: Project? = null) {
   PagesPanel<ImageInfoWithBox>(
     name = "OCR Creator",
-    state = state,
+    navigationController = navigationController,
     dataExtractor = {
       if (project == null) {
         val images = BatchService.getInstance().get().toList()
@@ -81,7 +82,7 @@ fun OCRCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
       OCRCreatorStep(counter, data)
     },
     finalWindow = { dataList ->
-      OCRCreatorFinal(state, dataList, project)
+      OCRCreatorFinal(navigationController, dataList, project)
     }
   )
 }
@@ -255,7 +256,7 @@ private fun OCRCreatorStep(
 
 @Composable
 private fun OCRCreatorFinal(
-  state: MutableState<AppStateEnum>,
+  navigationController: NavigationController,
   dataList: List<ImageInfoWithBox>,
   project: Project?
 ) {
@@ -363,7 +364,7 @@ private fun OCRCreatorFinal(
         } catch (e: InvalidPathException) {
           println(e)
         }
-        state.value = AppStateEnum.MAIN_MENU
+        navigationController.navigateTo(NavigationDestination.MainMenu)
       }
     }) {
       Text("Done")

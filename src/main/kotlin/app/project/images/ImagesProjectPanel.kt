@@ -12,17 +12,17 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
 import app.batch.ImageDataCreator
 import app.editor.EditCreator
 import app.ocr.OCRCreator
 import app.translation.TranslationCreator
+import core.navigation.NavigationController
 import core.utils.AnimatedContentUtils.horizontalSpec
 import project.data.Project
 import project.domain.ProjectPanelViewModel
 
 @Composable
-fun ImagesProjectPanel(state: MutableState<AppStateEnum>, project: Project, viewModel: ProjectPanelViewModel) {
+fun ImagesProjectPanel(navigationController: NavigationController, project: Project, viewModel: ProjectPanelViewModel) {
   val projectState = remember { mutableStateOf(ImageProjectPanelState.MAIN_MENU) }
 
   AnimatedContent(
@@ -31,19 +31,23 @@ fun ImagesProjectPanel(state: MutableState<AppStateEnum>, project: Project, view
     transitionSpec = horizontalSpec<ImageProjectPanelState>()
   ) { targetState ->
     when (targetState) {
-      ImageProjectPanelState.MAIN_MENU -> ImagesProjectPanelMenu(state, projectState, project, viewModel)
-      ImageProjectPanelState.UNTRANSLATED_IMAGES_CREATOR -> ImageDataCreator(state, projectState, project)
-      ImageProjectPanelState.OCR_CREATOR -> OCRCreator(state, project)
-      ImageProjectPanelState.TRANSLATION_CREATOR -> TranslationCreator(state, project)
-      ImageProjectPanelState.CLEANED_IMAGES_CREATOR -> ImageDataCreator(state, projectState, project)
-      ImageProjectPanelState.EDIT_CREATOR -> EditCreator(state, project)
+      ImageProjectPanelState.MAIN_MENU -> ImagesProjectPanelMenu(projectState, project, viewModel)
+      ImageProjectPanelState.UNTRANSLATED_IMAGES_CREATOR -> ImageDataCreator(
+        navigationController,
+        projectState,
+        project
+      )
+
+      ImageProjectPanelState.OCR_CREATOR -> OCRCreator(navigationController, project)
+      ImageProjectPanelState.TRANSLATION_CREATOR -> TranslationCreator(navigationController, project)
+      ImageProjectPanelState.CLEANED_IMAGES_CREATOR -> ImageDataCreator(navigationController, projectState, project)
+      ImageProjectPanelState.EDIT_CREATOR -> EditCreator(navigationController, project)
     }
   }
 }
 
 @Composable
 fun ImagesProjectPanelMenu(
-  appState: MutableState<AppStateEnum>,
   projectState: MutableState<ImageProjectPanelState>,
   project: Project,
   viewModel: ProjectPanelViewModel

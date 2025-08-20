@@ -7,9 +7,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
-import app.AppStateEnum
 import app.TopBar
 import app.utils.openFileDialog
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import core.utils.JSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,7 +22,7 @@ import kotlin.io.path.notExists
 import kotlin.io.path.readText
 
 @Composable
-fun LoadOCR(state: MutableState<AppStateEnum>) {
+fun LoadOCR(navigationController: NavigationController) {
   val parent = remember { ComposeWindow(null) }
   val scope = rememberCoroutineScope()
   var isLoading by remember { mutableStateOf(false) }
@@ -30,7 +31,7 @@ fun LoadOCR(state: MutableState<AppStateEnum>) {
   val error = remember { mutableStateOf<String?>(null) }
 
   TopBar(
-    state, "Load OCR",
+    navigationController, "Load OCR",
     bottomBar = {
       BottomAppBar {
         Row {
@@ -67,7 +68,7 @@ fun LoadOCR(state: MutableState<AppStateEnum>) {
               }
               OCRService.getInstance().workData = workData
               isLoading = false
-              state.value = AppStateEnum.MAIN_MENU
+              navigationController.navigateTo(NavigationDestination.MainMenu)
             }
           }, enabled = !isLoading) { Text("Load") }
         }

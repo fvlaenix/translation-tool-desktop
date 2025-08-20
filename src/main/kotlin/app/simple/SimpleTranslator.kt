@@ -18,11 +18,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
 import app.TopBar
-import core.utils.ClipboardUtils.getClipboardImage
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import core.navigation.NavigationController
 import org.koin.compose.koinInject
 import translation.domain.SimpleTranslatorViewModel
 import java.io.ByteArrayInputStream
@@ -30,7 +27,7 @@ import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 @Composable
-fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
+fun SimpleTranslator(navigationController: NavigationController) {
   val viewModel: SimpleTranslatorViewModel = koinInject()
 
   val currentImage by viewModel.currentImage
@@ -39,35 +36,24 @@ fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
   val isProcessingOCR by viewModel.isProcessingOCR
   val isTranslating by viewModel.isTranslating
   val error by viewModel.error
+  val statusMessage by viewModel.statusMessage
 
   val imagePaster = remember { mutableStateOf<ImageBitmap?>(null) }
   val currentSize = remember { mutableStateOf(IntSize.Zero) }
-  var commentText by remember { mutableStateOf("Press CTRL+V for insert picture") }
-
-  val scope = rememberCoroutineScope()
 
   // Convert BufferedImage to ImageBitmap for display
   LaunchedEffect(currentImage) {
     if (currentImage != null) {
-      scope.launch(Dispatchers.IO) {
-        val outputStream = ByteArrayOutputStream()
-        ImageIO.write(currentImage, "png", outputStream)
-        val byteArray = outputStream.toByteArray()
-        imagePaster.value = loadImageBitmap(ByteArrayInputStream(byteArray))
-      }
+      val outputStream = ByteArrayOutputStream()
+      ImageIO.write(currentImage, "png", outputStream)
+      val byteArray = outputStream.toByteArray()
+      imagePaster.value = loadImageBitmap(ByteArrayInputStream(byteArray))
     } else {
       imagePaster.value = null
     }
   }
 
-  // Show error messages
-  LaunchedEffect(error) {
-    error?.let { errorMessage ->
-      commentText = errorMessage
-    }
-  }
-
-  TopBar(mutableState, "Simple Translator") {
+  TopBar(navigationController, "Simple Translator") {
     Column(
       modifier = Modifier
         .fillMaxSize()
@@ -75,21 +61,14 @@ fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
         .padding(16.dp)
         .onKeyEvent { keyEvent ->
           if (keyEvent.isCtrlPressed && keyEvent.key == Key.V) {
-            commentText = "Image is loading"
-            scope.launch(Dispatchers.IO) {
-              val image = getClipboardImage()
-              if (image == null) {
-                commentText = "Failed to get image from clipboard"
-              } else {
-                viewModel.loadImage(image)
-                commentText = "Press CTRL+V for insert picture"
-              }
-            }
+            viewModel.loadImageFromClipboard()
+            true
+          } else {
+            false
           }
-          false
         }
     ) {
-      Text(commentText)
+      Text(statusMessage)
       InsideSimpleTranslator(
         viewModel = viewModel,
         imagePaster = imagePaster,

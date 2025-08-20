@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import app.AppStateEnum
 import app.batch.BatchService
 import app.batch.ImageDataService
 import app.batch.ImagePathInfo
@@ -24,6 +23,8 @@ import app.ocr.OCRService
 import app.translation.TextDataService
 import app.utils.ChipSelector
 import app.utils.PagesPanel
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import core.utils.FollowableMutableState
 import core.utils.ImageUtils.deepCopy
 import core.utils.Text2ImageUtils
@@ -48,10 +49,10 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.isDirectory
 
 @Composable
-fun EditCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
+fun EditCreator(navigationController: NavigationController, project: Project? = null) {
   PagesPanel(
     name = "Edit Creator",
-    state = state,
+    navigationController = navigationController,
     dataExtractor = {
       val (cleanedImages, imagesData) = if (project == null) {
         BatchService.getInstance().get().toList() to
@@ -69,7 +70,7 @@ fun EditCreator(state: MutableState<AppStateEnum>, project: Project? = null) {
       EditCreatorStep(jobCounter, data)
     },
     finalWindow = { dataList ->
-      EditCreatorFinal(state, dataList, project)
+      EditCreatorFinal(navigationController, dataList, project)
     }
   )
 }
@@ -231,7 +232,7 @@ private fun EditCreatorStep(
 
 @Composable
 private fun EditCreatorFinal(
-  state: MutableState<AppStateEnum>,
+  navigationController: NavigationController,
   cleanedImages: List<CleanedImageWithBlock>,
   project: Project?
 ) {
@@ -324,7 +325,7 @@ private fun EditCreatorFinal(
             }
           }.awaitAll()
           progress = 1.0f
-          state.value = AppStateEnum.MAIN_MENU
+          navigationController.navigateTo(NavigationDestination.MainMenu)
         }
       }) {
         Text("Done")

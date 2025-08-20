@@ -10,19 +10,19 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.AppStateEnum
 import app.project.images.ImagesProjectPanel
+import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import org.koin.compose.koinInject
 import project.data.ImagesProjectData
 import project.data.Project
 import project.domain.ProjectPanelViewModel
 
 @Composable
-fun ProjectPanel(state: MutableState<AppStateEnum>) {
+fun ProjectPanel(navigationController: NavigationController) {
   val viewModel: ProjectPanelViewModel = koinInject()
 
   val currentProject by viewModel.currentProject
@@ -37,16 +37,20 @@ fun ProjectPanel(state: MutableState<AppStateEnum>) {
   when {
     isLoadingProject -> LoadingProjectPanel()
     error != null -> ErrorProjectPanel(error!!) { viewModel.refreshProject() }
-    currentProject != null -> ProjectPanel(state, currentProject!!, viewModel)
-    else -> NoProjectSelectedPanel(state)
+    currentProject != null -> ProjectPanel(navigationController, currentProject!!, viewModel)
+    else -> NoProjectSelectedPanel(navigationController)
   }
 }
 
 @Composable
-private fun ProjectPanel(state: MutableState<AppStateEnum>, project: Project, viewModel: ProjectPanelViewModel) {
+private fun ProjectPanel(
+  navigationController: NavigationController,
+  project: Project,
+  viewModel: ProjectPanelViewModel
+) {
   when (project.data) {
     is ImagesProjectData -> {
-      ImagesProjectPanel(state, project, viewModel)
+      ImagesProjectPanel(navigationController, project, viewModel)
     }
   }
 }
@@ -82,11 +86,11 @@ private fun ErrorProjectPanel(errorMessage: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun NoProjectSelectedPanel(state: MutableState<AppStateEnum>) {
+private fun NoProjectSelectedPanel(navigationController: NavigationController) {
   Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
     Text("No project selected", style = MaterialTheme.typography.h4)
     Button(
-      onClick = { state.value = AppStateEnum.MAIN_MENU },
+      onClick = { navigationController.navigateTo(NavigationDestination.MainMenu) },
       modifier = Modifier.padding(top = 16.dp)
     ) {
       Text("Go to Main Menu")
