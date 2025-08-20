@@ -1,6 +1,6 @@
 package app.ocr
 
-import bean.BlockPosition
+import translation.data.BlockPosition
 
 data class OCRBoxData(
   val box: BlockPosition,

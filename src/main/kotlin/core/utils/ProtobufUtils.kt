@@ -1,7 +1,6 @@
 package core.utils
 
 import app.ocr.OCRBoxData
-import bean.BlockPosition
 import com.fvlaenix.image.protobuf.image
 import com.fvlaenix.ocr.protobuf.OcrImageRequest
 import com.fvlaenix.ocr.protobuf.ocrImageRequest
@@ -17,6 +16,7 @@ import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import settings.data.SettingsRepository
+import translation.data.BlockPosition
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO

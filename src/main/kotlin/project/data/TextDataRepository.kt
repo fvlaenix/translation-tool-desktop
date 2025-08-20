@@ -1,6 +1,6 @@
 package project.data
 
-import bean.WorkData
+import translation.data.WorkData
 
 interface TextDataRepository {
   suspend fun loadWorkData(project: Project, textType: TextType): Result<WorkData?>
@@ -14,6 +14,27 @@ interface TextDataRepository {
   ): Result<Unit>
 
   suspend fun hasWorkData(project: Project, textType: TextType): Result<Boolean>
+
+  suspend fun updateTranslationText(
+    project: Project,
+    textType: TextType,
+    imageIndex: Int,
+    blockIndex: Int,
+    translatedText: String
+  ): Result<Unit>
+
+  suspend fun getUntranslatedTexts(project: Project): Result<List<String>>
+
+  suspend fun setTranslatedTexts(
+    project: Project,
+    imageIndex: Int,
+    translatedTexts: List<String>
+  ): Result<Unit>
+
+  suspend fun createTranslatedWorkData(
+    project: Project,
+    baseWorkData: WorkData
+  ): Result<WorkData>
 }
 
 enum class TextType(val fileName: String) {

@@ -4,6 +4,8 @@ import app.batch.ImagePathInfo
 import core.base.Repository
 import core.utils.SortedImagesUtils.sortedByName
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import javax.imageio.ImageIO
 import kotlin.io.path.createDirectories
@@ -57,5 +59,32 @@ class ImageDataRepositoryImpl : ImageDataRepository, Repository {
 
   override suspend fun getImageCount(project: Project, imageType: ImageType): Result<Int> = safeCall {
     loadImages(project, imageType).getOrElse { emptyList() }.size
+  }
+
+  private val batchImages = mutableListOf<ImagePathInfo>()
+  private val batchMutex = Mutex()
+
+  override suspend fun addToBatch(image: ImagePathInfo): Result<Unit> = safeCall {
+    batchMutex.withLock {
+      batchImages.add(image)
+    }
+  }
+
+  override suspend fun getBatchImages(): Result<List<ImagePathInfo>> = safeCall {
+    batchMutex.withLock {
+      batchImages.toList()
+    }
+  }
+
+  override suspend fun clearBatch(): Result<Unit> = safeCall {
+    batchMutex.withLock {
+      batchImages.clear()
+    }
+  }
+
+  override suspend fun addAllToBatch(images: List<ImagePathInfo>): Result<Unit> = safeCall {
+    batchMutex.withLock {
+      batchImages.addAll(images)
+    }
   }
 }

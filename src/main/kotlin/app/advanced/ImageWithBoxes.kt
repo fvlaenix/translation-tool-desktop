@@ -24,11 +24,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
-import bean.BlockPosition
 import core.utils.ClipboardUtils.getClipboardImage
 import core.utils.FollowableMutableState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import translation.data.BlockPosition
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO

@@ -14,13 +14,13 @@ import app.utils.NumberField
 import app.utils.SearchableExpandedDropDownMenu
 import bean.Alignment
 import bean.BeanColor
-import bean.BlockSettings
 import core.utils.Text2ImageUtils
 import fonts.domain.FontResolver
 import fonts.domain.FontViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import translation.data.BlockSettings
 import java.awt.image.BufferedImage
 import kotlin.math.max
 import kotlin.math.min

@@ -10,10 +10,10 @@ import androidx.compose.ui.unit.sp
 import app.AppStateEnum
 import app.TopBar
 import app.utils.openFileDialog
-import bean.WorkData
 import core.utils.JSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import translation.data.WorkData
 import java.io.IOException
 import java.nio.file.InvalidPathException
 import java.nio.file.Path

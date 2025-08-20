@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
@@ -20,29 +21,57 @@ import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.TopBar
 import core.utils.ClipboardUtils.getClipboardImage
-import core.utils.ProtobufUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.awt.image.BufferedImage
+import org.koin.compose.koinInject
+import translation.domain.SimpleTranslatorViewModel
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 @Composable
 fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
-  val imageBuffered = remember { mutableStateOf<BufferedImage?>(null) }
+  val viewModel: SimpleTranslatorViewModel = koinInject()
+
+  val currentImage by viewModel.currentImage
+  val ocrText by viewModel.ocrText
+  val translationText by viewModel.translationText
+  val isProcessingOCR by viewModel.isProcessingOCR
+  val isTranslating by viewModel.isTranslating
+  val error by viewModel.error
+
   val imagePaster = remember { mutableStateOf<ImageBitmap?>(null) }
-
   val currentSize = remember { mutableStateOf(IntSize.Zero) }
-
   var commentText by remember { mutableStateOf("Press CTRL+V for insert picture") }
 
   val scope = rememberCoroutineScope()
 
+  // Convert BufferedImage to ImageBitmap for display
+  LaunchedEffect(currentImage) {
+    if (currentImage != null) {
+      scope.launch(Dispatchers.IO) {
+        val outputStream = ByteArrayOutputStream()
+        ImageIO.write(currentImage, "png", outputStream)
+        val byteArray = outputStream.toByteArray()
+        imagePaster.value = loadImageBitmap(ByteArrayInputStream(byteArray))
+      }
+    } else {
+      imagePaster.value = null
+    }
+  }
+
+  // Show error messages
+  LaunchedEffect(error) {
+    error?.let { errorMessage ->
+      commentText = errorMessage
+    }
+  }
+
   TopBar(mutableState, "Simple Translator") {
     Column(
       modifier = Modifier
-        .fillMaxSize().onSizeChanged { size -> currentSize.value = size }
+        .fillMaxSize()
+        .onSizeChanged { size -> currentSize.value = size }
         .padding(16.dp)
         .onKeyEvent { keyEvent ->
           if (keyEvent.isCtrlPressed && keyEvent.key == Key.V) {
@@ -50,39 +79,40 @@ fun SimpleTranslator(mutableState: MutableState<AppStateEnum>) {
             scope.launch(Dispatchers.IO) {
               val image = getClipboardImage()
               if (image == null) {
-                println("Failed to get image")
+                commentText = "Failed to get image from clipboard"
               } else {
-                val outputStream = ByteArrayOutputStream()
-                ImageIO.write(image, "png", outputStream)
-                val byteArray = outputStream.toByteArray()
-                imageBuffered.value = image
-                imagePaster.value = loadImageBitmap(ByteArrayInputStream(byteArray))
+                viewModel.loadImage(image)
+                commentText = "Press CTRL+V for insert picture"
               }
-              commentText = "Press CTRL+V for insert picture"
             }
           }
           false
         }
     ) {
       Text(commentText)
-      InsideSimpleTranslator(imageBuffered, imagePaster, currentSize)
+      InsideSimpleTranslator(
+        viewModel = viewModel,
+        imagePaster = imagePaster,
+        currentSize = currentSize,
+        ocrText = ocrText,
+        translationText = translationText,
+        isProcessingOCR = isProcessingOCR,
+        isTranslating = isTranslating
+      )
     }
   }
 }
 
 @Composable
 private fun InsideSimpleTranslator(
-  imageBuffered: MutableState<BufferedImage?>,
+  viewModel: SimpleTranslatorViewModel,
   imagePaster: MutableState<ImageBitmap?>,
-  currentSize: MutableState<IntSize>
+  currentSize: MutableState<IntSize>,
+  ocrText: String,
+  translationText: String,
+  isProcessingOCR: Boolean,
+  isTranslating: Boolean
 ) {
-
-
-  var ocrText by remember { mutableStateOf("") }
-  var translationText by remember { mutableStateOf("") }
-
-  val scope = rememberCoroutineScope()
-
 
   Row(
     modifier = Modifier
@@ -97,46 +127,57 @@ private fun InsideSimpleTranslator(
       )
     }
   }
-  Button(onClick = {
-    scope.launch(Dispatchers.IO) {
-      val localBufferedImage = imageBuffered.value
-      if (localBufferedImage != null) {
-        val previous = if (ocrText.isBlank()) "" else ocrText + "\n\n"
-        ocrText = previous + ProtobufUtils.getOCR(localBufferedImage)
+
+  Row {
+    Button(
+      onClick = { viewModel.processOCR() },
+      enabled = !isProcessingOCR && !isTranslating
+    ) {
+      if (isProcessingOCR) {
+        CircularProgressIndicator(modifier = Modifier.size(16.dp))
+      } else {
+        Text("Try OCR")
       }
     }
-  }) {
-    Text("Try OCR")
   }
 
   TextField(
     value = ocrText,
-    onValueChange = { ocrText = it },
+    onValueChange = { viewModel.updateOcrText(it) },
     modifier = Modifier
       .height(currentSize.value.height.dp / 6)
-      .fillMaxWidth()
+      .fillMaxWidth(),
+    enabled = !isProcessingOCR && !isTranslating
   )
-  Button(onClick = {
-    scope.launch(Dispatchers.IO) {
-      val previous = if (translationText.isBlank()) "" else translationText + "\n\n"
-      translationText = previous + ProtobufUtils.getTranslation(ocrText)
+
+  Row {
+    Button(
+      onClick = { viewModel.translate() },
+      enabled = !isProcessingOCR && !isTranslating && ocrText.isNotBlank()
+    ) {
+      if (isTranslating) {
+        CircularProgressIndicator(modifier = Modifier.size(16.dp))
+      } else {
+        Text("Try Translate")
+      }
     }
-  }) {
-    Text("Try Translate")
   }
+
   TextField(
     value = translationText,
-    onValueChange = { translationText = it },
+    onValueChange = { viewModel.updateTranslationText(it) },
     modifier = Modifier
       .height(currentSize.value.height.dp / 6)
-      .fillMaxWidth()
+      .fillMaxWidth(),
+    enabled = !isProcessingOCR && !isTranslating
   )
-  Button(onClick = {
-    imageBuffered.value = null
-    imagePaster.value = null
-    ocrText = ""
-    translationText = ""
-  }) {
-    Text("Clear")
+
+  Row {
+    Button(
+      onClick = { viewModel.clear() },
+      enabled = !isProcessingOCR && !isTranslating
+    ) {
+      Text("Clear")
+    }
   }
 }

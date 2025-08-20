@@ -1,5 +1,7 @@
-package bean
+package translation.data
 
+import bean.Alignment
+import bean.BeanColor
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.awt.Font
@@ -8,11 +10,11 @@ import java.awt.Font
 data class BlockSettings(
   val fontName: String,
   val fontSize: Int = 10,
-  val fontColor: BeanColor = BeanColor.BLACK,
+  val fontColor: BeanColor = BeanColor.Companion.BLACK,
   val alignment: Alignment = Alignment.CENTER,
-  val outlineColor: BeanColor = BeanColor.WHITE,
+  val outlineColor: BeanColor = BeanColor.Companion.WHITE,
   val outlineSize: Double = 5.0,
-  val backgroundColor: BeanColor = BeanColor.TRANSPARENT,
+  val backgroundColor: BeanColor = BeanColor.Companion.TRANSPARENT,
   val border: Int = 5
 ) {
   @Transient
@@ -31,11 +33,11 @@ data class BlockSettings(
       fontName: String,
       font: Font,
       fontSize: Int = 10,
-      fontColor: BeanColor = BeanColor.BLACK,
+      fontColor: BeanColor = BeanColor.Companion.BLACK,
       alignment: Alignment = Alignment.CENTER,
-      outlineColor: BeanColor = BeanColor.WHITE,
+      outlineColor: BeanColor = BeanColor.Companion.WHITE,
       outlineSize: Double = 5.0,
-      backgroundColor: BeanColor = BeanColor.TRANSPARENT,
+      backgroundColor: BeanColor = BeanColor.Companion.TRANSPARENT,
       border: Int = 5
     ): BlockSettings {
       return BlockSettings(

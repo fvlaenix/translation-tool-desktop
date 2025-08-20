@@ -1,9 +1,9 @@
 package fonts.domain
 
-import bean.BlockSettings
 import fonts.data.FontRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import translation.data.BlockSettings
 import java.awt.Font
 
 class FontResolver : KoinComponent {

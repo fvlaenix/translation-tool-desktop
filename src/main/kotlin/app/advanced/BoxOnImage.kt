@@ -18,13 +18,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.block.SimpleLoadedImageDisplayer
-import bean.BlockData
-import bean.BlockPosition
-import bean.BlockSettings
 import core.utils.KotlinUtils.applyIf
 import core.utils.PreemptiveCoroutineScope
 import core.utils.Text2ImageUtils
 import kotlinx.coroutines.Dispatchers
+import translation.data.BlockData
+import translation.data.BlockPosition
+import translation.data.BlockSettings
 import java.awt.image.BufferedImage
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max

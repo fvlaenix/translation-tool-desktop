@@ -8,6 +8,11 @@ interface ImageDataRepository {
   suspend fun addImage(project: Project, imageType: ImageType, image: ImagePathInfo): Result<Unit>
   suspend fun clearImages(project: Project, imageType: ImageType): Result<Unit>
   suspend fun getImageCount(project: Project, imageType: ImageType): Result<Int>
+
+  suspend fun addToBatch(image: ImagePathInfo): Result<Unit>
+  suspend fun getBatchImages(): Result<List<ImagePathInfo>>
+  suspend fun clearBatch(): Result<Unit>
+  suspend fun addAllToBatch(images: List<ImagePathInfo>): Result<Unit>
 }
 
 enum class ImageType(val folderName: String) {

@@ -1,4 +1,4 @@
-package bean
+package translation.data
 
 import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable

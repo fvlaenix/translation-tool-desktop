@@ -14,9 +14,9 @@ import androidx.compose.ui.unit.IntSize
 import app.advanced.BlockOnImage
 import app.advanced.BoxOnImage
 import app.ocr.OCRBoxData
-import bean.BlockData
-import bean.BlockSettings
 import core.utils.FollowableMutableState
+import translation.data.BlockData
+import translation.data.BlockSettings
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream

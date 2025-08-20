@@ -24,9 +24,6 @@ import app.ocr.OCRService
 import app.translation.TextDataService
 import app.utils.ChipSelector
 import app.utils.PagesPanel
-import bean.BlockPosition
-import bean.BlockSettings
-import bean.ImageData
 import core.utils.FollowableMutableState
 import core.utils.ImageUtils.deepCopy
 import core.utils.Text2ImageUtils
@@ -38,6 +35,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import project.data.Project
+import translation.data.BlockPosition
+import translation.data.BlockSettings
+import translation.data.ImageData
 import java.awt.image.BufferedImage
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger

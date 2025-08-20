@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.TopBar
 import app.advanced.steps.TranslationStep
-import bean.BlockPosition
 import core.utils.FollowableMutableState
+import translation.data.BlockPosition
 import java.awt.image.BufferedImage
 
 @Composable

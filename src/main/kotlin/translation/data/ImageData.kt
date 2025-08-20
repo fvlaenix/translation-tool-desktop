@@ -1,4 +1,4 @@
-package bean
+package translation.data
 
 import kotlinx.serialization.Serializable
 

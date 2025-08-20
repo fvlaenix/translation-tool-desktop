@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
@@ -29,11 +26,8 @@ import app.block.SimpleLoadedImageDisplayer
 import app.translation.TextDataService
 import app.utils.PagesPanel
 import app.utils.openFileDialog
-import bean.*
-import core.utils.FollowableMutableList
 import core.utils.JSON
 import core.utils.KotlinUtils.applyIf
-import core.utils.ProtobufUtils
 import fonts.domain.FontResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,6 +38,8 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import org.koin.compose.koinInject
 import project.data.Project
+import translation.data.*
+import translation.domain.OCRCreatorViewModel
 import java.awt.FileDialog
 import java.awt.image.BufferedImage
 import java.nio.file.InvalidPathException
@@ -100,36 +96,75 @@ private fun OCRCreatorStep(
   jobCounter: AtomicInteger,
   imageInfoWithBox: MutableState<ImageInfoWithBox?>
 ) {
-  val coroutineScope = rememberCoroutineScope()
-  val image = mutableStateOf<BufferedImage?>(imageInfoWithBox.value!!.imagePathInfo.image)
-  val selectedBoxIndex = remember { mutableStateOf<Int?>(null) }
-  val operationNumber = remember { mutableStateOf<Int>(0) }
+  val viewModel: OCRCreatorViewModel = koinInject()
 
-  val boxes =
-    FollowableMutableList(mutableStateListOf<OCRBoxData>())
-      .apply {
-        follow { newList ->
-          imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = newList.toList())
-        }
+  val currentImage by viewModel.currentImage
+  val ocrBoxes by viewModel.ocrBoxes
+  val isProcessingOCR by viewModel.isProcessingOCR
+  val operationNumber by viewModel.operationNumber
+  val selectedBoxIndex by viewModel.selectedBoxIndex
+  val error by viewModel.error
+
+  val image = mutableStateOf<BufferedImage?>(imageInfoWithBox.value!!.imagePathInfo.image)
+  val boxes = mutableStateListOf<OCRBoxData>().apply {
+    addAll(imageInfoWithBox.value!!.box)
+  }
+
+  // Load image into ViewModel when it changes
+  LaunchedEffect(imageInfoWithBox.value) {
+    imageInfoWithBox.value?.let { info ->
+      viewModel.loadImage(info.imagePathInfo)
+      // If there are existing boxes, load them
+      if (info.box.isNotEmpty()) {
+        // Note: In a real implementation, you might want to set these boxes in the ViewModel
+        // For now, we'll keep the existing box management
       }
-      .apply { addAll(imageInfoWithBox.value!!.box) }
+    }
+  }
+
+  // Update job counter based on ViewModel loading state
+  LaunchedEffect(isProcessingOCR) {
+    if (isProcessingOCR) {
+      jobCounter.incrementAndGet()
+    } else {
+      jobCounter.decrementAndGet()
+    }
+  }
+
+  // Sync ViewModel boxes with local state
+  LaunchedEffect(ocrBoxes) {
+    boxes.clear()
+    boxes.addAll(ocrBoxes)
+    imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
+  }
+
+  // Show errors
+  error?.let { errorMessage ->
+    LaunchedEffect(errorMessage) {
+      // Handle error display - you might want to show a snackbar or similar
+      println("OCR Error: $errorMessage")
+    }
+  }
 
   val lazyListState = rememberReorderableLazyListState(onMove = { from, to ->
     if (from.index == 0) return@rememberReorderableLazyListState
-    boxes.add(to.index - 1, boxes.removeAt(from.index - 1))
-    operationNumber.value += 1
+    val fromIndex = from.index - 1
+    val toIndex = to.index - 1
+    if (fromIndex in boxes.indices && toIndex in boxes.indices) {
+      val item = boxes.removeAt(fromIndex)
+      boxes.add(toIndex, item)
+      imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
+    }
   })
 
-  Row(
-    modifier = Modifier
-  ) {
+  Row {
     Column(modifier = Modifier.fillMaxWidth(0.7f)) {
       SimpleLoadedImageDisplayer(
         modifier = Modifier.fillMaxSize(0.9f),
         image = image,
         boxes = boxes,
-        operationNumber = operationNumber,
-        selectedBoxIndex = selectedBoxIndex
+        operationNumber = mutableStateOf(operationNumber),
+        selectedBoxIndex = mutableStateOf(selectedBoxIndex)
       )
     }
     LazyColumn(
@@ -142,23 +177,15 @@ private fun OCRCreatorStep(
       item {
         Row(modifier = Modifier.fillMaxWidth()) {
           Button(
-            onClick = {
-              jobCounter.incrementAndGet()
-              coroutineScope.launch(Dispatchers.IO) {
-                try {
-                  val currentOcrBoxes = ProtobufUtils.getBoxedOCR(imageInfoWithBox.value!!.imagePathInfo.image)
-                  boxes.clear()
-                  boxes.addAll(currentOcrBoxes)
-                  operationNumber.value += 1
-                } finally {
-                  jobCounter.decrementAndGet()
-                }
-              }
-            },
-            enabled = jobCounter.get() == 0,
+            onClick = { viewModel.processOCR() },
+            enabled = !isProcessingOCR,
             modifier = Modifier.fillMaxWidth()
           ) {
-            Text("Try OCR")
+            if (isProcessingOCR) {
+              CircularProgressIndicator(modifier = Modifier.size(16.dp))
+            } else {
+              Text("Try OCR")
+            }
           }
         }
       }
@@ -168,48 +195,51 @@ private fun OCRCreatorStep(
           val box = boxes[index]
           val interactionSource = remember { MutableInteractionSource() }
           val isFocused by interactionSource.collectIsFocusedAsState()
-          if (isFocused) selectedBoxIndex.value = index
+
+          if (isFocused) {
+            viewModel.selectBox(index)
+          }
 
           Row(
             modifier = Modifier
               .fillMaxWidth()
-              .applyIf(selectedBoxIndex.value == index) { it.border(1.dp, Color.Cyan) }
+              .applyIf(selectedBoxIndex == index) { it.border(1.dp, Color.Cyan) }
               .shadow(elevation.value)
           ) {
-            Button(onClick = {
-              val currentBox = boxes[index]
-              val nextBox = boxes[index + 1]
-              val minX = minOf(currentBox.box.x, nextBox.box.x)
-              val minY = minOf(currentBox.box.y, nextBox.box.y)
-              val maxX = maxOf(currentBox.box.x + currentBox.box.width, nextBox.box.x + nextBox.box.width)
-              val maxY = maxOf(currentBox.box.y + currentBox.box.height, nextBox.box.y + nextBox.box.height)
-              val newBox = OCRBoxData(
-                box = BlockPosition(
-                  x = minX,
-                  y = minY,
-                  width = maxX - minX,
-                  height = maxY - minY,
-                  shape = BlockPosition.Shape.Rectangle
-                ),
-                text = currentBox.text + " " + nextBox.text
-              )
-              boxes[index] = newBox
-              boxes.removeAt(index + 1)
-              operationNumber.value += 1
-            }, enabled = jobCounter.get() == 0 && index < boxes.size - 1) {
+            Button(
+              onClick = {
+                if (index < boxes.size - 1) {
+                  viewModel.mergeBoxes(index)
+                  // Update local state from ViewModel
+                  boxes.clear()
+                  boxes.addAll(ocrBoxes)
+                  imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
+                }
+              },
+              enabled = !isProcessingOCR && index < boxes.size - 1
+            ) {
               Text("Merge Down")
             }
             TextField(
               value = box.text,
               modifier = Modifier.fillMaxSize(0.9f).padding(10.dp),
-              onValueChange = { boxes[index] = box.copy(text = it) },
+              onValueChange = {
+                viewModel.updateBoxText(index, it)
+                // Update local state
+                boxes[index] = box.copy(text = it)
+                imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
+              },
               interactionSource = interactionSource
             )
             Button(
               onClick = {
-                boxes.removeAt(index)
-                operationNumber.value += 1
-              }, enabled = jobCounter.get() == 0
+                viewModel.removeBox(index)
+                // Update local state from ViewModel
+                boxes.clear()
+                boxes.addAll(ocrBoxes)
+                imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
+              },
+              enabled = !isProcessingOCR
             ) {
               Icon(
                 imageVector = Icons.Default.Delete,

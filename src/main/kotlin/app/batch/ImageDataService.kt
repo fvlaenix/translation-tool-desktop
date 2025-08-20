@@ -1,35 +1,35 @@
 package app.batch
 
-import core.utils.SortedImagesUtils.sortedByName
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import project.data.ImageDataRepository
+import project.data.ImageType
 import project.data.Project
 import service.CoroutineServiceScope
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentLinkedQueue
-import javax.imageio.ImageIO
-import kotlin.io.path.createDirectories
-import kotlin.io.path.nameWithoutExtension
 
-class ImageDataService private constructor(val project: Project, folderName: String) : ImagesService {
+@Deprecated(message = "use repositories instead ImageDataRepository")
+class ImageDataService private constructor(val project: Project, folderName: String) : ImagesService, KoinComponent {
+  private val imageDataRepository: ImageDataRepository by inject()
   private val loaded = CompletableDeferred<Unit>()
 
   val workDataPath: Path = project.path.resolve(folderName)
   private val images: ConcurrentLinkedQueue<ImagePathInfo> = ConcurrentLinkedQueue<ImagePathInfo>()
 
+  private val imageType = when (folderName) {
+    UNTRANSLATED -> ImageType.UNTRANSLATED
+    CLEANED -> ImageType.CLEANED
+    EDITED -> ImageType.EDITED
+    else -> throw IllegalArgumentException("Unknown folder name: $folderName")
+  }
+
   init {
     CoroutineServiceScope.scope.launch {
       try {
-        val images = (workDataPath.toFile().listFiles() ?: emptyArray()).map { it.toPath() }.sortedByName()
-        images.forEach { imagePath ->
-          val imagePathInfo = ImagePathInfo(
-            ImageIO.read(imagePath.toFile()),
-            imagePath.nameWithoutExtension
-          )
-          add(imagePathInfo)
-        }
+        val loadedImages = imageDataRepository.loadImages(project, imageType).getOrElse { emptyList() }
+        images.addAll(loadedImages)
       } finally {
         loaded.complete(Unit)
       }
@@ -39,28 +39,31 @@ class ImageDataService private constructor(val project: Project, folderName: Str
   suspend fun waitUntilLoaded() = loaded.await()
 
   override fun clear() {
-    images.clear()
+    runBlocking {
+      images.clear()
+      imageDataRepository.clearImages(project, imageType)
+    }
   }
 
   override fun add(image: ImagePathInfo) {
     images.add(image)
+    runBlocking {
+      imageDataRepository.addImage(project, imageType, image)
+    }
   }
 
   fun addAll(list: List<ImagePathInfo>) {
     images.addAll(list)
+    runBlocking {
+      imageDataRepository.saveImages(project, imageType, images.toList())
+    }
   }
 
   override fun get(): ConcurrentLinkedQueue<ImagePathInfo> = images
 
   override suspend fun saveIfRequired() {
     withContext(Dispatchers.IO) {
-      workDataPath.createDirectories()
-      val list = get()
-      list.forEachIndexed { index, imagePathInfo ->
-        val image = imagePathInfo.image
-        val path = workDataPath.resolve("${(index + 1).toString().padStart(list.size.toString().length + 1, '0')}.png")
-        ImageIO.write(image, "PNG", path.toFile())
-      }
+      imageDataRepository.saveImages(project, imageType, images.toList())
     }
   }
 

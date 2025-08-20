@@ -1,9 +1,9 @@
 package core.utils
 
 import bean.Alignment
-import bean.BlockData
-import bean.BlockPosition
-import bean.BlockSettings
+import translation.data.BlockData
+import translation.data.BlockPosition
+import translation.data.BlockSettings
 import java.awt.BasicStroke
 import java.awt.FontMetrics
 import java.awt.RenderingHints
