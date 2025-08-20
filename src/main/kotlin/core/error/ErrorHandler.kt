@@ -7,20 +7,39 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * Centralized error handling with modern UI notifications and console logging
+ * Centralized error handling with modern UI notifications and console logging.
+ *
+ * This system provides:
+ * - Consistent error display across the entire application
+ * - Different error types (Error, Warning, Info, Success)
+ * - Automatic console logging with timestamps
+ * - Modern snackbar-style UI notifications
+ * - Error history for debugging
+ *
+ * Benefits over scattered error handling:
+ * - Consistent user experience
+ * - Easier debugging (centralized logging)
+ * - Configurable error display (duration, styling)
+ * - Error analytics capability (future enhancement)
  */
 class ErrorHandler {
-
+  // Current error being displayed to user
   private val _currentError = mutableStateOf<ErrorMessage?>(null)
   val currentError: State<ErrorMessage?> = _currentError
 
+  // History of all errors for debugging purposes
   private val _errorHistory = mutableStateOf<List<ErrorMessage>>(emptyList())
   val errorHistory: State<List<ErrorMessage>> = _errorHistory
 
   private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
   /**
-   * Show an error with automatic dismissal
+   * Show an error with automatic dismissal after specified duration.
+   *
+   * @param message Human-readable error message
+   * @param throwable Optional exception for technical details
+   * @param type Type of error (Error, Warning, Info, Success)
+   * @param duration How long to show the error (milliseconds)
    */
   fun showError(
     message: String,
