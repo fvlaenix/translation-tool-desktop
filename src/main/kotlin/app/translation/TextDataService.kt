@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
-import project.Project
+import project.data.Project
 import service.CoroutineServiceScope
 import java.nio.file.Path
 import kotlin.io.path.exists

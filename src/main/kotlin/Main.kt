@@ -4,7 +4,7 @@ import app.App
 import core.MangaTranslationApplication
 import fonts.data.FontRepository
 import org.koin.core.context.GlobalContext
-import project.ProjectsInfoService
+import project.data.ProjectRepository
 
 suspend fun main() {
   val app = MangaTranslationApplication()
@@ -19,8 +19,12 @@ suspend fun main() {
       println("Failed to load fonts: ${it.message}")
     }
 
-    // Load projects
-    ProjectsInfoService.getInstance().load()
+    // Load projects through repository
+    val projectRepository = GlobalContext.get().get<ProjectRepository>()
+    projectRepository.loadProjects().getOrElse {
+      println("Failed to load projects: ${it.message}")
+      // Continue with empty projects list
+    }
 
     application {
       Window(

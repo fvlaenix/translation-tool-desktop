@@ -28,7 +28,7 @@ import core.utils.ProtobufUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
-import project.Project
+import project.data.Project
 import java.awt.FileDialog
 import java.nio.file.InvalidPathException
 import java.nio.file.Path

@@ -3,95 +3,129 @@ package app.project
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
-import core.utils.JSON
 import io.github.vinceglb.filekit.core.FileKit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.encodeToString
-import project.BaseProjectData
-import project.ImagesProjectData
-import project.ProjectsInfoService
-import java.nio.file.Path
-import kotlin.io.path.*
+import org.koin.compose.koinInject
+import project.domain.NewProjectViewModel
 
 @Composable
 fun NewProjectPanel(state: MutableState<AppStateEnum>) {
+  val viewModel: NewProjectViewModel = koinInject()
   val scope = rememberCoroutineScope()
 
-  var pathString by remember { mutableStateOf("") }
-  var projectName by remember { mutableStateOf("") }
-  val projectFolderName = projectName.replace(Regex("[^a-zA-Z0-9]"), "-").lowercase()
+  val projectName by viewModel.projectName
+  val basePath by viewModel.basePath
+  val validationErrors by viewModel.validationErrors
+  val isCreating by viewModel.isCreating
+  val creationSuccess by viewModel.creationSuccess
+  val error by viewModel.error
 
-  var isDoneUnlocked by remember { mutableStateOf(false) }
-
-  LaunchedEffect(pathString, projectFolderName) {
-    val path = Path.of(pathString)
-    isDoneUnlocked = path.exists() && path.resolve(projectFolderName).notExists()
+  // Navigate to project panel on successful creation
+  LaunchedEffect(creationSuccess) {
+    if (creationSuccess) {
+      state.value = AppStateEnum.PROJECT
+      viewModel.resetForm()
+    }
   }
 
   Column(modifier = Modifier.padding(16.dp)) {
     Row {
       Text("Path: ")
       TextField(
-        value = pathString,
-        onValueChange = { pathString = it },
+        value = basePath,
+        onValueChange = { viewModel.setBasePath(it) },
         label = { Text("Project base path") },
-        singleLine = true
+        singleLine = true,
+        isError = validationErrors.containsKey("path"),
+        enabled = !isCreating
       )
       Button(
         onClick = {
           scope.launch(Dispatchers.IO) {
             val files = FileKit.pickDirectory("Directory where project created")
-            pathString = files?.file?.absolutePath ?: return@launch
+            files?.file?.absolutePath?.let { path ->
+              viewModel.setBasePath(path)
+            }
           }
-        }
+        },
+        enabled = !isCreating
       ) {
         Text("Select")
       }
     }
+
+    validationErrors["path"]?.let { errorMessage ->
+      Text(
+        text = errorMessage,
+        color = MaterialTheme.colors.error,
+        modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+      )
+    }
+
     Row {
       Text("Project name: ")
       TextField(
         value = projectName,
-        onValueChange = { projectName = it },
+        onValueChange = { viewModel.setProjectName(it) },
         label = { Text("Project name") },
+        isError = validationErrors.containsKey("name"),
+        enabled = !isCreating
       )
     }
+
+    validationErrors["name"]?.let { errorMessage ->
+      Text(
+        text = errorMessage,
+        color = MaterialTheme.colors.error,
+        modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+      )
+    }
+
     Row {
-      if (!isDoneUnlocked) {
-        Text("Project parent folder should exists and project folder should not exists")
+      if (!viewModel.isValid()) {
+        Text("Project parent folder should exist and project folder should not exist")
       } else {
-        Text("Project folder will be created in ${Path.of(pathString, projectFolderName).absolutePathString()}")
+        Text("Project folder will be created in ${viewModel.fullProjectPath}")
       }
     }
+
+    if (isCreating) {
+      Row {
+        CircularProgressIndicator()
+        Text("Creating project...")
+      }
+    }
+
+    error?.let { errorMessage ->
+      Text(
+        text = errorMessage,
+        color = MaterialTheme.colors.error,
+        modifier = Modifier.padding(top = 8.dp)
+      )
+    }
+
     Row {
       Button(
-        onClick = {
-          val projectPath = Path.of(pathString, projectFolderName)
-          projectPath.createDirectories()
-          val projectInfo = ProjectsInfoService.ProjectInfoData(projectName, projectPath.absolutePathString())
-          val imagesProjectData = ImagesProjectData()
-          val projectData = BaseProjectData(projectName, imagesProjectData)
-          runBlocking {
-            // TODO make indicator
-            ProjectsInfoService.getInstance().add(projectInfo)
-          }
-          val projectFile = projectPath.resolve("project.json")
-          projectFile.writeText(JSON.encodeToString<BaseProjectData>(projectData))
-          ProjectsInfoService.getInstance().selectedProjectInfo = projectInfo
-          state.value = AppStateEnum.PROJECT
-        },
-        enabled = isDoneUnlocked
+        onClick = { viewModel.createProject() },
+        enabled = viewModel.isValid() && !isCreating
       ) {
         Text("Create project")
+      }
+
+      Button(
+        onClick = {
+          viewModel.resetForm()
+          state.value = AppStateEnum.MAIN_MENU
+        },
+        enabled = !isCreating
+      ) {
+        Text("Cancel")
       }
     }
   }

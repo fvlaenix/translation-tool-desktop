@@ -7,12 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -21,14 +19,22 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import core.utils.KotlinUtils.applyIf
-import project.ProjectsInfoService
+import org.koin.compose.koinInject
+import project.data.ProjectInfo
+import project.domain.ProjectListViewModel
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun ProjectListPanel(state: MutableState<AppStateEnum>) {
-  val projectsService = remember { ProjectsInfoService.getInstance() }
+  val viewModel: ProjectListViewModel = koinInject()
+
+  val projects by viewModel.projects
+  val isLoading by viewModel.isLoading
+  val isRefreshing by viewModel.isRefreshing
+  val error by viewModel.error
+
   val fullSize = remember { mutableStateOf(IntSize.Zero) }
 
   Column(
@@ -43,16 +49,42 @@ fun ProjectListPanel(state: MutableState<AppStateEnum>) {
       }) {
         Text("Create new project")
       }
+
+      Button(
+        onClick = { viewModel.refreshProjects() },
+        enabled = !isLoading && !isRefreshing
+      ) {
+        if (isRefreshing) {
+          CircularProgressIndicator(modifier = Modifier.size(16.dp))
+        } else {
+          Text("Refresh")
+        }
+      }
     }
 
-    projectsService.getProjects().forEach { project ->
+    if (isLoading) {
+      Row(modifier = Modifier.fillMaxWidth()) {
+        CircularProgressIndicator()
+        Text("Loading projects...")
+      }
+    }
+
+    error?.let { errorMessage ->
+      Text(
+        text = errorMessage,
+        color = MaterialTheme.colors.error,
+        modifier = Modifier.padding(8.dp)
+      )
+    }
+
+    projects.forEach { project ->
       Row(
         modifier = Modifier
           .fillMaxWidth()
           .border(1.dp, MaterialTheme.colors.primary)
           .pointerInput(Unit) {
             detectTapGestures {
-              projectsService.selectedProjectInfo = project
+              viewModel.selectProject(project)
               state.value = AppStateEnum.PROJECT
             }
           }
@@ -64,22 +96,22 @@ fun ProjectListPanel(state: MutableState<AppStateEnum>) {
 }
 
 @Composable
-private fun ProjectPreviewPanel(baseProjectData: ProjectsInfoService.ProjectInfoData) {
+private fun ProjectPreviewPanel(projectInfo: ProjectInfo) {
   Column(
     modifier = Modifier
       .padding(10.dp)
-      .applyIf(!baseProjectData.exists) { it.background(Color.Gray) }
+      .applyIf(!projectInfo.exists) { it.background(Color.Gray) }
   ) {
     Text(
-      text = baseProjectData.name,
+      text = projectInfo.name,
       style = MaterialTheme.typography.h6
     )
 
-    val formattedTime = if (baseProjectData.lastTimeChange == null) {
+    val formattedTime = if (projectInfo.lastTimeChange == null) {
       "????-??-?? ??:??:??"
     } else {
       val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-      val localDateTime = LocalDateTime.ofInstant(baseProjectData.lastTimeChange!!.toInstant(), ZoneId.systemDefault())
+      val localDateTime = LocalDateTime.ofInstant(projectInfo.lastTimeChange!!.toInstant(), ZoneId.systemDefault())
       localDateTime.format(formatter)
     }
 

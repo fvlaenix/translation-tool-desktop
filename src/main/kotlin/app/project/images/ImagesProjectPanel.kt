@@ -1,25 +1,29 @@
 package app.project.images
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import app.AppStateEnum
 import app.batch.ImageDataCreator
 import app.editor.EditCreator
 import app.ocr.OCRCreator
 import app.translation.TranslationCreator
 import core.utils.AnimatedContentUtils.horizontalSpec
-import project.ImagesProjectData
-import project.Project
+import project.data.Project
+import project.domain.ProjectPanelViewModel
 
 @Composable
-fun ImagesProjectPanel(state: MutableState<AppStateEnum>, project: Project) {
+fun ImagesProjectPanel(state: MutableState<AppStateEnum>, project: Project, viewModel: ProjectPanelViewModel) {
   val projectState = remember { mutableStateOf(ImageProjectPanelState.MAIN_MENU) }
-  val imagesProjectData = project.data as ImagesProjectData
 
   AnimatedContent(
     targetState = projectState.value,
@@ -27,12 +31,97 @@ fun ImagesProjectPanel(state: MutableState<AppStateEnum>, project: Project) {
     transitionSpec = horizontalSpec<ImageProjectPanelState>()
   ) { targetState ->
     when (targetState) {
-      ImageProjectPanelState.MAIN_MENU -> ImagesProjectPanelMenu(state, projectState, project)
+      ImageProjectPanelState.MAIN_MENU -> ImagesProjectPanelMenu(state, projectState, project, viewModel)
       ImageProjectPanelState.UNTRANSLATED_IMAGES_CREATOR -> ImageDataCreator(state, projectState, project)
       ImageProjectPanelState.OCR_CREATOR -> OCRCreator(state, project)
       ImageProjectPanelState.TRANSLATION_CREATOR -> TranslationCreator(state, project)
       ImageProjectPanelState.CLEANED_IMAGES_CREATOR -> ImageDataCreator(state, projectState, project)
       ImageProjectPanelState.EDIT_CREATOR -> EditCreator(state, project)
+    }
+  }
+}
+
+@Composable
+fun ImagesProjectPanelMenu(
+  appState: MutableState<AppStateEnum>,
+  projectState: MutableState<ImageProjectPanelState>,
+  project: Project,
+  viewModel: ProjectPanelViewModel
+) {
+  val projectSections by viewModel.projectSections
+  val isLoading by viewModel.isLoading
+
+  Column {
+    Text(project.name, style = MaterialTheme.typography.h3)
+
+    if (isLoading) {
+      CircularProgressIndicator()
+      Text("Loading project status...")
+    }
+
+    projectSections.forEach { section ->
+      Row(modifier = Modifier.padding(vertical = 4.dp)) {
+        when (section.id) {
+          "untranslated_images" -> {
+            Button(
+              onClick = { projectState.value = ImageProjectPanelState.UNTRANSLATED_IMAGES_CREATOR },
+              enabled = section.isEnabled
+            ) {
+              Text("Add untranslated pictures")
+            }
+            Text(section.description, modifier = Modifier.padding(start = 8.dp))
+          }
+
+          "ocr" -> {
+            Button(
+              onClick = { projectState.value = ImageProjectPanelState.OCR_CREATOR },
+              enabled = section.isEnabled
+            ) {
+              Text("Try OCR untranslated pictures")
+            }
+            Text(section.description, modifier = Modifier.padding(start = 8.dp))
+            if (!section.isEnabled && section.isRequired) {
+              Text("Untranslated images should be added first", color = MaterialTheme.colors.error)
+            }
+          }
+
+          "translation" -> {
+            Button(
+              onClick = { projectState.value = ImageProjectPanelState.TRANSLATION_CREATOR },
+              enabled = section.isEnabled
+            ) {
+              Text("Translate OCR")
+            }
+            Text(section.description, modifier = Modifier.padding(start = 8.dp))
+            if (!section.isEnabled && section.isRequired) {
+              Text("OCR should be done first", color = MaterialTheme.colors.error)
+            }
+          }
+
+          "cleaned_images" -> {
+            Button(
+              onClick = { projectState.value = ImageProjectPanelState.CLEANED_IMAGES_CREATOR },
+              enabled = section.isEnabled
+            ) {
+              Text("Add cleaned pictures")
+            }
+            Text(section.description, modifier = Modifier.padding(start = 8.dp))
+          }
+
+          "final_edit" -> {
+            Button(
+              onClick = { projectState.value = ImageProjectPanelState.EDIT_CREATOR },
+              enabled = section.isEnabled
+            ) {
+              Text("Add translation to cleaned pictures")
+            }
+            Text(section.description, modifier = Modifier.padding(start = 8.dp))
+            if (!section.isEnabled && section.isRequired) {
+              Text("Cleaned images and translation should be added first", color = MaterialTheme.colors.error)
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -11,7 +11,7 @@ import app.AppStateEnum
 import app.batch.ImageDataService
 import app.translation.TextDataService
 import kotlinx.coroutines.launch
-import project.Project
+import project.data.Project
 
 @Composable
 fun ImagesProjectPanelMenu(

@@ -43,7 +43,7 @@ import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import org.koin.compose.koinInject
-import project.Project
+import project.data.Project
 import java.awt.FileDialog
 import java.awt.image.BufferedImage
 import java.nio.file.InvalidPathException
