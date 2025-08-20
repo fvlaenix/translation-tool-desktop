@@ -6,6 +6,7 @@ import org.koin.core.component.inject
 import project.data.ImageDataRepository
 import java.util.concurrent.ConcurrentLinkedQueue
 
+@Deprecated(message = "use repositories instead ImageDataRepository")
 class BatchService private constructor() : ImagesService, KoinComponent {
   private val imageDataRepository: ImageDataRepository by inject()
 
