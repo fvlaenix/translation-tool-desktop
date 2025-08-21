@@ -56,74 +56,96 @@ fun ImagesProjectPanelMenu(
   val isLoading by viewModel.isLoading
 
   Column {
-    Text(project.name, style = MaterialTheme.typography.h3)
-
-    if (isLoading) {
-      CircularProgressIndicator()
-      Text("Loading project status...")
-    }
+    ProjectHeaderSection(
+      projectName = project.name,
+      isLoading = isLoading
+    )
 
     projectSections.forEach { section ->
-      Row(modifier = Modifier.padding(vertical = 4.dp)) {
-        when (section.id) {
-          "untranslated_images" -> {
-            Button(
-              onClick = { projectState.value = ImageProjectPanelState.UNTRANSLATED_IMAGES_CREATOR },
-              enabled = section.isEnabled
-            ) {
-              Text("Add untranslated pictures")
-            }
-            Text(section.description, modifier = Modifier.padding(start = 8.dp))
-          }
+      ProjectSectionItem(
+        section = section,
+        projectState = projectState
+      )
+    }
+  }
+}
 
-          "ocr" -> {
-            Button(
-              onClick = { projectState.value = ImageProjectPanelState.OCR_CREATOR },
-              enabled = section.isEnabled
-            ) {
-              Text("Try OCR untranslated pictures")
-            }
-            Text(section.description, modifier = Modifier.padding(start = 8.dp))
-            if (!section.isEnabled && section.isRequired) {
-              Text("Untranslated images should be added first", color = MaterialTheme.colors.error)
-            }
-          }
+@Composable
+private fun ProjectHeaderSection(
+  projectName: String,
+  isLoading: Boolean
+) {
+  Text(projectName, style = MaterialTheme.typography.h3)
 
-          "translation" -> {
-            Button(
-              onClick = { projectState.value = ImageProjectPanelState.TRANSLATION_CREATOR },
-              enabled = section.isEnabled
-            ) {
-              Text("Translate OCR")
-            }
-            Text(section.description, modifier = Modifier.padding(start = 8.dp))
-            if (!section.isEnabled && section.isRequired) {
-              Text("OCR should be done first", color = MaterialTheme.colors.error)
-            }
-          }
+  if (isLoading) {
+    CircularProgressIndicator()
+    Text("Loading project status...")
+  }
+}
 
-          "cleaned_images" -> {
-            Button(
-              onClick = { projectState.value = ImageProjectPanelState.CLEANED_IMAGES_CREATOR },
-              enabled = section.isEnabled
-            ) {
-              Text("Add cleaned pictures")
-            }
-            Text(section.description, modifier = Modifier.padding(start = 8.dp))
-          }
+@Composable
+private fun ProjectSectionItem(
+  section: ProjectPanelViewModel.ProjectSection,
+  projectState: MutableState<ImageProjectPanelState>
+) {
+  Row(modifier = Modifier.padding(vertical = 4.dp)) {
+    when (section.id) {
+      "untranslated_images" -> {
+        Button(
+          onClick = { projectState.value = ImageProjectPanelState.UNTRANSLATED_IMAGES_CREATOR },
+          enabled = section.isEnabled
+        ) {
+          Text("Add untranslated pictures")
+        }
+        Text(section.description, modifier = Modifier.padding(start = 8.dp))
+      }
 
-          "final_edit" -> {
-            Button(
-              onClick = { projectState.value = ImageProjectPanelState.EDIT_CREATOR },
-              enabled = section.isEnabled
-            ) {
-              Text("Add translation to cleaned pictures")
-            }
-            Text(section.description, modifier = Modifier.padding(start = 8.dp))
-            if (!section.isEnabled && section.isRequired) {
-              Text("Cleaned images and translation should be added first", color = MaterialTheme.colors.error)
-            }
-          }
+      "ocr" -> {
+        Button(
+          onClick = { projectState.value = ImageProjectPanelState.OCR_CREATOR },
+          enabled = section.isEnabled
+        ) {
+          Text("Try OCR untranslated pictures")
+        }
+        Text(section.description, modifier = Modifier.padding(start = 8.dp))
+        if (!section.isEnabled && section.isRequired) {
+          app.common.RequirementErrorText("Untranslated images should be added first")
+        }
+      }
+
+      "translation" -> {
+        Button(
+          onClick = { projectState.value = ImageProjectPanelState.TRANSLATION_CREATOR },
+          enabled = section.isEnabled
+        ) {
+          Text("Translate OCR")
+        }
+        Text(section.description, modifier = Modifier.padding(start = 8.dp))
+        if (!section.isEnabled && section.isRequired) {
+          app.common.RequirementErrorText("OCR should be done first")
+        }
+      }
+
+      "cleaned_images" -> {
+        Button(
+          onClick = { projectState.value = ImageProjectPanelState.CLEANED_IMAGES_CREATOR },
+          enabled = section.isEnabled
+        ) {
+          Text("Add cleaned pictures")
+        }
+        Text(section.description, modifier = Modifier.padding(start = 8.dp))
+      }
+
+      "final_edit" -> {
+        Button(
+          onClick = { projectState.value = ImageProjectPanelState.EDIT_CREATOR },
+          enabled = section.isEnabled
+        ) {
+          Text("Add translation to cleaned pictures")
+        }
+        Text(section.description, modifier = Modifier.padding(start = 8.dp))
+        if (!section.isEnabled && section.isRequired) {
+          app.common.RequirementErrorText("Cleaned images and translation should be added first")
         }
       }
     }

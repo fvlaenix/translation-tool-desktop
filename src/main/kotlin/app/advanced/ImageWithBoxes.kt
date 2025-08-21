@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color.Companion.Cyan
 import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Color.Companion.Magenta
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.TextStyle
@@ -35,7 +36,6 @@ fun ImageWithBoxes(
   val uiState by viewModel.uiState
   val requester = remember { FocusRequester() }
 
-  // Notify parent of state changes
   LaunchedEffect(uiState.boxes) {
     onStateChange(uiState.boxes)
   }
@@ -59,62 +59,103 @@ fun ImageWithBoxes(
       .focusRequester(requester)
       .focusable()
   ) {
-    val image = uiState.image
-    if (image != null) {
-      val imageOriginalSize = IntSize(image.width, image.height)
-
-      Box(modifier = Modifier.fillMaxSize()) {
-        Image(
-          bitmap = image,
-          contentDescription = null,
-          modifier = Modifier.fillMaxSize()
-            .onSizeChanged { size -> viewModel.updateCurrentSize(size) },
-          alignment = Alignment.TopStart
-        )
-        uiState.boxes.forEachIndexed { index, box ->
-          val boxFollowable = FollowableMutableState(mutableStateOf(box))
-          val selectedBoxIndexState = remember { mutableStateOf(uiState.selectedBoxIndex) }
-
-          // Update selection state when UI state changes
-          LaunchedEffect(uiState.selectedBoxIndex) {
-            selectedBoxIndexState.value = uiState.selectedBoxIndex
-          }
-
-          boxFollowable.follow { _, after ->
-            viewModel.updateBox(index, after)
-          }
-
-          // Handle box selection by wrapping BoxOnImage with click detection
-          Box(
-            modifier = Modifier.clickable { viewModel.selectBox(index) }
-          ) {
-            BoxOnImage(
-              index = index,
-              imageSize = imageOriginalSize,
-              displayImageSize = uiState.currentSize,
-              blockData = boxFollowable,
-              selectedBoxIndex = selectedBoxIndexState
-            )
-          }
-        }
-      }
-    } else {
-      val gradientColors = listOf(Cyan, Gray, Magenta)
-      Text(
-        text = uiState.emptyText,
-        modifier = Modifier.fillMaxSize(),
-        textAlign = TextAlign.Center,
-        fontSize = 20.sp,
-        style = TextStyle(
-          brush = Brush.linearGradient(
-            colors = gradientColors
-          )
-        )
+    if (uiState.image != null) {
+      ImageDisplayArea(
+        image = uiState.image!!,
+        boxes = uiState.boxes,
+        selectedBoxIndex = uiState.selectedBoxIndex,
+        currentSize = uiState.currentSize,
+        onSizeChanged = { viewModel.updateCurrentSize(it) },
+        onBoxSelect = { viewModel.selectBox(it) },
+        onBoxUpdate = { index, box -> viewModel.updateBox(index, box) }
       )
+    } else {
+      EmptyImageState(uiState.emptyText)
     }
   }
 
   LaunchedEffect(Unit) {
     requester.requestFocus()
   }
+}
+
+@Composable
+private fun ImageDisplayArea(
+  image: ImageBitmap,
+  boxes: List<BlockPosition>,
+  selectedBoxIndex: Int?,
+  currentSize: IntSize,
+  onSizeChanged: (IntSize) -> Unit,
+  onBoxSelect: (Int?) -> Unit,
+  onBoxUpdate: (Int, BlockPosition) -> Unit
+) {
+  val imageOriginalSize = IntSize(image.width, image.height)
+
+  Box(modifier = Modifier.fillMaxSize()) {
+    Image(
+      bitmap = image,
+      contentDescription = null,
+      modifier = Modifier.fillMaxSize()
+        .onSizeChanged { size -> onSizeChanged(size) },
+      alignment = Alignment.TopStart
+    )
+
+    BoxOverlayContainer(
+      boxes = boxes,
+      imageOriginalSize = imageOriginalSize,
+      displayImageSize = currentSize,
+      selectedBoxIndex = selectedBoxIndex,
+      onBoxSelect = onBoxSelect,
+      onBoxUpdate = onBoxUpdate
+    )
+  }
+}
+
+@Composable
+private fun BoxOverlayContainer(
+  boxes: List<BlockPosition>,
+  imageOriginalSize: IntSize,
+  displayImageSize: IntSize,
+  selectedBoxIndex: Int?,
+  onBoxSelect: (Int?) -> Unit,
+  onBoxUpdate: (Int, BlockPosition) -> Unit
+) {
+  boxes.forEachIndexed { index, box ->
+    val boxFollowable = FollowableMutableState(mutableStateOf(box))
+    val selectedBoxIndexState = remember { mutableStateOf(selectedBoxIndex) }
+
+    LaunchedEffect(selectedBoxIndex) {
+      selectedBoxIndexState.value = selectedBoxIndex
+    }
+
+    boxFollowable.follow { _, after ->
+      onBoxUpdate(index, after)
+    }
+
+    Box(
+      modifier = Modifier.clickable { onBoxSelect(index) }
+    ) {
+      BoxOnImage(
+        index = index,
+        imageSize = imageOriginalSize,
+        displayImageSize = displayImageSize,
+        blockData = boxFollowable,
+        selectedBoxIndex = selectedBoxIndexState
+      )
+    }
+  }
+}
+
+@Composable
+private fun EmptyImageState(emptyText: String) {
+  val gradientColors = listOf(Cyan, Gray, Magenta)
+  Text(
+    text = emptyText,
+    modifier = Modifier.fillMaxSize(),
+    textAlign = TextAlign.Center,
+    fontSize = 20.sp,
+    style = TextStyle(
+      brush = Brush.linearGradient(colors = gradientColors)
+    )
+  )
 }

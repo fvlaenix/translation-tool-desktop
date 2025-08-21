@@ -30,10 +30,7 @@ import fonts.domain.FontResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
-import org.burnoutcrew.reorderable.ReorderableItem
-import org.burnoutcrew.reorderable.detectReorderAfterLongPress
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.burnoutcrew.reorderable.reorderable
+import org.burnoutcrew.reorderable.*
 import org.koin.compose.koinInject
 import project.data.*
 import translation.data.*
@@ -157,97 +154,176 @@ private fun OCRCreatorStep(
   })
 
   Row {
-    Column(modifier = Modifier.fillMaxWidth(0.7f)) {
-      SimpleLoadedImageDisplayer(
-        modifier = Modifier.fillMaxSize(0.9f),
-        image = image,
-        boxes = boxes,
-        operationNumber = mutableStateOf(operationNumber),
-        selectedBoxIndex = mutableStateOf(selectedBoxIndex)
+    OCRImageDisplayArea(
+      image = image,
+      boxes = boxes,
+      operationNumber = mutableStateOf(operationNumber),
+      selectedBoxIndex = mutableStateOf(selectedBoxIndex)
+    )
+
+    OCRControlsList(
+      isProcessingOCR = isProcessingOCR,
+      isReorderingEnabled = uiState.isReorderingEnabled,
+      boxes = boxes,
+      selectedBoxIndex = selectedBoxIndex,
+      lazyListState = lazyListState,
+      onOCRProcess = { viewModel.processOCR() },
+      onMergeBoxes = { index ->
+        viewModel.mergeBoxes(index)
+        boxes.clear()
+        boxes.addAll(ocrBoxes)
+        imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
+      },
+      onTextChange = { index, text ->
+        viewModel.updateBoxText(index, text)
+        boxes[index] = boxes[index].copy(text = text)
+        imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
+      },
+      onRemoveBox = { index ->
+        viewModel.removeBox(index)
+        boxes.clear()
+        boxes.addAll(ocrBoxes)
+        imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
+      },
+      onBoxSelect = { viewModel.selectBox(it) }
+    )
+  }
+}
+
+@Composable
+private fun OCRImageDisplayArea(
+  image: MutableState<BufferedImage?>,
+  boxes: MutableList<OCRBoxData>,
+  operationNumber: MutableState<Int>,
+  selectedBoxIndex: MutableState<Int?>
+) {
+  Column(modifier = Modifier.fillMaxWidth(0.7f)) {
+    SimpleLoadedImageDisplayer(
+      modifier = Modifier.fillMaxSize(0.9f),
+      image = image,
+      boxes = boxes,
+      operationNumber = operationNumber,
+      selectedBoxIndex = selectedBoxIndex
+    )
+  }
+}
+
+@Composable
+private fun OCRControlsList(
+  isProcessingOCR: Boolean,
+  isReorderingEnabled: Boolean,
+  boxes: MutableList<OCRBoxData>,
+  selectedBoxIndex: Int?,
+  lazyListState: ReorderableLazyListState,
+  onOCRProcess: () -> Unit,
+  onMergeBoxes: (Int) -> Unit,
+  onTextChange: (Int, String) -> Unit,
+  onRemoveBox: (Int) -> Unit,
+  onBoxSelect: (Int) -> Unit
+) {
+  LazyColumn(
+    state = lazyListState.listState,
+    modifier = Modifier
+      .fillMaxWidth()
+      .reorderable(lazyListState)
+      .detectReorderAfterLongPress(lazyListState)
+  ) {
+    item {
+      OCRProcessButton(
+        isProcessingOCR = isProcessingOCR,
+        isReorderingEnabled = isReorderingEnabled,
+        onOCRProcess = onOCRProcess
       )
     }
 
-    LazyColumn(
-      state = lazyListState.listState,
+    items(boxes.size, { it }) { index ->
+      OCRTextBoxItem(
+        index = index,
+        box = boxes[index],
+        isProcessingOCR = isProcessingOCR,
+        selectedBoxIndex = selectedBoxIndex,
+        boxes = boxes,
+        lazyListState = lazyListState,
+        onMergeBoxes = onMergeBoxes,
+        onTextChange = onTextChange,
+        onRemoveBox = onRemoveBox,
+        onBoxSelect = onBoxSelect
+      )
+    }
+  }
+}
+
+@Composable
+private fun OCRProcessButton(
+  isProcessingOCR: Boolean,
+  isReorderingEnabled: Boolean,
+  onOCRProcess: () -> Unit
+) {
+  Row(modifier = Modifier.fillMaxWidth()) {
+    Button(
+      onClick = onOCRProcess,
+      enabled = !isProcessingOCR && isReorderingEnabled,
+      modifier = Modifier.fillMaxWidth()
+    ) {
+      if (isProcessingOCR) {
+        CircularProgressIndicator(modifier = Modifier.size(16.dp))
+      } else {
+        Text("Try OCR")
+      }
+    }
+  }
+}
+
+@Composable
+private fun OCRTextBoxItem(
+  index: Int,
+  box: OCRBoxData,
+  isProcessingOCR: Boolean,
+  selectedBoxIndex: Int?,
+  boxes: MutableList<OCRBoxData>,
+  lazyListState: ReorderableLazyListState,
+  onMergeBoxes: (Int) -> Unit,
+  onTextChange: (Int, String) -> Unit,
+  onRemoveBox: (Int) -> Unit,
+  onBoxSelect: (Int) -> Unit
+) {
+  ReorderableItem(lazyListState, key = index) { isDragging ->
+    val elevation = animateDpAsState(if (isDragging) 16.dp else 0.dp)
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    if (isFocused) {
+      onBoxSelect(index)
+    }
+
+    Row(
       modifier = Modifier
         .fillMaxWidth()
-        .reorderable(lazyListState)
-        .detectReorderAfterLongPress(lazyListState)
+        .applyIf(selectedBoxIndex == index) { it.border(1.dp, Color.Cyan) }
+        .shadow(elevation.value)
     ) {
-      item {
-        Row(modifier = Modifier.fillMaxWidth()) {
-          Button(
-            onClick = { viewModel.processOCR() },
-            enabled = !isProcessingOCR && uiState.isReorderingEnabled,
-            modifier = Modifier.fillMaxWidth()
-          ) {
-            if (isProcessingOCR) {
-              CircularProgressIndicator(modifier = Modifier.size(16.dp))
-            } else {
-              Text("Try OCR")
-            }
-          }
-        }
+      Button(
+        onClick = { onMergeBoxes(index) },
+        enabled = !isProcessingOCR && index < boxes.size - 1
+      ) {
+        Text("Merge Down")
       }
 
-      items(boxes.size, { it }) { index ->
-        ReorderableItem(lazyListState, key = index) { isDragging ->
-          val elevation = animateDpAsState(if (isDragging) 16.dp else 0.dp)
-          val box = boxes[index]
-          val interactionSource = remember { MutableInteractionSource() }
-          val isFocused by interactionSource.collectIsFocusedAsState()
+      TextField(
+        value = box.text,
+        modifier = Modifier.fillMaxSize(0.9f).padding(10.dp),
+        onValueChange = { onTextChange(index, it) },
+        interactionSource = interactionSource
+      )
 
-          if (isFocused) {
-            viewModel.selectBox(index)
-          }
-
-          Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .applyIf(selectedBoxIndex == index) { it.border(1.dp, Color.Cyan) }
-              .shadow(elevation.value)
-          ) {
-            Button(
-              onClick = {
-                if (index < boxes.size - 1) {
-                  viewModel.mergeBoxes(index)
-                  boxes.clear()
-                  boxes.addAll(ocrBoxes)
-                  imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
-                }
-              },
-              enabled = !isProcessingOCR && index < boxes.size - 1
-            ) {
-              Text("Merge Down")
-            }
-
-            TextField(
-              value = box.text,
-              modifier = Modifier.fillMaxSize(0.9f).padding(10.dp),
-              onValueChange = {
-                viewModel.updateBoxText(index, it)
-                boxes[index] = box.copy(text = it)
-                imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
-              },
-              interactionSource = interactionSource
-            )
-
-            Button(
-              onClick = {
-                viewModel.removeBox(index)
-                boxes.clear()
-                boxes.addAll(ocrBoxes)
-                imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
-              },
-              enabled = !isProcessingOCR
-            ) {
-              Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Trash"
-              )
-            }
-          }
-        }
+      Button(
+        onClick = { onRemoveBox(index) },
+        enabled = !isProcessingOCR
+      ) {
+        Icon(
+          imageVector = Icons.Default.Delete,
+          contentDescription = "Trash"
+        )
       }
     }
   }

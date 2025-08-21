@@ -17,6 +17,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanel
 import app.block.SimpleLoadedImageDisplayer
+import app.editor.domain.EditCreatorStepUiState
 import app.editor.domain.EditCreatorStepViewModel
 import app.utils.ChipSelector
 import app.utils.PagesPanel
@@ -34,6 +35,7 @@ import kotlinx.coroutines.sync.withPermit
 import org.koin.compose.koinInject
 import project.data.*
 import translation.data.BlockPosition
+import translation.data.BlockSettings
 import translation.data.ImageData
 import translation.data.WorkDataRepository
 import java.nio.file.Path
@@ -110,7 +112,6 @@ fun EditCreatorStep(
 ) {
   val uiState by viewModel.uiState
 
-  // Sync with parent data
   LaunchedEffect(currentImage.value) {
     currentImage.value?.let { data ->
       viewModel.loadImageData(
@@ -121,7 +122,6 @@ fun EditCreatorStep(
     }
   }
 
-  // Notify parent of changes
   LaunchedEffect(uiState.boxes, uiState.currentSettings) {
     currentImage.value?.let { current ->
       val updatedImageData = current.imageData.copy(
@@ -141,77 +141,132 @@ fun EditCreatorStep(
         false
       }
   ) {
-    Column(modifier = Modifier.fillMaxWidth(0.5f)) {
-      // Only show image displayer if we have the required data
-      val currentSettings = uiState.currentSettings
-      if (currentSettings != null) {
-        SimpleLoadedImageDisplayer(
-          imageEditsCounter,
-          currentSettings,
-          mutableStateOf(uiState.image),
-          mutableStateOf(uiState.boxes),
-          mutableStateOf(uiState.operationNumber),
-          mutableStateOf(uiState.selectedBoxIndex)
-        )
-      }
+    ImageEditingArea(
+      uiState = uiState,
+      imageEditsCounter = imageEditsCounter
+    )
+
+    EditControlsPanel(
+      uiState = uiState,
+      onBoxTextUpdate = { index, text -> viewModel.updateBoxText(index, text) },
+      onSettingsUpdate = { viewModel.updateSettings(it) },
+      onShapeUpdate = { viewModel.updateBoxShape(it) }
+    )
+  }
+}
+
+@Composable
+private fun ImageEditingArea(
+  uiState: EditCreatorStepUiState,
+  imageEditsCounter: AtomicInteger
+) {
+  Column(modifier = Modifier.fillMaxWidth(0.5f)) {
+    val currentSettings = uiState.currentSettings
+    if (currentSettings != null) {
+      SimpleLoadedImageDisplayer(
+        imageEditsCounter,
+        currentSettings,
+        mutableStateOf(uiState.image),
+        mutableStateOf(uiState.boxes),
+        mutableStateOf(uiState.operationNumber),
+        mutableStateOf(uiState.selectedBoxIndex)
+      )
+    }
+  }
+}
+
+@Composable
+private fun EditControlsPanel(
+  uiState: EditCreatorStepUiState,
+  onBoxTextUpdate: (Int, String) -> Unit,
+  onSettingsUpdate: (BlockSettings) -> Unit,
+  onShapeUpdate: (BlockPosition.Shape) -> Unit
+) {
+  Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+    TextEditingField(
+      selectedBoxIndex = uiState.selectedBoxIndex,
+      boxes = uiState.boxes,
+      onTextUpdate = onBoxTextUpdate
+    )
+
+    SettingsConfigurationPanel(
+      currentSettings = uiState.currentSettings,
+      onSettingsUpdate = onSettingsUpdate
+    )
+
+    ShapeSelectionPanel(
+      selectedBoxIndex = uiState.selectedBoxIndex,
+      currentShape = uiState.currentShape,
+      onShapeUpdate = onShapeUpdate
+    )
+  }
+}
+
+@Composable
+private fun TextEditingField(
+  selectedBoxIndex: Int?,
+  boxes: List<translation.data.BlockData>,
+  onTextUpdate: (Int, String) -> Unit
+) {
+  if (selectedBoxIndex == null) {
+    TextField(
+      value = "",
+      onValueChange = {},
+      enabled = false
+    )
+  } else {
+    val box = boxes.getOrNull(selectedBoxIndex)
+    if (box != null) {
+      TextField(
+        value = box.text,
+        onValueChange = { onTextUpdate(selectedBoxIndex, it) }
+      )
+    }
+  }
+}
+
+@Composable
+private fun SettingsConfigurationPanel(
+  currentSettings: BlockSettings?,
+  onSettingsUpdate: (BlockSettings) -> Unit
+) {
+  val currentSettings = currentSettings
+  if (currentSettings != null) {
+    val settingsState = remember { mutableStateOf(currentSettings) }
+
+    LaunchedEffect(currentSettings) {
+      settingsState.value = currentSettings
     }
 
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-      // Text editing for selected box
-      if (uiState.selectedBoxIndex == null) {
-        TextField(
-          value = "",
-          onValueChange = {},
-          enabled = false
-        )
-      } else {
-        val boxIndex = uiState.selectedBoxIndex ?: return@Column
-        val box = uiState.boxes.getOrNull(boxIndex)
-        if (box != null) {
-          TextField(
-            value = box.text,
-            onValueChange = { viewModel.updateBoxText(boxIndex, it) }
-          )
-        }
-      }
-
-      // Settings panel
-      val currentSettings = uiState.currentSettings
-      if (currentSettings != null) {
-        val settingsState = remember { mutableStateOf(currentSettings) }
-
-        LaunchedEffect(currentSettings) {
-          currentSettings.let { settings ->
-            settingsState.value = settings
-          }
-        }
-
-        LaunchedEffect(settingsState.value) {
-          viewModel.updateSettings(settingsState.value)
-        }
-
-        BlockSettingsPanel(settingsState)
-      }
-
-      // Shape selector for selected box
-      if (uiState.selectedBoxIndex != null && uiState.currentShape != null) {
-        val types = listOf("Rectangle", "Oval")
-        val selectedType = when (uiState.currentShape) {
-          is BlockPosition.Shape.Rectangle -> "Rectangle"
-          is BlockPosition.Shape.Oval -> "Oval"
-          else -> "Rectangle"
-        }
-        val chipsState = ChipSelector.rememberChipSelectorState(types, listOf(selectedType)) { typeString ->
-          val shape = when (typeString) {
-            "Rectangle" -> BlockPosition.Shape.Rectangle
-            "Oval" -> BlockPosition.Shape.Oval
-            else -> BlockPosition.Shape.Rectangle
-          }
-          viewModel.updateBoxShape(shape)
-        }
-        ChipSelector.ChipsSelector(chipsState, modifier = Modifier.fillMaxWidth())
-      }
+    LaunchedEffect(settingsState.value) {
+      onSettingsUpdate(settingsState.value)
     }
+
+    BlockSettingsPanel(settingsState)
+  }
+}
+
+@Composable
+private fun ShapeSelectionPanel(
+  selectedBoxIndex: Int?,
+  currentShape: BlockPosition.Shape?,
+  onShapeUpdate: (BlockPosition.Shape) -> Unit
+) {
+  if (selectedBoxIndex != null && currentShape != null) {
+    val types = listOf("Rectangle", "Oval")
+    val selectedType = when (currentShape) {
+      is BlockPosition.Shape.Rectangle -> "Rectangle"
+      is BlockPosition.Shape.Oval -> "Oval"
+    }
+    val chipsState = ChipSelector.rememberChipSelectorState(types, listOf(selectedType)) { typeString ->
+      val shape = when (typeString) {
+        "Rectangle" -> BlockPosition.Shape.Rectangle
+        "Oval" -> BlockPosition.Shape.Oval
+        else -> BlockPosition.Shape.Rectangle
+      }
+      onShapeUpdate(shape)
+    }
+    ChipSelector.ChipsSelector(chipsState, modifier = Modifier.fillMaxWidth())
   }
 }
 
