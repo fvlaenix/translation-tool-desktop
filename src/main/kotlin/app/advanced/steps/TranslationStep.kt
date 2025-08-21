@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
@@ -17,35 +18,52 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.advanced.TranslationInfo
-import core.utils.ProtobufUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import app.advanced.domain.ProcessingType
+import org.koin.compose.koinInject
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 @Composable
-fun TranslationStep(parentSize: MutableState<IntSize>, translationInfos: MutableState<List<TranslationInfo>>) {
-  val scope = rememberCoroutineScope()
+fun TranslationStep(
+  viewModel: app.advanced.domain.TranslationStepViewModel = koinInject(),
+  parentSize: MutableState<IntSize>,
+  translationInfos: MutableState<List<TranslationInfo>>
+) {
+  val uiState by viewModel.uiState
+
+  // Sync with parent state
+  LaunchedEffect(parentSize.value) {
+    viewModel.updateParentSize(parentSize.value)
+  }
+
+  LaunchedEffect(translationInfos.value) {
+    viewModel.setTranslationInfos(translationInfos.value)
+  }
+
+  // Update parent state when our state changes
+  LaunchedEffect(uiState.translationInfos) {
+    translationInfos.value = uiState.translationInfos
+  }
 
   Column(
     modifier = Modifier
       .verticalScroll(rememberScrollState())
       .fillMaxSize()
   ) {
-    translationInfos.value.forEach { info ->
+    uiState.translationInfos.forEachIndexed { index, info ->
       val localSize = remember { mutableStateOf(IntSize.Zero) }
-      var localOcrText by remember { mutableStateOf(info.ocr) }
-      var localTranslationText by remember { mutableStateOf(info.translation) }
+      val isProcessingThisInfo = viewModel.isProcessingInfo(index)
 
       val outputStream = ByteArrayOutputStream()
       ImageIO.write(info.subImage, "png", outputStream)
       val byteArray = outputStream.toByteArray()
       val image = loadImageBitmap(ByteArrayInputStream(byteArray))
+
       Row(
         modifier = Modifier
           .border(1.dp, Color.Black, CutCornerShape(16.dp))
-          .height(parentSize.value.height.dp / 4)
+          .height(uiState.parentSize.height.dp / 4)
           .fillMaxWidth()
           .onSizeChanged { localSize.value = it }
       ) {
@@ -61,48 +79,54 @@ fun TranslationStep(parentSize: MutableState<IntSize>, translationInfos: Mutable
             modifier = Modifier.fillMaxSize()
           )
         }
+
         // OCR
         Column(
           modifier = Modifier
             .padding(16.dp)
             .size(width = localSize.value.width.dp / 3, height = localSize.value.height.dp)
         ) {
-          Button(onClick = {
-            scope.launch(Dispatchers.IO) {
-              val localBufferedImage = info.subImage
-              val previous = if (localOcrText.isBlank()) "" else localOcrText + "\n\n"
-              localOcrText = previous + ProtobufUtils.getOCR(localBufferedImage)
+          Button(
+            onClick = { viewModel.processOCRForInfo(index) },
+            enabled = !isProcessingThisInfo
+          ) {
+            if (isProcessingThisInfo && uiState.processingType == ProcessingType.OCR) {
+              CircularProgressIndicator(modifier = Modifier.size(16.dp))
+            } else {
+              Text("Try OCR")
             }
-          }) {
-            Text("Try OCR")
           }
 
           TextField(
-            value = localOcrText,
-            onValueChange = { localOcrText = it },
-            modifier = Modifier
-              .fillMaxSize()
+            value = info.ocr,
+            onValueChange = { viewModel.setOcrTextDirectly(index, it) },
+            modifier = Modifier.fillMaxSize(),
+            enabled = !isProcessingThisInfo
           )
         }
+
         // Translate
         Column(
           modifier = Modifier
             .padding(16.dp)
             .size(width = localSize.value.width.dp / 3, height = localSize.value.height.dp)
         ) {
-          Button(onClick = {
-            scope.launch(Dispatchers.IO) {
-              val previous = if (localTranslationText.isBlank()) "" else localTranslationText + "\n\n"
-              localTranslationText = previous + ProtobufUtils.getTranslation(localOcrText)
+          Button(
+            onClick = { viewModel.translateInfo(index) },
+            enabled = !isProcessingThisInfo && info.ocr.isNotBlank()
+          ) {
+            if (isProcessingThisInfo && uiState.processingType == ProcessingType.TRANSLATION) {
+              CircularProgressIndicator(modifier = Modifier.size(16.dp))
+            } else {
+              Text("Try Translate")
             }
-          }) {
-            Text("Try Translate")
           }
+
           TextField(
-            value = localTranslationText,
-            onValueChange = { localTranslationText = it },
-            modifier = Modifier
-              .fillMaxSize()
+            value = info.translation,
+            onValueChange = { viewModel.setTranslationTextDirectly(index, it) },
+            modifier = Modifier.fillMaxSize(),
+            enabled = !isProcessingThisInfo
           )
         }
       }

@@ -1,5 +1,7 @@
 package core.di
 
+import app.advanced.di.advancedModule
+import app.editor.di.editorModule
 import fonts.di.fontModule
 import org.koin.dsl.module
 import project.di.projectModule
@@ -28,6 +30,8 @@ val appModule = module {
     settingsModule,
     fontModule,
     projectModule,
-    translationModule
+    translationModule,
+    advancedModule,
+    editorModule
   )
 }

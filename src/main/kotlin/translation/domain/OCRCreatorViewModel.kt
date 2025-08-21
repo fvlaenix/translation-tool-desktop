@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import app.batch.ImagePathInfo
 import app.ocr.OCRBoxData
+import app.translation.domain.OCRCreatorStepUiState
 import core.base.BaseViewModel
 import kotlinx.coroutines.launch
 import project.data.ImageDataRepository
@@ -34,11 +35,24 @@ class OCRCreatorViewModel(
   private val _selectedBoxIndex = mutableStateOf<Int?>(null)
   val selectedBoxIndex: State<Int?> = _selectedBoxIndex
 
+  private val _uiState = mutableStateOf(OCRCreatorStepUiState())
+  val uiState: State<OCRCreatorStepUiState> = _uiState
+
+  private fun syncUiState() {
+    _uiState.value = _uiState.value.copy(
+      image = _currentImage.value?.image,
+      boxes = _ocrBoxes.value,
+      selectedBoxIndex = _selectedBoxIndex.value,
+      operationNumber = _operationNumber.value
+    )
+  }
+
   fun loadImage(imagePathInfo: ImagePathInfo) {
     _currentImage.value = imagePathInfo
     _ocrBoxes.value = emptyList()
     _selectedBoxIndex.value = null
     clearError()
+    syncUiState()
   }
 
   fun processOCR() {
@@ -52,6 +66,7 @@ class OCRCreatorViewModel(
         .onSuccess { boxes ->
           _ocrBoxes.value = boxes
           incrementOperationNumber()
+          syncUiState()
         }
         .onFailure { exception ->
           setError("OCR processing failed: ${exception.message}")
@@ -67,6 +82,7 @@ class OCRCreatorViewModel(
       val oldBox = currentBoxes[index]
       currentBoxes[index] = oldBox.copy(text = text)
       _ocrBoxes.value = currentBoxes
+      syncUiState()
     }
   }
 
@@ -96,6 +112,7 @@ class OCRCreatorViewModel(
       currentBoxes.removeAt(index + 1)
       _ocrBoxes.value = currentBoxes
       incrementOperationNumber()
+      syncUiState()
     }
   }
 
@@ -112,11 +129,13 @@ class OCRCreatorViewModel(
       } else if (_selectedBoxIndex.value != null && _selectedBoxIndex.value!! > index) {
         _selectedBoxIndex.value = _selectedBoxIndex.value!! - 1
       }
+      syncUiState()
     }
   }
 
   fun selectBox(index: Int?) {
     _selectedBoxIndex.value = index
+    syncUiState()
   }
 
   fun saveOCRResults(project: Project?, author: String, defaultSettings: BlockSettings) {
@@ -169,5 +188,21 @@ class OCRCreatorViewModel(
 
   private fun incrementOperationNumber() {
     _operationNumber.value += 1
+  }
+
+  fun addValidationError(field: String, message: String) {
+    val currentErrors = _uiState.value.validationErrors.toMutableMap()
+    currentErrors[field] = message
+    _uiState.value = _uiState.value.copy(validationErrors = currentErrors)
+  }
+
+  fun clearValidationError(field: String) {
+    val currentErrors = _uiState.value.validationErrors.toMutableMap()
+    currentErrors.remove(field)
+    _uiState.value = _uiState.value.copy(validationErrors = currentErrors)
+  }
+
+  fun setReorderingEnabled(enabled: Boolean) {
+    _uiState.value = _uiState.value.copy(isReorderingEnabled = enabled)
   }
 }

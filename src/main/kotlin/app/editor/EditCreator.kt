@@ -17,11 +17,11 @@ import androidx.compose.ui.input.key.onKeyEvent
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanel
 import app.block.SimpleLoadedImageDisplayer
+import app.editor.domain.EditCreatorStepViewModel
 import app.utils.ChipSelector
 import app.utils.PagesPanel
 import core.navigation.NavigationController
 import core.navigation.NavigationDestination
-import core.utils.FollowableMutableState
 import core.utils.ImageUtils.deepCopy
 import core.utils.Text2ImageUtils
 import io.github.vinceglb.filekit.core.FileKit
@@ -34,10 +34,8 @@ import kotlinx.coroutines.sync.withPermit
 import org.koin.compose.koinInject
 import project.data.*
 import translation.data.BlockPosition
-import translation.data.BlockSettings
 import translation.data.ImageData
 import translation.data.WorkDataRepository
-import java.awt.image.BufferedImage
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
@@ -73,7 +71,7 @@ fun EditCreator(navigationController: NavigationController, project: Project? = 
         .map { (imagePathInfo, imageData) -> CleanedImageWithBlock(imagePathInfo, imageData) }
     },
     stepWindow = { jobCounter, data ->
-      EditCreatorStep(jobCounter, data)
+      EditCreatorStep(imageEditsCounter = jobCounter, currentImage = data)
     },
     finalWindow = { dataList ->
       EditCreatorFinal(navigationController, dataList, project)
@@ -81,7 +79,7 @@ fun EditCreator(navigationController: NavigationController, project: Project? = 
   )
 }
 
-private data class CleanedImageWithBlock(
+data class CleanedImageWithBlock(
   val imagePathInfo: ImagePathInfo,
   val imageData: ImageData
 )
@@ -91,94 +89,47 @@ private fun EditCreatorStep(
   imageEditsCounter: AtomicInteger,
   currentImage: MutableState<CleanedImageWithBlock?>
 ) {
-  val selectedBoxIndex = remember { mutableStateOf<Int?>(null) }
-  val operationNumber = remember { mutableStateOf<Int>(0) }
+  val viewModel: EditCreatorStepViewModel = koinInject()
 
-  val boxes = remember {
-    FollowableMutableState(mutableStateOf(currentImage.value!!.imageData.blockData)).apply {
-      follow { old, new ->
-        if (old.size != new.size) {
-          // TODO make check
-          selectedBoxIndex.value = null
-          return@follow
-        }
-      }
-      follow { _, new ->
-        currentImage.value = currentImage.value!!.copy(
-          imageData = currentImage.value!!.imageData.copy(
-            blockData = new
-          )
-        )
-      }
+  EditCreatorStep(
+    viewModel = viewModel,
+    imageEditsCounter = imageEditsCounter,
+    currentImage = currentImage,
+    onDataChange = { updatedData ->
+      currentImage.value = updatedData
     }
-  }
+  )
+}
 
-  fun currentSettings(): BlockSettings =
-    if (selectedBoxIndex.value == null) {
-      currentImage.value!!.imageData.settings
-    } else {
-      val boxIndex = selectedBoxIndex.value!!
-      if (boxes.value.indices.contains(boxIndex)) {
-        boxes.value[boxIndex].settings ?: currentImage.value!!.imageData.settings
-      } else {
-        selectedBoxIndex.value = null
-        currentImage.value!!.imageData.settings
-      }
-    }
+@Composable
+fun EditCreatorStep(
+  viewModel: EditCreatorStepViewModel = koinInject(),
+  imageEditsCounter: AtomicInteger,
+  currentImage: MutableState<CleanedImageWithBlock?>,
+  onDataChange: (CleanedImageWithBlock) -> Unit
+) {
+  val uiState by viewModel.uiState
 
-  fun currentShape(): BlockPosition.Shape? =
-    if (selectedBoxIndex.value == null) {
-      null
-    } else {
-      val boxIndex = selectedBoxIndex.value!!
-      if (boxes.value.indices.contains(boxIndex)) {
-        boxes.value[boxIndex].blockPosition.shape
-      } else {
-        selectedBoxIndex.value = null
-        null
-      }
-    }
-
-  val settings = remember { mutableStateOf(currentSettings()) }
-  val boxType = remember { mutableStateOf(currentShape()) }
-  val image = remember { mutableStateOf<BufferedImage?>(currentImage.value!!.imagePathInfo.image) }
-
+  // Sync with parent data
   LaunchedEffect(currentImage.value) {
-    boxes.value = currentImage.value!!.imageData.blockData
-    image.value = currentImage.value!!.imagePathInfo.image
-  }
-
-  LaunchedEffect(selectedBoxIndex.value) {
-    settings.value = currentSettings()
-    boxType.value = currentShape()
-  }
-
-  LaunchedEffect(boxes.value) {
-    settings.value = currentSettings()
-    boxType.value = currentShape()
-  }
-
-  LaunchedEffect(settings.value) {
-    val index = selectedBoxIndex.value
-
-    if (index == null) {
-      val currentImageValue = currentImage.value!!
-      currentImage.value =
-        currentImageValue.copy(imageData = currentImageValue.imageData.copy(settings = settings.value))
-    } else {
-      val box = boxes.value[index]
-      boxes.value = boxes.value.toMutableList().apply { set(index, box.copy(settings = settings.value)) }
+    currentImage.value?.let { data ->
+      viewModel.loadImageData(
+        image = data.imagePathInfo.image,
+        blockData = data.imageData.blockData,
+        settings = data.imageData.settings
+      )
     }
   }
 
-  LaunchedEffect(boxType.value) {
-    val index = selectedBoxIndex.value
-    val boxTypeValue = boxType.value
-
-    if (index != null && boxTypeValue != null) {
-      val box = boxes.value[index]
-      boxes.value = boxes.value.toMutableList()
-        .apply { set(index, box.copy(blockPosition = box.blockPosition.copy(shape = boxTypeValue))) }
+  // Notify parent of changes
+  LaunchedEffect(uiState.boxes, uiState.currentSettings) {
+    currentImage.value?.let { current ->
+      val updatedImageData = current.imageData.copy(
+        blockData = uiState.boxes,
+        settings = uiState.currentSettings ?: current.imageData.settings
+      )
+      val updatedData = current.copy(imageData = updatedImageData)
+      onDataChange(updatedData)
     }
   }
 
@@ -186,50 +137,78 @@ private fun EditCreatorStep(
     modifier = Modifier
       .onKeyEvent { keyEvent ->
         if (keyEvent.key != Key.Escape) return@onKeyEvent true
-        selectedBoxIndex.value = null
+        viewModel.selectBox(null)
         false
       }
   ) {
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
-      SimpleLoadedImageDisplayer(
-        imageEditsCounter,
-        currentImage.value!!.imageData.settings,
-        image,
-        boxes,
-        operationNumber,
-        selectedBoxIndex
-      )
+      // Only show image displayer if we have the required data
+      val currentSettings = uiState.currentSettings
+      if (currentSettings != null) {
+        SimpleLoadedImageDisplayer(
+          imageEditsCounter,
+          currentSettings,
+          mutableStateOf(uiState.image),
+          mutableStateOf(uiState.boxes),
+          mutableStateOf(uiState.operationNumber),
+          mutableStateOf(uiState.selectedBoxIndex)
+        )
+      }
     }
+
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-      if (selectedBoxIndex.value == null) {
+      // Text editing for selected box
+      if (uiState.selectedBoxIndex == null) {
         TextField(
           value = "",
           onValueChange = {},
           enabled = false
         )
       } else {
-        val boxIndex = selectedBoxIndex.value!!
-        val box = boxes.value[boxIndex]
-        TextField(
-          value = box.text,
-          onValueChange = { boxes.value = boxes.value.toMutableList().apply { set(boxIndex, box.copy(text = it)) } }
-        )
-      }
-      BlockSettingsPanel(settings)
-      if (selectedBoxIndex.value != null && boxType.value != null) {
-        val types = listOf("Rectangle", "Oval")
-        val selectedType = when (boxType.value!!) {
-          is BlockPosition.Shape.Rectangle -> "Rectangle"
-          is BlockPosition.Shape.Oval -> "Oval"
+        val boxIndex = uiState.selectedBoxIndex ?: return@Column
+        val box = uiState.boxes.getOrNull(boxIndex)
+        if (box != null) {
+          TextField(
+            value = box.text,
+            onValueChange = { viewModel.updateBoxText(boxIndex, it) }
+          )
         }
-        val chipsState = ChipSelector.rememberChipSelectorState(types, listOf(selectedType)) {
-          boxType.value = when (it) {
-            "Rectangle" -> BlockPosition.Shape.Rectangle
-            "Oval" -> BlockPosition.Shape.Oval
-            else -> throw IllegalStateException("Unknown type $it")
+      }
+
+      // Settings panel
+      val currentSettings = uiState.currentSettings
+      if (currentSettings != null) {
+        val settingsState = remember { mutableStateOf(currentSettings) }
+
+        LaunchedEffect(currentSettings) {
+          currentSettings.let { settings ->
+            settingsState.value = settings
           }
         }
-        chipsState.selectedChips
+
+        LaunchedEffect(settingsState.value) {
+          viewModel.updateSettings(settingsState.value)
+        }
+
+        BlockSettingsPanel(settingsState)
+      }
+
+      // Shape selector for selected box
+      if (uiState.selectedBoxIndex != null && uiState.currentShape != null) {
+        val types = listOf("Rectangle", "Oval")
+        val selectedType = when (uiState.currentShape) {
+          is BlockPosition.Shape.Rectangle -> "Rectangle"
+          is BlockPosition.Shape.Oval -> "Oval"
+          else -> "Rectangle"
+        }
+        val chipsState = ChipSelector.rememberChipSelectorState(types, listOf(selectedType)) { typeString ->
+          val shape = when (typeString) {
+            "Rectangle" -> BlockPosition.Shape.Rectangle
+            "Oval" -> BlockPosition.Shape.Oval
+            else -> BlockPosition.Shape.Rectangle
+          }
+          viewModel.updateBoxShape(shape)
+        }
         ChipSelector.ChipsSelector(chipsState, modifier = Modifier.fillMaxWidth())
       }
     }

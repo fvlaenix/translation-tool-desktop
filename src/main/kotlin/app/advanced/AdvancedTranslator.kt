@@ -8,34 +8,35 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomAppBar
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.TopBar
+import app.advanced.domain.ImageWithBoxesViewModel
+import app.advanced.domain.TranslationStepViewModel
 import app.advanced.steps.TranslationStep
 import core.navigation.NavigationController
-import core.utils.FollowableMutableState
-import translation.data.BlockPosition
+import org.koin.compose.koinInject
 import java.awt.image.BufferedImage
 
 @Composable
 fun AdvancedTranslator(navigationController: NavigationController) {
   val currentSize = remember { mutableStateOf(IntSize.Zero) }
-
-  val imageBuffered = remember { mutableStateOf<ImageBitmap?>(null) }
-  val boxes = remember { mutableStateListOf<BlockPosition>() }
   val translationInfos = remember { mutableStateOf<List<TranslationInfo>>(emptyList()) }
   val isEnabled = remember { mutableStateOf(false) }
-  val imageSize = remember { FollowableMutableState(mutableStateOf(IntSize.Zero)) }
-
   val currentState = remember { mutableStateOf(AdvancedTranslatorState.INITIAL_IMAGE) }
+
+  val imageWithBoxesViewModel: ImageWithBoxesViewModel = koinInject()
+  val translationStepViewModel: TranslationStepViewModel = koinInject()
+
+  val imageWithBoxesState by imageWithBoxesViewModel.uiState
+
+  LaunchedEffect(imageWithBoxesState.image) {
+    isEnabled.value = imageWithBoxesState.image != null
+  }
 
   TopBar(
     navigationController, "Advanced Translator",
@@ -44,31 +45,40 @@ fun AdvancedTranslator(navigationController: NavigationController) {
         Row {
           Button(
             onClick = {
-              currentState.value = AdvancedTranslatorState.entries[currentState.value.ordinal - 1]
-              isEnabled.value = false
+              if (currentState.value.ordinal > 0) {
+                currentState.value = AdvancedTranslatorState.entries[currentState.value.ordinal - 1]
+                isEnabled.value = imageWithBoxesState.image != null
+              }
             },
             enabled = currentState.value.ordinal > 0
           ) {
             Text("Previous")
           }
+
           Button(
             onClick = {
-              currentState.value = AdvancedTranslatorState.entries[currentState.value.ordinal + 1]
-              isEnabled.value = false
+              if (currentState.value.ordinal < AdvancedTranslatorState.entries.size - 1) {
+                currentState.value = AdvancedTranslatorState.entries[currentState.value.ordinal + 1]
+                isEnabled.value = false
 
-              val fullBufferedImage = imageBuffered.value!!.toAwtImage()
-
-              translationInfos.value = boxes.map { boxData ->
-                val subImage = fullBufferedImage.getSubimage(
-                  boxData.x.toInt(),
-                  boxData.y.toInt(),
-                  boxData.width.toInt(),
-                  boxData.height.toInt()
-                )
-                TranslationInfo(subImage)
-              }
-              if (translationInfos.value.isEmpty()) {
-                translationInfos.value = listOf(TranslationInfo(fullBufferedImage))
+                // Prepare translation infos when moving to translation step
+                val fullBufferedImage = imageWithBoxesState.image?.toAwtImage()
+                if (fullBufferedImage != null) {
+                  val infos = if (imageWithBoxesState.boxes.isEmpty()) {
+                    listOf(TranslationInfo(fullBufferedImage))
+                  } else {
+                    imageWithBoxesState.boxes.map { boxData ->
+                      val subImage = fullBufferedImage.getSubimage(
+                        boxData.x.toInt(),
+                        boxData.y.toInt(),
+                        boxData.width.toInt(),
+                        boxData.height.toInt()
+                      )
+                      TranslationInfo(subImage)
+                    }
+                  }
+                  translationInfos.value = infos
+                }
               }
             },
             enabled = currentState.value.ordinal < AdvancedTranslatorState.entries.size - 1 && isEnabled.value
@@ -80,7 +90,8 @@ fun AdvancedTranslator(navigationController: NavigationController) {
     }) {
     Column(
       modifier = Modifier
-        .fillMaxSize().onSizeChanged { size -> currentSize.value = size }
+        .fillMaxSize()
+        .onSizeChanged { size -> currentSize.value = size }
         .padding(16.dp)
     ) {
       AnimatedContent(
@@ -96,8 +107,20 @@ fun AdvancedTranslator(navigationController: NavigationController) {
         },
       ) { targetState ->
         when (targetState) {
-          AdvancedTranslatorState.INITIAL_IMAGE -> ImageWithBoxes(imageBuffered, boxes, isEnabled, imageSize)
-          AdvancedTranslatorState.TRANSLATION_STEP -> TranslationStep(currentSize, translationInfos)
+          AdvancedTranslatorState.INITIAL_IMAGE -> {
+            ImageWithBoxes(
+              viewModel = imageWithBoxesViewModel,
+              onStateChange = { /* boxes state is managed by ViewModel */ }
+            )
+          }
+
+          AdvancedTranslatorState.TRANSLATION_STEP -> {
+            TranslationStep(
+              viewModel = translationStepViewModel,
+              parentSize = currentSize,
+              translationInfos = translationInfos
+            )
+          }
         }
       }
     }

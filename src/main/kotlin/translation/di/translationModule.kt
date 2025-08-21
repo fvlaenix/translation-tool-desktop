@@ -1,7 +1,8 @@
-// Create new file: src/main/kotlin/translation/di/translationModule.kt
-
 package translation.di
 
+import app.advanced.domain.ImageWithBoxesViewModel
+import app.advanced.domain.TranslationStepViewModel
+import app.editor.domain.EditCreatorStepViewModel
 import org.koin.dsl.module
 import project.data.Project
 import translation.data.*
@@ -60,5 +61,17 @@ val translationModule = module {
       ocrRepository = get(),
       translationRepository = get()
     )
+  }
+
+  factory {
+    ImageWithBoxesViewModel()
+  }
+
+  factory {
+    TranslationStepViewModel()
+  }
+
+  factory {
+    EditCreatorStepViewModel()
   }
 }

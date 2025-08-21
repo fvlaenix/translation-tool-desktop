@@ -108,6 +108,7 @@ private fun OCRCreatorStep(
   val operationNumber by viewModel.operationNumber
   val selectedBoxIndex by viewModel.selectedBoxIndex
   val error by viewModel.error
+  val uiState by viewModel.uiState
 
   val image = mutableStateOf<BufferedImage?>(imageInfoWithBox.value!!.imagePathInfo.image)
   val boxes = mutableStateListOf<OCRBoxData>().apply {
@@ -118,11 +119,6 @@ private fun OCRCreatorStep(
   LaunchedEffect(imageInfoWithBox.value) {
     imageInfoWithBox.value?.let { info ->
       viewModel.loadImage(info.imagePathInfo)
-      // If there are existing boxes, load them
-      if (info.box.isNotEmpty()) {
-        // Note: In a real implementation, you might want to set these boxes in the ViewModel
-        // For now, we'll keep the existing box management
-      }
     }
   }
 
@@ -145,7 +141,6 @@ private fun OCRCreatorStep(
   // Show errors
   error?.let { errorMessage ->
     LaunchedEffect(errorMessage) {
-      // Handle error display - you might want to show a snackbar or similar
       println("OCR Error: $errorMessage")
     }
   }
@@ -171,6 +166,7 @@ private fun OCRCreatorStep(
         selectedBoxIndex = mutableStateOf(selectedBoxIndex)
       )
     }
+
     LazyColumn(
       state = lazyListState.listState,
       modifier = Modifier
@@ -182,7 +178,7 @@ private fun OCRCreatorStep(
         Row(modifier = Modifier.fillMaxWidth()) {
           Button(
             onClick = { viewModel.processOCR() },
-            enabled = !isProcessingOCR,
+            enabled = !isProcessingOCR && uiState.isReorderingEnabled,
             modifier = Modifier.fillMaxWidth()
           ) {
             if (isProcessingOCR) {
@@ -193,6 +189,7 @@ private fun OCRCreatorStep(
           }
         }
       }
+
       items(boxes.size, { it }) { index ->
         ReorderableItem(lazyListState, key = index) { isDragging ->
           val elevation = animateDpAsState(if (isDragging) 16.dp else 0.dp)
@@ -214,7 +211,6 @@ private fun OCRCreatorStep(
               onClick = {
                 if (index < boxes.size - 1) {
                   viewModel.mergeBoxes(index)
-                  // Update local state from ViewModel
                   boxes.clear()
                   boxes.addAll(ocrBoxes)
                   imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
@@ -224,21 +220,21 @@ private fun OCRCreatorStep(
             ) {
               Text("Merge Down")
             }
+
             TextField(
               value = box.text,
               modifier = Modifier.fillMaxSize(0.9f).padding(10.dp),
               onValueChange = {
                 viewModel.updateBoxText(index, it)
-                // Update local state
                 boxes[index] = box.copy(text = it)
                 imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
               },
               interactionSource = interactionSource
             )
+
             Button(
               onClick = {
                 viewModel.removeBox(index)
-                // Update local state from ViewModel
                 boxes.clear()
                 boxes.addAll(ocrBoxes)
                 imageInfoWithBox.value = imageInfoWithBox.value!!.copy(box = boxes.toList())
