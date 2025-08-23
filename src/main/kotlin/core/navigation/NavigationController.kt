@@ -2,7 +2,6 @@ package core.navigation
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import app.AppStateEnum
 
 /**
  * Navigation controller that manages app navigation state.
@@ -21,20 +20,11 @@ class NavigationController {
   private val _currentDestination = mutableStateOf<NavigationDestination>(NavigationDestination.MainMenu)
   val currentDestination: State<NavigationDestination> = _currentDestination
 
-  // Legacy support - wraps old AppStateEnum system during migration
-  @Deprecated(message = "To remove")
-  private val _currentAppState = mutableStateOf(AppStateEnum.MAIN_MENU)
-
-  @Deprecated(message = "To remove")
-  val currentAppState: State<AppStateEnum> = _currentAppState
-
   /**
    * Navigate to a specific destination.
-   * Updates both new destination state and legacy app state for compatibility.
    */
   fun navigateTo(destination: NavigationDestination) {
     _currentDestination.value = destination
-    _currentAppState.value = destination.appState
   }
 
   /**

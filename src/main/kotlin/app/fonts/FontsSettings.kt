@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import app.utils.openFileDialog
 import core.navigation.NavigationController
 import core.navigation.NavigationDestination
-import core.utils.AnimatedContentUtils.horizontalSpec
 import fonts.domain.FontViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -41,8 +40,7 @@ fun FontsSettings(navigationController: NavigationController) {
   ) {
     AnimatedContent(
       targetState = fontSettingsState.value,
-      modifier = Modifier.padding(10.dp),
-      transitionSpec = horizontalSpec<SettingsState>()
+      modifier = Modifier.padding(10.dp)
     ) { targetState ->
       when (targetState) {
         SettingsState.MAIN_MENU -> MainSettings(fontSettingsState, fontViewModel)

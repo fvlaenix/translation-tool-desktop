@@ -23,6 +23,7 @@ import app.translation.TranslationCreator
 import core.error.ErrorHandler
 import core.error.ErrorOverlay
 import core.navigation.NavigationController
+import core.navigation.NavigationDestination
 import core.utils.AnimatedContentUtils.horizontalSpec
 import org.koin.compose.koinInject
 
@@ -32,7 +33,7 @@ fun App() {
   val navigationController: NavigationController = koinInject()
   val errorHandler: ErrorHandler = koinInject()
 
-  val currentAppState by navigationController.currentAppState
+  val currentDestination by navigationController.currentDestination
 
   // Cleanup error handler when App is disposed
   DisposableEffect(errorHandler) {
@@ -44,42 +45,30 @@ fun App() {
   MaterialTheme {
     ErrorOverlay(errorHandler = errorHandler) {
       AnimatedContent(
-        targetState = currentAppState,
+        targetState = currentDestination,
         modifier = Modifier.fillMaxSize(),
-        transitionSpec = horizontalSpec<AppStateEnum>()
+        transitionSpec = horizontalSpec<NavigationDestination>()
       ) { targetState ->
         when (targetState) {
-          AppStateEnum.MAIN_MENU -> MainMenu(navigationController)
+          NavigationDestination.MainMenu -> MainMenu(navigationController)
 
-          AppStateEnum.SIMPLE_VERSION -> SimpleTranslator(navigationController)
+          NavigationDestination.SimpleTranslator -> SimpleTranslator(navigationController)
 
-          AppStateEnum.ADVANCED_VERSION -> AdvancedTranslator(navigationController)
+          NavigationDestination.AdvancedTranslator -> AdvancedTranslator(navigationController)
 
-          AppStateEnum.BATCH_CREATOR -> ImageDataCreator(navigationController)
-          AppStateEnum.OCR_CREATOR -> OCRCreator(navigationController)
-          AppStateEnum.LOAD_OCR_CREATOR -> LoadOCR(navigationController)
-          AppStateEnum.TRANSLATION_CREATOR -> TranslationCreator(navigationController)
-          AppStateEnum.EDIT_CREATOR -> EditCreator(navigationController)
+          NavigationDestination.BatchCreator -> ImageDataCreator(navigationController)
+          NavigationDestination.OCRCreator -> OCRCreator(navigationController)
+          NavigationDestination.LoadOCRCreator -> LoadOCR(navigationController)
+          NavigationDestination.TranslationCreator -> TranslationCreator(navigationController)
+          NavigationDestination.EditCreator -> EditCreator(navigationController)
 
-          AppStateEnum.NEW_PROJECT -> NewProjectPanel(navigationController)
-          AppStateEnum.PROJECT -> ProjectPanel(navigationController)
+          NavigationDestination.NewProject -> NewProjectPanel(navigationController)
+          NavigationDestination.Project -> ProjectPanel(navigationController)
 
-          AppStateEnum.SETTINGS -> Settings(navigationController)
-          AppStateEnum.FONT_SETTINGS -> FontsSettings(navigationController)
+          NavigationDestination.Settings -> Settings(navigationController)
+          NavigationDestination.FontSettings -> FontsSettings(navigationController)
         }
       }
     }
   }
-}
-
-enum class AppStateEnum {
-  MAIN_MENU,
-
-  SIMPLE_VERSION,
-  ADVANCED_VERSION,
-  BATCH_CREATOR, OCR_CREATOR, LOAD_OCR_CREATOR, TRANSLATION_CREATOR, EDIT_CREATOR,
-
-  NEW_PROJECT, PROJECT,
-
-  SETTINGS, FONT_SETTINGS
 }

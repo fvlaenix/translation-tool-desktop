@@ -17,7 +17,6 @@ import app.editor.EditCreator
 import app.ocr.OCRCreator
 import app.translation.TranslationCreator
 import core.navigation.NavigationController
-import core.utils.AnimatedContentUtils.horizontalSpec
 import project.data.Project
 import project.domain.ProjectPanelViewModel
 
@@ -27,8 +26,7 @@ fun ImagesProjectPanel(navigationController: NavigationController, project: Proj
 
   AnimatedContent(
     targetState = projectState.value,
-    modifier = Modifier.fillMaxSize(),
-    transitionSpec = horizontalSpec<ImageProjectPanelState>()
+    modifier = Modifier.fillMaxSize()
   ) { targetState ->
     when (targetState) {
       ImageProjectPanelState.MAIN_MENU -> ImagesProjectPanelMenu(projectState, project, viewModel)
