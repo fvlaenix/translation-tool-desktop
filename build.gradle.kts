@@ -72,6 +72,19 @@ dependencies {
   // koin
   implementation("io.insert-koin:koin-core:3.5.0")
   implementation("io.insert-koin:koin-compose:1.1.0")
+
+  // Testing dependencies
+  testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+  testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
+  testImplementation("io.mockk:mockk:1.13.8")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+  // For testing Compose UI components if needed later
+  testImplementation("org.jetbrains.compose.ui:ui-test-junit4:1.6.10") // compose.version
+}
+
+tasks.test {
+  useJUnitPlatform()
 }
 
 compose.desktop {
