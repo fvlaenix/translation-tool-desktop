@@ -8,14 +8,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.loadImageBitmap
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import core.image.overlays.ImageOverlay
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
 
 /**
  * Main image display component that replaces SimpleLoadedImageDisplayer.
@@ -32,43 +28,64 @@ fun ImageCanvas(
   image: BufferedImage?,
   modifier: Modifier = Modifier,
   onImageLoad: (BufferedImage) -> Unit = {},
-  overlays: List<ImageOverlay> = emptyList(),
-  // TODO: Future parameters for Phase 2+
-  // onToolChange: (ImageTool?) -> Unit = {},
-  // interactionEnabled: Boolean = true,
-  // zoomEnabled: Boolean = false,
-  // panEnabled: Boolean = false
+  overlays: List<ImageOverlay> = emptyList()
 ) {
-  // Create state and transformer - remember them so they persist across recompositions
   val state = remember { ImageCanvasState() }
   val transformer = remember(state) { CoordinateTransformer(state) }
 
-  // Handle image changes
   LaunchedEffect(image) {
-    if (image != null) {
-      state.setImage(image)
-      onImageLoad(image)
-    } else {
-      state.setImage(null)
-    }
+    state.setImage(image)
+    image?.let { onImageLoad(it) }
   }
 
+  ImageCanvasContent(
+    state = state,
+    transformer = transformer,
+    overlays = overlays,
+    modifier = modifier
+  )
+}
+
+@Composable
+fun ImageCanvas(
+  image: ImageBitmap?,
+  modifier: Modifier = Modifier,
+  onImageLoad: (ImageBitmap) -> Unit = {},
+  overlays: List<ImageOverlay> = emptyList()
+) {
+  val state = remember { ImageCanvasState() }
+  val transformer = remember(state) { CoordinateTransformer(state) }
+
+  LaunchedEffect(image) {
+    state.setImage(image)
+    image?.let { onImageLoad(it) }
+  }
+
+  ImageCanvasContent(
+    state = state,
+    transformer = transformer,
+    overlays = overlays,
+    modifier = modifier
+  )
+}
+
+@Composable
+private fun ImageCanvasContent(
+  state: ImageCanvasState,
+  transformer: CoordinateTransformer,
+  overlays: List<ImageOverlay>,
+  modifier: Modifier
+) {
   Box(
     modifier = modifier
       .onSizeChanged { newSize ->
         state.updateCanvasSize(newSize)
       }
-    // TODO: Future input handling for Phase 2+
-    // .pointerInput(state) {
-    //     // Handle zoom, pan, tool interactions
-    // }
   ) {
-    // Image rendering
     if (state.hasImage) {
       ImageRenderer(state = state, transformer = transformer)
     }
 
-    // Overlay rendering - sort by render order and render visible overlays
     val sortedOverlays = remember(overlays) {
       overlays.filter { it.isVisible }.sortedBy { it.renderOrder }
     }
@@ -79,16 +96,11 @@ fun ImageCanvas(
       }
     }
 
-    // Loading indicator
     if (state.isLoading) {
       CircularProgressIndicator(
         modifier = Modifier.align(Alignment.Center)
       )
     }
-
-    // TODO: Future UI elements for Phase 2+
-    // if (showTools) { ToolPalette(...) }
-    // if (showZoomControls) { ZoomControls(...) }
   }
 }
 
@@ -97,32 +109,14 @@ fun ImageCanvas(
  */
 @Composable
 private fun ImageRenderer(state: ImageCanvasState, transformer: CoordinateTransformer) {
-  val imageBitmap = remember(state.image) {
+  val imageBitmap = remember(state.hasImage, state.imageSize) {
     mutableStateOf<ImageBitmap?>(null)
   }
 
-  // Convert BufferedImage to ImageBitmap
-  LaunchedEffect(state.image) {
-    val bufferedImage = state.image
-    if (bufferedImage != null) {
-      try {
-        withContext(Dispatchers.IO) {
-          val outputStream = ByteArrayOutputStream()
-          ImageIO.write(bufferedImage, "png", outputStream)
-          val byteArray = outputStream.toByteArray()
-          val bitmap = loadImageBitmap(ByteArrayInputStream(byteArray))
-          imageBitmap.value = bitmap
-        }
-      } catch (e: Exception) {
-        println("Error converting BufferedImage to ImageBitmap: ${e.message}")
-        imageBitmap.value = null
-      }
-    } else {
-      imageBitmap.value = null
-    }
+  LaunchedEffect(state.hasImage, state.imageSize) {
+    imageBitmap.value = state.getImageBitmapForRendering()
   }
 
-  // Render the image if available
   imageBitmap.value?.let { bitmap ->
     val imageBounds = transformer.getImageBoundsInCanvas()
 
@@ -148,9 +142,6 @@ private fun ImageRenderer(state: ImageCanvasState, transformer: CoordinateTransf
   }
 }
 
-/**
- * Convenience composable for simple image display without overlays
- */
 @Composable
 fun SimpleImageCanvas(
   image: BufferedImage?,
@@ -165,20 +156,21 @@ fun SimpleImageCanvas(
   )
 }
 
-/**
- * Extension function to convert Float pixels to Dp for Compose layout
- */
 @Composable
-private fun Float.toDp(): androidx.compose.ui.unit.Dp {
-  return androidx.compose.ui.unit.Dp(this / androidx.compose.ui.platform.LocalDensity.current.density)
+fun SimpleImageCanvas(
+  image: ImageBitmap?,
+  modifier: Modifier = Modifier,
+  onImageLoad: (ImageBitmap) -> Unit = {}
+) {
+  ImageCanvas(
+    image = image,
+    modifier = modifier,
+    onImageLoad = onImageLoad,
+    overlays = emptyList()
+  )
 }
 
-// TODO: Future composables for Phase 2+
-// @Composable
-// fun InteractiveImageCanvas(...)
-// 
-// @Composable  
-// fun ZoomableImageCanvas(...)
-//
-// @Composable
-// fun ImageCanvasWithTools(...)
+@Composable
+private fun Float.toDp(): Dp {
+  return Dp(this / LocalDensity.current.density)
+}

@@ -4,15 +4,18 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import java.awt.image.BufferedImage
 import kotlin.math.min
 
 @Stable
 class ImageCanvasState {
-  private val _image = mutableStateOf<BufferedImage?>(null)
-  val image: BufferedImage? by _image
+  private val _bufferedImage = mutableStateOf<BufferedImage?>(null)
+  private val _imageBitmap = mutableStateOf<ImageBitmap?>(null)
 
+  private val _imageSourceType = mutableStateOf<ImageSourceType>(ImageSourceType.NONE)
+  
   private val _canvasSize = mutableStateOf(IntSize.Zero)
   val canvasSize: IntSize by _canvasSize
 
@@ -28,18 +31,73 @@ class ImageCanvasState {
   private val _isLoading = mutableStateOf(false)
   val isLoading: Boolean by _isLoading
 
+  val bufferedImage: BufferedImage?
+    get() = _bufferedImage.value
+
+  val imageBitmap: ImageBitmap?
+    get() = _imageBitmap.value
+
   val imageSize: IntSize
-    get() = _image.value?.let { IntSize(it.width, it.height) } ?: IntSize.Zero
+    get() = when (_imageSourceType.value) {
+      ImageSourceType.BUFFERED_IMAGE -> _bufferedImage.value?.let { IntSize(it.width, it.height) } ?: IntSize.Zero
+      ImageSourceType.IMAGE_BITMAP -> _imageBitmap.value?.let { IntSize(it.width, it.height) } ?: IntSize.Zero
+      ImageSourceType.NONE -> IntSize.Zero
+    }
 
   val hasImage: Boolean
-    get() = _image.value != null
+    get() = _bufferedImage.value != null || _imageBitmap.value != null
 
   fun setImage(newImage: BufferedImage?) {
-    if (_image.value != newImage) {
-      _isLoading.value = newImage == null && _image.value != null
-      _image.value = newImage
+    if (_bufferedImage.value != newImage) {
+      _isLoading.value = newImage == null && hasImage
+      _bufferedImage.value = newImage
+      _imageBitmap.value = null
+      _imageSourceType.value = if (newImage != null) ImageSourceType.BUFFERED_IMAGE else ImageSourceType.NONE
       recalculateTransformations()
       _isLoading.value = false
+    }
+  }
+
+  fun setImage(newImage: ImageBitmap?) {
+    if (_imageBitmap.value != newImage) {
+      _isLoading.value = newImage == null && hasImage
+      _imageBitmap.value = newImage
+      _bufferedImage.value = null
+      _imageSourceType.value = if (newImage != null) ImageSourceType.IMAGE_BITMAP else ImageSourceType.NONE
+      recalculateTransformations()
+      _isLoading.value = false
+    }
+  }
+
+  fun getImageBitmapForRendering(): ImageBitmap? {
+    return when (_imageSourceType.value) {
+      ImageSourceType.IMAGE_BITMAP -> _imageBitmap.value
+      ImageSourceType.BUFFERED_IMAGE -> {
+        _bufferedImage.value?.let { bufferedImg ->
+          try {
+            val outputStream = java.io.ByteArrayOutputStream()
+            javax.imageio.ImageIO.write(bufferedImg, "png", outputStream)
+            val byteArray = outputStream.toByteArray()
+            androidx.compose.ui.res.loadImageBitmap(java.io.ByteArrayInputStream(byteArray))
+          } catch (e: Exception) {
+            println("Error converting BufferedImage to ImageBitmap: ${e.message}")
+            null
+          }
+        }
+      }
+
+      ImageSourceType.NONE -> null
+    }
+  }
+
+  fun getBufferedImageForOverlays(): BufferedImage? {
+    return when (_imageSourceType.value) {
+      ImageSourceType.BUFFERED_IMAGE -> _bufferedImage.value
+      ImageSourceType.IMAGE_BITMAP -> {
+        null
+      }
+
+      ImageSourceType.NONE -> null
     }
   }
 
@@ -55,30 +113,27 @@ class ImageCanvasState {
   }
 
   private fun recalculateTransformations() {
-    val currentImage = _image.value
-    if (currentImage == null || _canvasSize.value.width <= 0 || _canvasSize.value.height <= 0) {
+    if (!hasImage || _canvasSize.value.width <= 0 || _canvasSize.value.height <= 0) {
       _imageDisplaySize.value = IntSize.Zero
       _imageToCanvasScale.value = 1f
       _imageOffsetInCanvas.value = Offset.Zero
       return
     }
 
-    val imageWidth = currentImage.width
-    val imageHeight = currentImage.height
-
-    if (imageWidth <= 0 || imageHeight <= 0) {
+    val currentImageSize = imageSize
+    if (currentImageSize.width <= 0 || currentImageSize.height <= 0) {
       _imageDisplaySize.value = IntSize.Zero
       _imageToCanvasScale.value = 1f
       _imageOffsetInCanvas.value = Offset.Zero
       return
     }
 
-    val scaleX = _canvasSize.value.width.toFloat() / imageWidth
-    val scaleY = _canvasSize.value.height.toFloat() / imageHeight
+    val scaleX = _canvasSize.value.width.toFloat() / currentImageSize.width
+    val scaleY = _canvasSize.value.height.toFloat() / currentImageSize.height
     val scale = min(scaleX, scaleY)
 
-    val displayWidth = (imageWidth * scale).toInt()
-    val displayHeight = (imageHeight * scale).toInt()
+    val displayWidth = (currentImageSize.width * scale).toInt()
+    val displayHeight = (currentImageSize.height * scale).toInt()
 
     val offsetX = (_canvasSize.value.width - displayWidth) / 2f
     val offsetY = (_canvasSize.value.height - displayHeight) / 2f
@@ -99,13 +154,14 @@ class ImageCanvasState {
   }
 
   fun debugValidateState(): Boolean {
-    val currentImage = _image.value ?: return true
+    if (!hasImage) return true
 
     if (_canvasSize.value.width <= 0 || _canvasSize.value.height <= 0) return true
 
+    val currentImageSize = imageSize
     val expectedScale = min(
-      _canvasSize.value.width.toFloat() / currentImage.width,
-      _canvasSize.value.height.toFloat() / currentImage.height
+      _canvasSize.value.width.toFloat() / currentImageSize.width,
+      _canvasSize.value.height.toFloat() / currentImageSize.height
     )
 
     val scaleDiff = kotlin.math.abs(_imageToCanvasScale.value - expectedScale)
@@ -115,5 +171,9 @@ class ImageCanvasState {
     }
 
     return true
+  }
+
+  private enum class ImageSourceType {
+    NONE, BUFFERED_IMAGE, IMAGE_BITMAP
   }
 }

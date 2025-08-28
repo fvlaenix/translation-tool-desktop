@@ -1,14 +1,14 @@
 package app.advanced
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -24,7 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
 import app.advanced.domain.ImageWithBoxesViewModel
-import core.utils.FollowableMutableState
+import core.image.ImageCanvas
+import core.image.overlays.BoxOverlay
 import org.koin.compose.koinInject
 import translation.data.BlockPosition
 
@@ -91,60 +92,29 @@ private fun ImageDisplayArea(
 ) {
   val imageOriginalSize = IntSize(image.width, image.height)
 
-  Box(modifier = Modifier.fillMaxSize()) {
-    Image(
-      bitmap = image,
-      contentDescription = null,
-      modifier = Modifier.fillMaxSize()
-        .onSizeChanged { size -> onSizeChanged(size) },
-      alignment = Alignment.TopStart
-    )
-
-    BoxOverlayContainer(
-      boxes = boxes,
-      imageOriginalSize = imageOriginalSize,
-      displayImageSize = currentSize,
-      selectedBoxIndex = selectedBoxIndex,
-      onBoxSelect = onBoxSelect,
-      onBoxUpdate = onBoxUpdate
-    )
-  }
-}
-
-@Composable
-private fun BoxOverlayContainer(
-  boxes: List<BlockPosition>,
-  imageOriginalSize: IntSize,
-  displayImageSize: IntSize,
-  selectedBoxIndex: Int?,
-  onBoxSelect: (Int?) -> Unit,
-  onBoxUpdate: (Int, BlockPosition) -> Unit
-) {
-  boxes.forEachIndexed { index, box ->
-    val boxFollowable = FollowableMutableState(mutableStateOf(box))
-    val selectedBoxIndexState = remember { mutableStateOf(selectedBoxIndex) }
-
-    LaunchedEffect(selectedBoxIndex) {
-      selectedBoxIndexState.value = selectedBoxIndex
-    }
-
-    boxFollowable.follow { _, after ->
-      onBoxUpdate(index, after)
-    }
-
-    Box(
-      modifier = Modifier.clickable { onBoxSelect(index) }
-    ) {
-      BoxOnImage(
+  val overlays = remember(boxes, selectedBoxIndex) {
+    boxes.mapIndexed { index, position ->
+      BoxOverlay.fromBoxOnImage(
         index = index,
+        blockPosition = position,
         imageSize = imageOriginalSize,
-        displayImageSize = displayImageSize,
-        blockData = boxFollowable,
-        selectedBoxIndex = selectedBoxIndexState
+        isSelected = selectedBoxIndex == index,
+        onPositionUpdate = { newPosition -> onBoxUpdate(index, newPosition) },
+        onBoxSelect = { onBoxSelect(index) }
       )
     }
   }
+
+  Box(modifier = Modifier.fillMaxSize()) {
+    ImageCanvas(
+      image = image,
+      overlays = overlays,
+      modifier = Modifier.fillMaxSize()
+        .onSizeChanged { size -> onSizeChanged(size) }
+    )
+  }
 }
+
 
 @Composable
 private fun EmptyImageState(emptyText: String) {

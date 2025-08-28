@@ -14,6 +14,7 @@ import app.utils.NumberField
 import app.utils.SearchableExpandedDropDownMenu
 import bean.Alignment
 import bean.BeanColor
+import core.image.SimpleImageCanvas
 import core.utils.Text2ImageUtils
 import fonts.domain.FontResolver
 import fonts.domain.FontViewModel
@@ -32,7 +33,8 @@ fun BlockSettingsPanelWithPreview(settings: MutableState<BlockSettings>, imageSt
 
   Row {
     Column(modifier = Modifier.fillMaxWidth(0.5f)) {
-      SimpleLoadedImageDisplayer<Unit>(image = imageState)
+      // Replace SimpleLoadedImageDisplayer with SimpleImageCanvas
+      SimpleImageCanvas(image = imageState.value)
     }
     Column(modifier = Modifier.fillMaxWidth()) {
       BlockSettingsPanel(settings)

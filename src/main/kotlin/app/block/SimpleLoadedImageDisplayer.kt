@@ -11,89 +11,12 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
-import app.advanced.BlockOnImage
-import app.advanced.BoxOnImage
-import app.ocr.OCRBoxData
 import core.utils.FollowableMutableState
-import translation.data.BlockData
-import translation.data.BlockSettings
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 import kotlin.math.min
-
-@Composable
-fun SimpleLoadedImageDisplayer(
-  jobCounter: AtomicInteger,
-  baseSettings: BlockSettings,
-  image: MutableState<BufferedImage?>,
-  boxes: MutableState<List<BlockData>>,
-  operationNumber: MutableState<Int>,
-  selectedBoxIndex: MutableState<Int?>
-) {
-  data class KeyClass(
-    val baseSettings: BlockSettings,
-    val boxes: MutableState<List<BlockData>>,
-    val selectedBoxIndex: MutableState<Int?>
-  )
-
-  val key = KeyClass(baseSettings, boxes, selectedBoxIndex)
-
-  SimpleLoadedImageDisplayer(
-    modifier = Modifier.fillMaxSize(0.8f),
-    image = image,
-    displayableKey = key,
-    displayableOnImage = { imageSize, imageOriginalSize, (baseSettings, boxes, selectedBoxIndex) ->
-      boxes.value.forEachIndexed { index, box ->
-        key(Triple(image.value?.hashCode(), operationNumber.value, index)) {
-          val boxFollowable = FollowableMutableState(mutableStateOf(box))
-          boxFollowable.follow { _, after ->
-            boxes.value = boxes.value.toMutableList().apply {
-              this[index] = after
-            }
-          }
-          BlockOnImage(
-            jobCounter = jobCounter,
-            imageSize = imageOriginalSize,
-            displayImageSize = imageSize.value,
-            basicSettings = baseSettings,
-            blockData = boxFollowable,
-            index = index,
-            selectedBoxIndex = selectedBoxIndex
-          )
-        }
-      }
-    }
-  )
-}
-
-@Composable
-fun SimpleLoadedImageDisplayer(
-  modifier: Modifier = Modifier,
-  image: MutableState<BufferedImage?>,
-  boxes: MutableList<OCRBoxData>,
-  operationNumber: MutableState<Int>,
-  selectedBoxIndex: MutableState<Int?>
-) {
-  SimpleLoadedImageDisplayer(
-    modifier = modifier,
-    image = image,
-    displayableKey = boxes,
-    displayableOnImage = { imageSize, imageOriginalSize, boxes ->
-      boxes.forEachIndexed { index, box ->
-        key(Triple(image.value?.hashCode(), operationNumber.value, index)) {
-          val boxFollowable = FollowableMutableState(mutableStateOf(box.box))
-          boxFollowable.follow { _, after ->
-            boxes[index] = boxes[index].copy(box = after)
-          }
-          BoxOnImage(index, imageOriginalSize, imageSize.value, boxFollowable, selectedBoxIndex)
-        }
-      }
-    }
-  )
-}
 
 @Composable
 fun <T> SimpleLoadedImageDisplayer(

@@ -16,12 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanelWithPreview
-import app.block.SimpleLoadedImageDisplayer
 import app.utils.PagesPanel
 import app.utils.openFileDialog
+import core.image.ImageCanvas
+import core.image.overlays.BoxOverlay
 import core.navigation.NavigationController
 import core.navigation.NavigationDestination
 import core.utils.JSON
@@ -198,12 +200,25 @@ private fun OCRImageDisplayArea(
   selectedBoxIndex: MutableState<Int?>
 ) {
   Column(modifier = Modifier.fillMaxWidth(0.7f)) {
-    SimpleLoadedImageDisplayer(
-      modifier = Modifier.fillMaxSize(0.9f),
-      image = image,
-      boxes = boxes,
-      operationNumber = operationNumber,
-      selectedBoxIndex = selectedBoxIndex
+    val overlays = remember(boxes.toList(), selectedBoxIndex.value, operationNumber.value) {
+      boxes.mapIndexed { index, ocrBox ->
+        BoxOverlay.fromBoxOnImage(
+          index = index,
+          blockPosition = ocrBox.box,
+          imageSize = image.value?.let { IntSize(it.width, it.height) } ?: IntSize(1000, 1000),
+          isSelected = selectedBoxIndex.value == index,
+          onPositionUpdate = { newPosition ->
+            boxes[index] = boxes[index].copy(box = newPosition)
+          },
+          onBoxSelect = { selectedBoxIndex.value = index }
+        )
+      }
+    }
+
+    ImageCanvas(
+      image = image.value,
+      overlays = overlays,
+      modifier = Modifier.fillMaxSize(0.9f)
     )
   }
 }

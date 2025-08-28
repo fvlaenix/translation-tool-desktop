@@ -18,7 +18,7 @@ class ImageCanvasStateTest {
 
   @Test
   fun `test initial state`() {
-    assertNull(state.image)
+    assertNull(state.bufferedImage)
     assertEquals(IntSize.Zero, state.canvasSize)
     assertEquals(IntSize.Zero, state.imageDisplaySize)
     assertEquals(1f, state.imageToCanvasScale)
@@ -34,7 +34,7 @@ class ImageCanvasStateTest {
 
     state.setImage(testImage)
 
-    assertEquals(testImage, state.image)
+    assertEquals(testImage, state.bufferedImage)
     assertTrue(state.hasImage)
     assertEquals(IntSize(100, 50), state.imageSize)
     assertFalse(state.isLoading)
@@ -76,7 +76,7 @@ class ImageCanvasStateTest {
     state.setImage(image2)
 
     assertFalse(state.isLoading)
-    assertEquals(image2, state.image)
+    assertEquals(image2, state.bufferedImage)
   }
 
   @Test
@@ -89,10 +89,10 @@ class ImageCanvasStateTest {
     assertNotEquals(1f, state.imageToCanvasScale)
     assertNotEquals(Offset.Zero, state.imageOffsetInCanvas)
 
-    state.setImage(null)
+    state.setImage(null as BufferedImage?)
 
     assertFalse(state.hasImage)
-    assertNull(state.image)
+    assertNull(state.bufferedImage)
     assertEquals(IntSize.Zero, state.imageSize)
     assertEquals(IntSize.Zero, state.imageDisplaySize)
     assertEquals(1f, state.imageToCanvasScale)

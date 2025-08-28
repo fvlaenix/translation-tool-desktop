@@ -17,7 +17,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import app.block.SimpleLoadedImageDisplayer
 import core.utils.KotlinUtils.applyIf
 import core.utils.PreemptiveCoroutineScope
 import core.utils.Text2ImageUtils

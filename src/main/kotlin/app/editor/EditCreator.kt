@@ -2,6 +2,7 @@ package app.editor
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,11 +17,12 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanel
-import app.block.SimpleLoadedImageDisplayer
 import app.editor.domain.EditCreatorStepUiState
 import app.editor.domain.EditCreatorStepViewModel
 import app.utils.ChipSelector
 import app.utils.PagesPanel
+import core.image.ImageCanvas
+import core.image.overlays.BoxOverlayMigration
 import core.navigation.NavigationController
 import core.navigation.NavigationDestination
 import core.utils.ImageUtils.deepCopy
@@ -163,13 +165,25 @@ private fun ImageEditingArea(
   Column(modifier = Modifier.fillMaxWidth(0.5f)) {
     val currentSettings = uiState.currentSettings
     if (currentSettings != null) {
-      SimpleLoadedImageDisplayer(
-        imageEditsCounter,
-        currentSettings,
-        mutableStateOf(uiState.image),
-        mutableStateOf(uiState.boxes),
-        mutableStateOf(uiState.operationNumber),
-        mutableStateOf(uiState.selectedBoxIndex)
+      val overlays = remember(uiState.boxes, uiState.selectedBoxIndex, uiState.operationNumber) {
+        BoxOverlayMigration.createBlockOverlays(
+          blocks = uiState.boxes,
+          basicSettings = currentSettings,
+          selectedBoxIndex = uiState.selectedBoxIndex,
+          jobCounter = imageEditsCounter,
+          onBlockUpdate = { index, newBlockData ->
+          },
+          onBoxSelect = { index ->
+          },
+          onHeavyChange = {
+          }
+        )
+      }
+
+      ImageCanvas(
+        image = uiState.image,
+        overlays = overlays,
+        modifier = Modifier.fillMaxSize()
       )
     }
   }
