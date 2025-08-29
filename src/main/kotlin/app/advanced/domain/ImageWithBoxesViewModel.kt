@@ -9,6 +9,7 @@ import core.utils.ClipboardUtils.getClipboardImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import translation.data.BlockPosition
+import translation.data.clampToImageBounds
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -46,6 +47,7 @@ class ImageWithBoxesViewModel : BaseViewModel() {
 
   fun addNewBox() {
     val image = _uiState.value.image ?: return
+    val imageSize = IntSize(image.width, image.height)
 
     val newBox = BlockPosition(
       x = 0.0,
@@ -53,7 +55,7 @@ class ImageWithBoxesViewModel : BaseViewModel() {
       width = image.width.toDouble() / 10,
       height = image.height.toDouble() / 10,
       shape = BlockPosition.Shape.Rectangle
-    )
+    ).clampToImageBounds(imageSize)
 
     _uiState.value = _uiState.value.copy(
       boxes = _uiState.value.boxes + newBox
@@ -70,9 +72,12 @@ class ImageWithBoxesViewModel : BaseViewModel() {
   }
 
   fun updateBox(index: Int, box: BlockPosition) {
+    val image = _uiState.value.image ?: return
+    val imageSize = IntSize(image.width, image.height)
+    
     val currentBoxes = _uiState.value.boxes.toMutableList()
     if (index in currentBoxes.indices) {
-      currentBoxes[index] = box
+      currentBoxes[index] = box.clampToImageBounds(imageSize)
       _uiState.value = _uiState.value.copy(boxes = currentBoxes)
     }
   }

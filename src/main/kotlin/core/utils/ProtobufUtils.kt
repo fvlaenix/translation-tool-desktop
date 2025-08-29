@@ -1,5 +1,6 @@
 package core.utils
 
+import androidx.compose.ui.unit.IntSize
 import app.ocr.OCRBoxData
 import com.fvlaenix.image.protobuf.image
 import com.fvlaenix.ocr.protobuf.OcrImageRequest
@@ -17,6 +18,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import settings.data.SettingsRepository
 import translation.data.BlockPosition
+import translation.data.clampToImageBounds
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -91,6 +93,7 @@ object ProtobufUtils : KoinComponent {
         throw Exception("Error occurred while processing image: ${response.error}")
       }
       val rectangles = response.rectangles.rectanglesList
+      val imageSize = IntSize(image.width, image.height)
 
       rectangles.map { rectangle ->
         OCRBoxData(
@@ -100,7 +103,7 @@ object ProtobufUtils : KoinComponent {
             width = rectangle.width.toDouble(),
             height = rectangle.height.toDouble(),
             shape = BlockPosition.Shape.Rectangle
-          ),
+          ).clampToImageBounds(imageSize),
           text = rectangle.text
         )
       }

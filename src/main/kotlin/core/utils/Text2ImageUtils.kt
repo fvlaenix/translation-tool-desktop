@@ -1,9 +1,11 @@
 package core.utils
 
+import androidx.compose.ui.unit.IntSize
 import bean.Alignment
 import translation.data.BlockData
 import translation.data.BlockPosition
 import translation.data.BlockSettings
+import translation.data.clampToImageBounds
 import java.awt.BasicStroke
 import java.awt.FontMetrics
 import java.awt.RenderingHints
@@ -161,8 +163,11 @@ object Text2ImageUtils {
   ): BufferedImage {
     val text =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec quis quam tempor, tempus lorem id, aliquet ante. Ut vitae mi blandit, tincidunt arcu eu, mattis metus. Donec eget tincidunt quam, nec tempor ligula. Donec ornare mi nisl, quis imperdiet erat laoreet quis. Phasellus sed neque non sem consequat pharetra. Fusce ultrices erat nec tincidunt vehicula. Duis non odio pharetra, laoreet ipsum varius, porta libero."
+
+    val imageSize = IntSize(width, height)
     val blockData = BlockData(
-      blockPosition = BlockPosition(.0, .0, width.toDouble(), height.toDouble(), BlockPosition.Shape.Oval),
+      blockPosition = BlockPosition(.0, .0, width.toDouble(), height.toDouble(), BlockPosition.Shape.Oval)
+        .clampToImageBounds(imageSize),
       text = text,
       settings = settings
     )

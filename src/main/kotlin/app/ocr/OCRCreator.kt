@@ -208,7 +208,8 @@ private fun OCRImageDisplayArea(
           imageSize = image.value?.let { IntSize(it.width, it.height) } ?: IntSize(1000, 1000),
           isSelected = selectedBoxIndex.value == index,
           onPositionUpdate = { newPosition ->
-            boxes[index] = boxes[index].copy(box = newPosition)
+            val imageSize = image.value?.let { IntSize(it.width, it.height) } ?: IntSize(1000, 1000)
+            boxes[index] = boxes[index].copy(box = newPosition.clampToImageBounds(imageSize))
           },
           onBoxSelect = { selectedBoxIndex.value = index }
         )

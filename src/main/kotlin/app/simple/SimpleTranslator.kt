@@ -1,6 +1,5 @@
 package app.simple
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
@@ -9,22 +8,18 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.TopBar
+import core.image.ImageCanvas
 import core.navigation.NavigationController
 import org.koin.compose.koinInject
 import translation.domain.SimpleTranslatorViewModel
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
 
 @Composable
 fun SimpleTranslator(navigationController: NavigationController) {
@@ -38,20 +33,7 @@ fun SimpleTranslator(navigationController: NavigationController) {
   val error by viewModel.error
   val statusMessage by viewModel.statusMessage
 
-  val imagePaster = remember { mutableStateOf<ImageBitmap?>(null) }
   val currentSize = remember { mutableStateOf(IntSize.Zero) }
-
-  // Convert BufferedImage to ImageBitmap for display
-  LaunchedEffect(currentImage) {
-    if (currentImage != null) {
-      val outputStream = ByteArrayOutputStream()
-      ImageIO.write(currentImage, "png", outputStream)
-      val byteArray = outputStream.toByteArray()
-      imagePaster.value = loadImageBitmap(ByteArrayInputStream(byteArray))
-    } else {
-      imagePaster.value = null
-    }
-  }
 
   TopBar(navigationController, "Simple Translator") {
     Column(
@@ -71,7 +53,7 @@ fun SimpleTranslator(navigationController: NavigationController) {
       Text(statusMessage)
       InsideSimpleTranslator(
         viewModel = viewModel,
-        imagePaster = imagePaster,
+        currentImage = currentImage,
         currentSize = currentSize,
         ocrText = ocrText,
         translationText = translationText,
@@ -85,7 +67,7 @@ fun SimpleTranslator(navigationController: NavigationController) {
 @Composable
 private fun InsideSimpleTranslator(
   viewModel: SimpleTranslatorViewModel,
-  imagePaster: MutableState<ImageBitmap?>,
+  currentImage: java.awt.image.BufferedImage?,
   currentSize: MutableState<IntSize>,
   ocrText: String,
   translationText: String,
@@ -98,13 +80,10 @@ private fun InsideSimpleTranslator(
       .size(width = currentSize.value.width.dp / 3, height = currentSize.value.height.dp / 3)
       .focusable()
   ) {
-    if (imagePaster.value != null) {
-      Image(
-        bitmap = imagePaster.value!!,
-        contentDescription = null,
-        modifier = Modifier.fillMaxSize()
-      )
-    }
+    ImageCanvas(
+      image = currentImage,
+      modifier = Modifier.fillMaxSize()
+    )
   }
 
   Row {
