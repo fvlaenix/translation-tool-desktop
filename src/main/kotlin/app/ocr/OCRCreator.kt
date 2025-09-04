@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import org.burnoutcrew.reorderable.*
 import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 import project.data.*
 import translation.data.*
 import translation.domain.OCRCreatorViewModel
@@ -81,7 +82,7 @@ fun OCRCreator(navigationController: NavigationController, project: Project? = n
       }
     },
     stepWindow = { counter, data ->
-      OCRCreatorStep(counter, data)
+      OCRCreatorStep(counter, data, project)
     },
     finalWindow = { dataList ->
       OCRCreatorFinal(navigationController, dataList, project)
@@ -97,9 +98,10 @@ private data class ImageInfoWithBox(
 @Composable
 private fun OCRCreatorStep(
   jobCounter: AtomicInteger,
-  imageInfoWithBox: MutableState<ImageInfoWithBox?>
+  imageInfoWithBox: MutableState<ImageInfoWithBox?>,
+  project: Project? = null
 ) {
-  val viewModel: OCRCreatorViewModel = koinInject()
+  val viewModel: OCRCreatorViewModel = koinInject { parametersOf(project) }
 
   val currentImage by viewModel.currentImage
   val ocrBoxes by viewModel.ocrBoxes

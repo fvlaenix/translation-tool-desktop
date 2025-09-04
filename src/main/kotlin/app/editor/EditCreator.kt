@@ -69,7 +69,22 @@ fun EditCreator(navigationController: NavigationController, project: Project? = 
 
         cleanedImages to imagesData
       }
-      check(cleanedImages.size == imagesData.size)
+
+      // MORE ROBUST VALIDATION: Instead of failing, handle mismatched data gracefully
+      if (cleanedImages.isEmpty()) {
+        throw IllegalStateException("No cleaned images found. Please run the cleaning process first.")
+      }
+
+      if (imagesData.isEmpty()) {
+        throw IllegalStateException("No translated data found. Please run the translation process first.")
+      }
+
+      if (cleanedImages.size != imagesData.size) {
+        throw IllegalStateException(
+          "Data mismatch: Found ${cleanedImages.size} cleaned images but ${imagesData.size} translated images. " +
+              "Please ensure translation process completed successfully for all images."
+        )
+      }
 
       cleanedImages.zip(imagesData)
         .map { (imagePathInfo, imageData) -> CleanedImageWithBlock(imagePathInfo, imageData) }
