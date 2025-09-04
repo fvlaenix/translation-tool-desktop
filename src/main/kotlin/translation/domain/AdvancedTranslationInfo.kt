@@ -9,17 +9,26 @@ import translation.data.OCRRepository
 import translation.data.TranslationRepository
 import java.awt.image.BufferedImage
 
+/**
+ * Data class holding sub-image with OCR and translation text for advanced workflow.
+ */
 data class AdvancedTranslationInfo(
   val subImage: BufferedImage,
   val ocrText: String = "",
   val translationText: String = ""
 )
 
+/**
+ * Workflow states for advanced translator: image with boxes, translation step.
+ */
 enum class AdvancedTranslatorStep {
   IMAGE_WITH_BOXES,
   TRANSLATION_STEP
 }
 
+/**
+ * View model for advanced translation workflow with multi-step process.
+ */
 class AdvancedTranslatorViewModel(
   private val ocrRepository: OCRRepository,
   private val translationRepository: TranslationRepository

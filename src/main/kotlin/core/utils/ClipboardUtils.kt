@@ -11,7 +11,13 @@ import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 
+/**
+ * System clipboard integration. Extracts images from clipboard for translation workflow.
+ */
 object ClipboardUtils {
+  /**
+   * Retrieves image from system clipboard, handles awt/buffered image conversion.
+   */
   fun getClipboardImage(): BufferedImage? {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
     val transferable = clipboard.getContents(null)

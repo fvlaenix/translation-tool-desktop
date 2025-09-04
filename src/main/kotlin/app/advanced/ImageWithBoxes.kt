@@ -29,6 +29,9 @@ import core.image.overlays.BoxOverlay
 import org.koin.compose.koinInject
 import translation.data.BlockPosition
 
+/**
+ * Composable for drawing/editing text selection boxes on images. supports box creation, selection, and manipulation.
+ */
 @Composable
 fun ImageWithBoxes(
   viewModel: ImageWithBoxesViewModel = koinInject(),
@@ -80,6 +83,9 @@ fun ImageWithBoxes(
   }
 }
 
+/**
+ * Renders image with draggable/resizable overlay boxes for text region selection.
+ */
 @Composable
 private fun ImageDisplayArea(
   image: ImageBitmap,
@@ -115,7 +121,9 @@ private fun ImageDisplayArea(
   }
 }
 
-
+/**
+ * Displays placeholder text with gradient styling when no image is loaded.
+ */
 @Composable
 private fun EmptyImageState(emptyText: String) {
   val gradientColors = listOf(Cyan, Gray, Magenta)

@@ -5,6 +5,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntSize
 import translation.data.BlockPosition
 
+/**
+ * Ii state for image with boxes functionality, holds image, boxes, selection and display settings.
+ */
 @Immutable
 data class ImageWithBoxesUiState(
   val image: ImageBitmap? = null,

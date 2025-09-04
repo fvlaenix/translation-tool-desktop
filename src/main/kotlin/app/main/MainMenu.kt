@@ -17,6 +17,9 @@ import fonts.data.FontRepository
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
+/**
+ * Main navigation menu with buttons for different translation workflows and project management.
+ */
 @Composable
 fun MainMenu(navigationController: NavigationController) {
   val fontRepository: FontRepository = koinInject()

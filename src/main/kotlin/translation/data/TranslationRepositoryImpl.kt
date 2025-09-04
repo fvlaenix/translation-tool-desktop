@@ -3,6 +3,9 @@ package translation.data
 import core.base.Repository
 import core.utils.ProtobufUtils
 
+/**
+ * Translation repository implementation. Translates text through external grpc service.
+ */
 class TranslationRepositoryImpl : TranslationRepository, Repository {
 
   override suspend fun translateText(text: String): Result<String> = safeCall {

@@ -10,10 +10,16 @@ import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.*
 
+/**
+ * Project repository implementation. Manages project loading, creation, and persistence to json file.
+ */
 class ProjectRepositoryImpl(
   private val projectsFilePath: String
 ) : ProjectRepository, Repository {
 
+  /**
+   * Loads all projects from json file, sorted by last change time.
+   */
   override suspend fun loadProjects(): Result<List<ProjectInfo>> = safeCall {
     withContext(Dispatchers.IO) {
       try {
@@ -29,6 +35,9 @@ class ProjectRepositoryImpl(
     }
   }
 
+  /**
+   * Saves or updates project information in the projects list.
+   */
   override suspend fun saveProject(project: ProjectInfo): Result<Unit> = safeCall {
     val currentProjects = loadProjects().getOrElse { emptyList() }.toMutableList()
 
@@ -43,6 +52,9 @@ class ProjectRepositoryImpl(
     }
   }
 
+  /**
+   * Creates new project directory with initial structure and files.
+   */
   override suspend fun createProject(name: String, path: String): Result<ProjectInfo> = safeCall {
     val projectPath = Path.of(path)
 
@@ -66,6 +78,9 @@ class ProjectRepositoryImpl(
     }
   }
 
+  /**
+   * Loads project data from project.json file in project directory.
+   */
   override suspend fun getProject(projectInfo: ProjectInfo): Result<Project> = safeCall {
     withContext(Dispatchers.IO) {
       if (!projectInfo.exists) {
@@ -86,6 +101,9 @@ class ProjectRepositoryImpl(
     }
   }
 
+  /**
+   * Removes project from the projects list without deleting files.
+   */
   override suspend fun deleteProject(projectInfo: ProjectInfo): Result<Unit> = safeCall {
     val currentProjects = loadProjects().getOrElse { emptyList() }.toMutableList()
     currentProjects.removeAll { it.stringPath == projectInfo.stringPath }
@@ -95,6 +113,9 @@ class ProjectRepositoryImpl(
     }
   }
 
+  /**
+   * Validates that project path exists and project directory doesn't exist yet.
+   */
   override suspend fun validateProjectPath(path: String, projectName: String): Result<Boolean> = safeCall {
     val basePath = Path.of(path)
     val projectPath = basePath.resolve(projectName.replace(Regex("[^a-zA-Z0-9]"), "-").lowercase())

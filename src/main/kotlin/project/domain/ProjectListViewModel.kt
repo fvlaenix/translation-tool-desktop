@@ -7,6 +7,9 @@ import kotlinx.coroutines.launch
 import project.data.ProjectInfo
 import project.data.ProjectRepository
 
+/**
+ * View model for managing project list display and selection.
+ */
 class ProjectListViewModel(
   private val projectRepository: ProjectRepository,
   private val projectSelectionState: ProjectSelectionState
@@ -22,6 +25,9 @@ class ProjectListViewModel(
     loadProjects()
   }
 
+  /**
+   * Loads all available projects from the repository.
+   */
   fun loadProjects() {
     viewModelScope.launch {
       setLoading(true)
@@ -39,6 +45,9 @@ class ProjectListViewModel(
     }
   }
 
+  /**
+   * Selects a project and loads its full data.
+   */
   fun selectProject(projectInfo: ProjectInfo) {
     viewModelScope.launch {
       projectSelectionState.selectProject(projectInfo)
@@ -54,6 +63,9 @@ class ProjectListViewModel(
     }
   }
 
+  /**
+   * Refreshes the project list by reloading from repository.
+   */
   fun refreshProjects() {
     viewModelScope.launch {
       _isRefreshing.value = true
@@ -62,6 +74,9 @@ class ProjectListViewModel(
     }
   }
 
+  /**
+   * Deletes a project and updates the local list and selection state.
+   */
   fun deleteProject(projectInfo: ProjectInfo) {
     viewModelScope.launch {
       projectRepository.deleteProject(projectInfo)

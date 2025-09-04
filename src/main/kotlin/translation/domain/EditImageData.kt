@@ -21,11 +21,17 @@ import javax.imageio.ImageIO
 import kotlin.io.path.createDirectories
 import kotlin.io.path.isDirectory
 
+/**
+ * Data class combining image path info with image data for editing.
+ */
 data class EditImageData(
   val imagePathInfo: ImagePathInfo,
   val imageData: ImageData
 )
 
+/**
+ * View model for editing image data with text blocks and generating final images.
+ */
 class EditCreatorViewModel(
   private val imageDataRepository: ImageDataRepository,
   private val textDataRepository: TextDataRepository,

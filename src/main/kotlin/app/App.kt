@@ -27,6 +27,9 @@ import core.navigation.NavigationDestination
 import core.utils.AnimatedContentUtils.horizontalSpec
 import org.koin.compose.koinInject
 
+/**
+ * Main Compose UI root. Handles navigation between screens using animated content and manages error overlay.
+ */
 @Composable
 @Preview
 fun App() {

@@ -10,6 +10,9 @@ import translation.data.OCRRepository
 import translation.data.TranslationRepository
 import java.awt.image.BufferedImage
 
+/**
+ * View model for simple translation workflow with image OCR and text translation.
+ */
 class SimpleTranslatorViewModel(
   private val ocrRepository: OCRRepository,
   private val translationRepository: TranslationRepository

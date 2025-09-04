@@ -13,6 +13,9 @@ import project.data.TextDataRepository
 import project.data.TextType
 import translation.data.*
 
+/**
+ * View model for managing OCR creation workflow including image processing and text extraction.
+ */
 class OCRCreatorViewModel(
   private val ocrRepository: OCRRepository,
   private val workDataRepository: WorkDataRepository,

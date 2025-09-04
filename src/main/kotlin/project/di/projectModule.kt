@@ -7,6 +7,9 @@ import project.domain.ProjectListViewModel
 import project.domain.ProjectPanelViewModel
 import project.domain.ProjectSelectionState
 
+/**
+ * Koin module for project-related dependencies including repositories and view models.
+ */
 val projectModule = module {
 
   // Repositories

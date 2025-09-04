@@ -1,8 +1,14 @@
 package core.utils
 
+/**
+ * Mutablelist wrapper with change listeners for reactive updates.
+ */
 class FollowableMutableList<T>(private val delegate: MutableList<T>) : MutableList<T> {
   private val followers = mutableListOf<(List<T>) -> Unit>()
 
+  /**
+   * Registers change listener that fires on list modifications.
+   */
   fun follow(block: (List<T>) -> Unit) {
     followers.add(block)
   }

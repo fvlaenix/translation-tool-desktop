@@ -21,6 +21,9 @@ import core.navigation.NavigationController
 import org.koin.compose.koinInject
 import translation.domain.SimpleTranslatorViewModel
 
+/**
+ * Simple translation workflow with single image ocr and translation functionality.
+ */
 @Composable
 fun SimpleTranslator(navigationController: NavigationController) {
   val viewModel: SimpleTranslatorViewModel = koinInject()
@@ -64,6 +67,9 @@ fun SimpleTranslator(navigationController: NavigationController) {
   }
 }
 
+/**
+ * internal ui components for simple translator including image display, ocr and translation controls.
+ */
 @Composable
 private fun InsideSimpleTranslator(
   viewModel: SimpleTranslatorViewModel,

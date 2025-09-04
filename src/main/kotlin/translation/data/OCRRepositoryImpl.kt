@@ -5,6 +5,9 @@ import core.base.Repository
 import core.utils.ProtobufUtils
 import java.awt.image.BufferedImage
 
+/**
+ * OCR repository implementation. Processes images through external grpc service for text extraction.
+ */
 class OCRRepositoryImpl : OCRRepository, Repository {
 
   override suspend fun processImage(image: BufferedImage): Result<String> = safeCall {

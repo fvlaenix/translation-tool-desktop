@@ -6,6 +6,9 @@ import fonts.data.FontRepository
 import org.koin.core.context.GlobalContext
 import project.data.ProjectRepository
 
+/**
+ * Application entry point. Initializes dependency injection, loads fonts and projects, starts compose desktop window.
+ */
 suspend fun main() {
   val app = MangaTranslationApplication()
 

@@ -4,8 +4,14 @@ import core.di.appModule
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 
+/**
+ * Application lifecycle manager. Handles dependency injection initialization and cleanup.
+ */
 class MangaTranslationApplication {
 
+  /**
+   * Initializes dependency injection container with all required modules.
+   */
   fun initialize() {
     try {
       startKoin {
@@ -17,6 +23,9 @@ class MangaTranslationApplication {
     }
   }
 
+  /**
+   * Cleanly shuts down dependency injection container.
+   */
   fun shutdown() {
     try {
       stopKoin()

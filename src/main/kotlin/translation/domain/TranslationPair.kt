@@ -11,6 +11,9 @@ import translation.data.TranslationRepository
 import translation.data.WorkData
 import translation.data.WorkDataRepository
 
+/**
+ * Represents a pair of original and translated text with position information.
+ */
 data class TranslationPair(
   val originalText: String,
   val translatedText: String,
@@ -18,6 +21,9 @@ data class TranslationPair(
   val blockIndex: Int
 )
 
+/**
+ * ViewModel for managing translation creation workflow and text pair translations.
+ */
 class TranslationCreatorViewModel(
   private val translationRepository: TranslationRepository,
   private val workDataRepository: WorkDataRepository,

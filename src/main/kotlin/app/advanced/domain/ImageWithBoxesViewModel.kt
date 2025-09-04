@@ -14,6 +14,9 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
+/**
+ * Viewmodel for managing image with text selection boxes functionality, handles image loading and box manipulation.
+ */
 class ImageWithBoxesViewModel : BaseViewModel() {
 
   private val _uiState = mutableStateOf(ImageWithBoxesUiState())

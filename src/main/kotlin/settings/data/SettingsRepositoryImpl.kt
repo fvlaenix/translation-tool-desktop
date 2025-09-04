@@ -9,10 +9,16 @@ import java.nio.file.Path
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
+/**
+ * Implementation of settings repository that handles file-based settings persistence.
+ */
 class SettingsRepositoryImpl(
   private val settingsFilePath: String
 ) : SettingsRepository, Repository {
 
+  /**
+   * Loads settings from file or returns defaults if file doesn't exist.
+   */
   override suspend fun loadSettings(): Result<SettingsModel> = safeCall {
     withContext(Dispatchers.IO) {
       try {
@@ -25,6 +31,9 @@ class SettingsRepositoryImpl(
     }
   }
 
+  /**
+   * Saves settings to file.
+   */
   override suspend fun saveSettings(settings: SettingsModel): Result<Unit> = safeCall {
     withContext(Dispatchers.IO) {
       Path.of(settingsFilePath).writeText(
@@ -33,6 +42,9 @@ class SettingsRepositoryImpl(
     }
   }
 
+  /**
+   * Updates a specific setting by key and saves to file.
+   */
   override suspend fun updateSetting(key: String, value: Any): Result<Unit> = safeCall {
     val currentSettings = loadSettings().getOrThrow()
     val updatedSettings = when (key) {

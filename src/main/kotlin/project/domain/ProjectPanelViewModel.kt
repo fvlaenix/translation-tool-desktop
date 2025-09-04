@@ -6,6 +6,9 @@ import core.base.BaseViewModel
 import kotlinx.coroutines.launch
 import project.data.*
 
+/**
+ * View model for project panel that manages project loading and section display.
+ */
 class ProjectPanelViewModel(
   private val projectRepository: ProjectRepository,
   private val imageDataRepository: ImageDataRepository,
@@ -31,6 +34,9 @@ class ProjectPanelViewModel(
     // This would ideally be a proper observable, but for simplicity we'll check in loadProject
   }
 
+  /**
+   * Loads the currently selected project and its sections.
+   */
   fun loadProject() {
     val selectedProjectInfo = projectSelectionState.selectedProjectInfo.value
     if (selectedProjectInfo == null) {
@@ -136,10 +142,16 @@ class ProjectPanelViewModel(
     return sections
   }
 
+  /**
+   * Refreshes the current project by reloading it.
+   */
   fun refreshProject() {
     loadProject()
   }
 
+  /**
+   * Represents a section in the project workflow with status and requirements.
+   */
   data class ProjectSection(
     val id: String,
     val title: String,

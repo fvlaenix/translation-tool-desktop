@@ -11,6 +11,9 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
+/**
+ * Text data repository implementation. Manages work data loading, saving and translation text operations.
+ */
 class TextDataRepositoryImpl : TextDataRepository, Repository {
 
   override suspend fun loadWorkData(project: Project, textType: TextType): Result<WorkData?> = safeCall {

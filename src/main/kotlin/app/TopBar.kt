@@ -9,6 +9,9 @@ import androidx.compose.runtime.Composable
 import core.navigation.NavigationController
 import core.navigation.NavigationDestination
 
+/**
+ * Reusable top app bar composable with navigation, title, and action buttons.
+ */
 @Composable
 fun TopBar(
   navigationController: NavigationController,

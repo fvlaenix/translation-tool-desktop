@@ -9,6 +9,9 @@ import core.utils.ProtobufUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+/**
+ * View model for advanced translation step. Manages per-box OCR and translation operations.
+ */
 class TranslationStepViewModel : BaseViewModel() {
 
   private val _uiState = mutableStateOf(TranslationStepUiState())
@@ -22,6 +25,9 @@ class TranslationStepViewModel : BaseViewModel() {
     _uiState.value = _uiState.value.copy(parentSize = size)
   }
 
+  /**
+   * Processes OCR for specific text box and appends result to existing text.
+   */
   fun processOCRForInfo(index: Int) {
     val info = _uiState.value.translationInfos.getOrNull(index) ?: return
 
@@ -47,6 +53,9 @@ class TranslationStepViewModel : BaseViewModel() {
     }
   }
 
+  /**
+   * Translates OCR text for specific box via external service.
+   */
   fun translateInfo(index: Int) {
     val info = _uiState.value.translationInfos.getOrNull(index) ?: return
     if (info.ocr.isBlank()) return

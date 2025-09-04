@@ -9,6 +9,9 @@ import androidx.compose.ui.unit.IntSize
 import java.awt.image.BufferedImage
 import kotlin.math.min
 
+/**
+ * Manages image display state with transformations and scaling for canvas rendering.
+ */
 @Stable
 class ImageCanvasState {
   private val _bufferedImage = mutableStateOf<BufferedImage?>(null)
@@ -47,6 +50,9 @@ class ImageCanvasState {
   val hasImage: Boolean
     get() = _bufferedImage.value != null || _imageBitmap.value != null
 
+  /**
+   * Sets buffered image and updates canvas state.
+   */
   fun setImage(newImage: BufferedImage?) {
     if (_bufferedImage.value != newImage) {
       _isLoading.value = newImage == null && hasImage
@@ -58,6 +64,9 @@ class ImageCanvasState {
     }
   }
 
+  /**
+   * Sets image bitmap and updates canvas state.
+   */
   fun setImage(newImage: ImageBitmap?) {
     if (_imageBitmap.value != newImage) {
       _isLoading.value = newImage == null && hasImage
@@ -69,6 +78,9 @@ class ImageCanvasState {
     }
   }
 
+  /**
+   * Gets image bitmap suitable for compose rendering.
+   */
   fun getImageBitmapForRendering(): ImageBitmap? {
     return when (_imageSourceType.value) {
       ImageSourceType.IMAGE_BITMAP -> _imageBitmap.value
@@ -90,6 +102,9 @@ class ImageCanvasState {
     }
   }
 
+  /**
+   * Gets buffered image for overlay processing.
+   */
   fun getBufferedImageForOverlays(): BufferedImage? {
     return when (_imageSourceType.value) {
       ImageSourceType.BUFFERED_IMAGE -> _bufferedImage.value
@@ -101,6 +116,9 @@ class ImageCanvasState {
     }
   }
 
+  /**
+   * Updates canvas size and recalculates transformations.
+   */
   fun updateCanvasSize(size: IntSize) {
     if (_canvasSize.value != size) {
       _canvasSize.value = size
@@ -108,6 +126,9 @@ class ImageCanvasState {
     }
   }
 
+  /**
+   * Sets loading state for image operations.
+   */
   fun setLoading(loading: Boolean) {
     _isLoading.value = loading
   }
@@ -143,6 +164,9 @@ class ImageCanvasState {
     _imageOffsetInCanvas.value = Offset(offsetX, offsetY)
   }
 
+  /**
+   * Gets image boundaries within canvas coordinates.
+   */
   fun getImageBoundsInCanvas(): androidx.compose.ui.geometry.Rect {
     return androidx.compose.ui.geometry.Rect(
       offset = _imageOffsetInCanvas.value,
@@ -153,6 +177,9 @@ class ImageCanvasState {
     )
   }
 
+  /**
+   * Validates internal state consistency for debugging.
+   */
   fun debugValidateState(): Boolean {
     if (!hasImage) return true
 

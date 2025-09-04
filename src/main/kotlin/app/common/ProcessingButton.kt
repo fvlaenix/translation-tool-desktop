@@ -8,6 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+/**
+ * Reusable button with loading spinner for async operations.
+ */
 @Composable
 fun ProcessingButton(
   text: String,

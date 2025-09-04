@@ -22,6 +22,9 @@ import core.navigation.NavigationController
 import org.koin.compose.koinInject
 import java.awt.image.BufferedImage
 
+/**
+ * Advanced translation workflow with multi-step process: image with text boxes → translation step.
+ */
 @Composable
 fun AdvancedTranslator(navigationController: NavigationController) {
   val currentSize = remember { mutableStateOf(IntSize.Zero) }
@@ -127,10 +130,16 @@ fun AdvancedTranslator(navigationController: NavigationController) {
   }
 }
 
+/**
+ * Workflow states for advanced translator: initial_image, translation_step.
+ */
 enum class AdvancedTranslatorState {
   INITIAL_IMAGE, TRANSLATION_STEP
 }
 
+/**
+ * Data class holding sub-image with OCR and translation text for advanced workflow.
+ */
 data class TranslationInfo(
   val subImage: BufferedImage,
   val ocr: String = "",

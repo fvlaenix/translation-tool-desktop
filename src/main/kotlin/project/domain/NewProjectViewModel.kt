@@ -8,6 +8,9 @@ import project.data.ProjectRepository
 import java.nio.file.Path
 import kotlin.io.path.exists
 
+/**
+ * View model for creating new projects with validation and folder management.
+ */
 class NewProjectViewModel(
   private val projectRepository: ProjectRepository,
   private val projectSelectionState: ProjectSelectionState
@@ -36,16 +39,25 @@ class NewProjectViewModel(
       Path.of(_basePath.value, projectFolderName).toString()
     } else ""
 
+  /**
+   * Sets the project name and triggers validation.
+   */
   fun setProjectName(name: String) {
     _projectName.value = name
     validateInputs()
   }
 
+  /**
+   * Sets the base path and triggers validation.
+   */
   fun setBasePath(path: String) {
     _basePath.value = path
     validateInputs()
   }
 
+  /**
+   * Validates project name and path inputs.
+   */
   fun validateInputs() {
     val errors = mutableMapOf<String, String>()
 
@@ -72,11 +84,17 @@ class NewProjectViewModel(
     _validationErrors.value = errors
   }
 
+  /**
+   * Checks if all inputs are valid.
+   */
   fun isValid(): Boolean {
     validateInputs()
     return _validationErrors.value.isEmpty()
   }
 
+  /**
+   * Creates a new project with the specified name and path.
+   */
   fun createProject() {
     if (!isValid()) {
       setError("Please fix validation errors before creating project")
@@ -106,6 +124,9 @@ class NewProjectViewModel(
     }
   }
 
+  /**
+   * Resets the form to its initial state.
+   */
   fun resetForm() {
     _projectName.value = ""
     _basePath.value = ""

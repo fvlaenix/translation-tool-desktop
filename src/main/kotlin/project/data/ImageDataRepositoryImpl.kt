@@ -12,8 +12,14 @@ import javax.imageio.ImageIO
 import kotlin.io.path.createDirectories
 import kotlin.io.path.nameWithoutExtension
 
+/**
+ * Image data repository implementation. Manages project image loading, saving and batch operations.
+ */
 class ImageDataRepositoryImpl : ImageDataRepository, Repository {
 
+  /**
+   * Loads all images from project directory for specified image type.
+   */
   override suspend fun loadImages(project: Project, imageType: ImageType): Result<List<ImagePathInfo>> = safeCall {
     withContext(Dispatchers.IO) {
       val workDataPath = project.path.resolve(imageType.folderName)
@@ -30,6 +36,9 @@ class ImageDataRepositoryImpl : ImageDataRepository, Repository {
     }
   }
 
+  /**
+   * Saves image list to project directory with sequential naming.
+   */
   override suspend fun saveImages(project: Project, imageType: ImageType, images: List<ImagePathInfo>): Result<Unit> =
     safeCall {
       withContext(Dispatchers.IO) {
@@ -45,12 +54,18 @@ class ImageDataRepositoryImpl : ImageDataRepository, Repository {
       }
     }
 
+  /**
+   * Adds single image to existing images and saves updated list.
+   */
   override suspend fun addImage(project: Project, imageType: ImageType, image: ImagePathInfo): Result<Unit> = safeCall {
     val currentImages = loadImages(project, imageType).getOrElse { emptyList() }.toMutableList()
     currentImages.add(image)
     saveImages(project, imageType, currentImages).getOrThrow()
   }
 
+  /**
+   * Removes all images from project directory for specified type.
+   */
   override suspend fun clearImages(project: Project, imageType: ImageType): Result<Unit> = safeCall {
     withContext(Dispatchers.IO) {
       val workDataPath = project.path.resolve(imageType.folderName)

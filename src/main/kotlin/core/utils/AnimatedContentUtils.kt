@@ -3,7 +3,13 @@ package core.utils
 import androidx.compose.animation.*
 import core.navigation.NavigationDestination
 
+/**
+ * Utility for creating animated content transitions with navigation-aware direction.
+ */
 object AnimatedContentUtils {
+  /**
+   * Creates horizontal slide transitions based on navigation destination order.
+   */
   fun <T : NavigationDestination> horizontalSpec(): AnimatedContentTransitionScope<T>.() -> ContentTransform = {
     val targetOrder = getNavigationOrder(targetState as NavigationDestination)
     val initialOrder = getNavigationOrder(initialState as NavigationDestination)

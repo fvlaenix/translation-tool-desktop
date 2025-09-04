@@ -20,27 +20,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
+ * Chip selector component for single or multiple selection of items.
  * Copied from https://gist.github.com/fvilarino/997169b74410a7821e393551431f732d
  */
-
 object ChipSelector {
   private const val ANIMATION_DURATION_MILLISECONDS = 600
 
+  /**
+   * Selection mode for chip selector.
+   */
   enum class SelectionMode(val index: Int) {
+    /** Allow only single chip selection */
     Single(0),
+
+    /** Allow multiple chips selection */
     Multiple(1);
 
     companion object {
+      /** Creates selection mode from index value */
       fun fromIndex(index: Int) = entries.firstOrNull { it.index == index } ?: Single
     }
   }
 
+  /**
+   * State interface for managing chip selection.
+   */
   @Stable
   interface ChipSelectorState {
+    /** List of all available chips */
     val chips: List<String>
+
+    /** List of currently selected chips */
     val selectedChips: List<String>
 
+    /** Handles chip click events */
     fun onChipClick(chip: String)
+
+    /** Checks if a chip is currently selected */
     fun isSelected(chip: String): Boolean
   }
 

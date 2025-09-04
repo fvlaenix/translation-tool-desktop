@@ -4,6 +4,9 @@ import core.base.Repository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+/**
+ * Work data repository implementation. Manages temporary work session data in memory.
+ */
 class WorkDataRepositoryImpl : WorkDataRepository, Repository {
   private val mutex = Mutex()
   private var workData: WorkData? = null

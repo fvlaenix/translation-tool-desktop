@@ -8,6 +8,9 @@ import project.data.Project
 import translation.data.*
 import translation.domain.*
 
+/**
+ * Koin module for translation-related dependencies including repositories and view models.
+ */
 val translationModule = module {
 
   // App-level repositories (singletons)

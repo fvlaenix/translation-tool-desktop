@@ -6,6 +6,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.awt.Font
 
+/**
+ * Contains styling settings for text blocks including font, colors, and alignment.
+ */
 @Serializable
 data class BlockSettings(
   val fontName: String,
@@ -29,6 +32,9 @@ data class BlockSettings(
     }
 
   companion object {
+    /**
+     * Creates block settings with a pre-resolved font instance.
+     */
     fun createWithFont(
       fontName: String,
       font: Font,

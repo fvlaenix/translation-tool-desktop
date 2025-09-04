@@ -4,6 +4,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.awt.Color
 
+/**
+ * Serializable color wrapper with RGBA values and validation.
+ */
 @Serializable
 data class BeanColor(val r: Int, val g: Int, val b: Int, val a: Int) {
 
@@ -27,6 +30,9 @@ data class BeanColor(val r: Int, val g: Int, val b: Int, val a: Int) {
     val WHITE = fromColor(Color.WHITE)
     val TRANSPARENT = BeanColor(0, 0, 0, 0)
 
+    /**
+     * Creates a BeanColor from a Java AWT Color.
+     */
     fun fromColor(color: Color) = BeanColor(color.red, color.green, color.blue, color.alpha)
   }
 }

@@ -25,6 +25,9 @@ import javax.imageio.ImageIO
 
 private val AUTHORIZATION_KEY: Metadata.Key<String> = Metadata.Key.of("x-api-key", Metadata.ASCII_STRING_MARSHALLER)
 
+/**
+ * Grpc client for external ocr/translation services. Manages protobuf requests and api key authentication.
+ */
 object ProtobufUtils : KoinComponent {
   private val settingsRepository: SettingsRepository by inject()
 
@@ -68,6 +71,9 @@ object ProtobufUtils : KoinComponent {
     }
   }
 
+  /**
+   * Calls external ocr service via grpc, returns extracted text from image.
+   */
   suspend fun getOCR(image: BufferedImage): String {
     return getStringFromChannel { proxyStub ->
       val settings = getSettings()
@@ -82,6 +88,9 @@ object ProtobufUtils : KoinComponent {
     }
   }
 
+  /**
+   * Calls ocr service for text regions with bounding boxes for advanced workflow.
+   */
   suspend fun getBoxedOCR(image: BufferedImage): List<OCRBoxData> {
     return getDataFromChannel { proxyStub ->
       val settings = getSettings()
@@ -110,6 +119,9 @@ object ProtobufUtils : KoinComponent {
     }
   }
 
+  /**
+   * Translates text via external grpc service using configured api key.
+   */
   suspend fun getTranslation(text: String): String {
     return getStringFromChannel { proxyStub ->
       val settings = getSettings()
@@ -124,6 +136,9 @@ object ProtobufUtils : KoinComponent {
     }
   }
 
+  /**
+   * Translates text list via external grpc service using configured api key.
+   */
   suspend fun getTranslation(text: List<String>): List<String> {
     return getDataFromChannel { proxyStub ->
       val settings = getSettings()

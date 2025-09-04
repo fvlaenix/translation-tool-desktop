@@ -5,6 +5,9 @@ import androidx.compose.ui.unit.IntSize
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
+/**
+ * Represents the position and dimensions of a text block on an image.
+ */
 @Serializable
 @Immutable
 data class BlockPosition(
@@ -14,6 +17,9 @@ data class BlockPosition(
   val height: Double,
   val shape: Shape
 ) {
+  /**
+   * Defines the shape of the text block.
+   */
   @Serializable
   sealed interface Shape {
     @Serializable

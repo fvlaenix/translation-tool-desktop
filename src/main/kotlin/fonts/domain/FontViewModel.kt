@@ -10,6 +10,9 @@ import kotlinx.coroutines.launch
 import java.awt.Font
 import java.nio.file.Path
 
+/**
+ * Font management view model. Handles font loading, adding, selection and validation.
+ */
 class FontViewModel(
   private val fontRepository: FontRepository
 ) : BaseViewModel() {

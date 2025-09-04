@@ -14,6 +14,9 @@ import java.nio.file.Path
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
+/**
+ * Font repository implementation. Manages font loading, storage and persistence to json file.
+ */
 class FontRepositoryImpl(
   private val fontsFilePath: String
 ) : FontRepository, Repository {
@@ -22,6 +25,9 @@ class FontRepositoryImpl(
   private val fonts: MutableMap<String, FontInfo> = mutableMapOf()
   private var loaded: Boolean = false
 
+  /**
+   * Loads fonts from json file and creates font objects.
+   */
   override suspend fun loadFonts(): Result<Unit> = safeCall {
     fontLock.withLock {
       fonts.clear()
@@ -53,6 +59,9 @@ class FontRepositoryImpl(
     }
   }
 
+  /**
+   * Adds a new font from file path to the repository.
+   */
   override suspend fun addFont(name: String, path: Path): Result<Unit> = safeCall {
     val fontInfo = withContext(Dispatchers.IO) {
       val font = Font.createFont(0, path.toFile())
@@ -67,6 +76,9 @@ class FontRepositoryImpl(
     saveFonts().getOrThrow()
   }
 
+  /**
+   * Retrieves font by name from the repository.
+   */
   override suspend fun getFont(name: String): Result<FontInfo?> = safeCall {
     fontLock.withLock {
       checkLoaded()
@@ -74,6 +86,9 @@ class FontRepositoryImpl(
     }
   }
 
+  /**
+   * Returns all loaded fonts from the repository.
+   */
   override suspend fun getAllFonts(): Result<List<FontInfo>> = safeCall {
     fontLock.withLock {
       checkLoaded()
@@ -81,6 +96,9 @@ class FontRepositoryImpl(
     }
   }
 
+  /**
+   * Saves current fonts list to json file.
+   */
   override suspend fun saveFonts(): Result<Unit> = safeCall {
     fontLock.withLock {
       val fontsList = fonts.values.map { it.toWritable() }
@@ -90,6 +108,9 @@ class FontRepositoryImpl(
     }
   }
 
+  /**
+   * Checks if any fonts are loaded in the repository.
+   */
   override suspend fun isFontsAdded(): Result<Boolean> = safeCall {
     fontLock.withLock {
       checkLoaded()
@@ -97,6 +118,9 @@ class FontRepositoryImpl(
     }
   }
 
+  /**
+   * Returns the name of the first available font as default.
+   */
   override suspend fun getDefaultFont(): Result<String> = safeCall {
     fontLock.withLock {
       checkLoaded()

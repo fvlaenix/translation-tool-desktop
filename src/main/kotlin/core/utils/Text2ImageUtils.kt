@@ -16,6 +16,9 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
+/**
+ * Utility for converting text to images with various alignments and shapes.
+ */
 object Text2ImageUtils {
   private fun splitToLinesRectangle(text: String, textMetrics: FontMetrics, width: Int): List<String> {
     val lines = text.lines()
@@ -79,6 +82,9 @@ object Text2ImageUtils {
     }
   }
 
+  /**
+   * Converts text to rendered image with styling and positioning.
+   */
   fun textToImage(
     globalSettings: BlockSettings,
     blockData: BlockData
@@ -156,6 +162,9 @@ object Text2ImageUtils {
     return Text2ImageResult(image, isOutOfBorder)
   }
 
+  /**
+   * Creates sample text image for preview purposes.
+   */
   fun createSample(
     width: Int,
     height: Int,
