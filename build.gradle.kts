@@ -8,7 +8,7 @@ plugins {
   id("com.google.protobuf") version "0.9.4"
   id("org.jetbrains.compose")
   id("org.jetbrains.kotlin.plugin.compose")
-  kotlin("plugin.serialization") version "2.0.0"
+  kotlin("plugin.serialization") version "2.1.20"
 }
 
 group = "org.example"
@@ -23,7 +23,7 @@ repositories {
 kotlin {
   val versions = listOf("macos-x64", "macos-arm64", "windows-x64", "windows-arm64", "linux-x64", "linux-arm64")
 
-  val version = "0.7.70"
+  val version = "0.9.24"
 
   sourceSets {
     dependencies {
@@ -43,6 +43,8 @@ dependencies {
   // With compose.desktop.common you will also lose @Preview functionality
   implementation(compose.desktop.currentOs)
 
+  implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+
   // grpc
   implementation("io.grpc:grpc-kotlin-stub:1.4.0")
   implementation("com.google.protobuf:protobuf-java:4.28.2")
@@ -54,8 +56,8 @@ dependencies {
   protobuf(files("discord-bots-rpc/proxy-request.proto", "discord-bots-rpc/ocr-request.proto", "discord-bots-rpc/gpt-request.proto", "discord-bots-rpc/is-alive.proto", "discord-bots-rpc/image.proto"))
 
   // coroutines
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.6.4")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
 
   // json
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
@@ -77,7 +79,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
   testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
   testImplementation("io.mockk:mockk:1.13.8")
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 
   // For testing Compose UI components if needed later
   testImplementation("org.jetbrains.compose.ui:ui-test-junit4:1.6.10") // compose.version
@@ -106,6 +108,12 @@ compose.desktop {
 task<JavaExec>("runServer") {
   classpath = sourceSets.main.get().runtimeClasspath
   mainClass.set("MainKt")
+}
+
+task<JavaExec>("runDebugApplication") {
+  classpath = sourceSets.main.get().runtimeClasspath
+  mainClass.set("MainKt")
+  jvmArgs("-Dkotlinx.coroutines.debug=off")
 }
 
 fun createJarTaskByJavaExec(name: String, resultName: String) = tasks.create<ShadowJar>("${name}Jar") {
