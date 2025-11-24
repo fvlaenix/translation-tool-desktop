@@ -1,0 +1,25 @@
+package translation.data
+
+import core.base.Repository
+import core.utils.ProtobufUtils
+import java.awt.image.BufferedImage
+
+/**
+ * OCR repository implementation. Processes images through external grpc service for text extraction.
+ */
+class OCRRepositoryImpl : OCRRepository, Repository {
+
+  override suspend fun processImage(image: BufferedImage): Result<String> = safeCall {
+    ProtobufUtils.getOCR(image)
+  }
+
+  override suspend fun processBatchImages(images: List<BufferedImage>): Result<List<String>> = safeCall {
+    images.map { image ->
+      ProtobufUtils.getOCR(image)
+    }
+  }
+
+  override suspend fun getBoxedOCR(image: BufferedImage): Result<List<OCRBoxData>> = safeCall {
+    ProtobufUtils.getBoxedOCR(image)
+  }
+}

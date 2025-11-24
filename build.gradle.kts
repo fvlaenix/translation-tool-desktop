@@ -1,161 +1,26 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import com.google.protobuf.gradle.id
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-
 plugins {
-  kotlin("jvm")
-  id("com.github.johnrengelman.shadow") version "8.1.1"
-  id("com.google.protobuf") version "0.9.4"
-  id("org.jetbrains.compose")
-  id("org.jetbrains.kotlin.plugin.compose")
-  kotlin("plugin.serialization") version "2.1.20"
+  kotlin("jvm") version "2.1.20" apply false
+  kotlin("plugin.serialization") version "2.1.20" apply false
+  id("org.jetbrains.compose") version "1.7.3" apply false
+  id("org.jetbrains.kotlin.plugin.compose") version "2.1.20" apply false
+  id("com.google.protobuf") version "0.9.4" apply false
 }
 
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
-repositories {
-  mavenCentral()
-  maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-  google()
-}
-
-kotlin {
-  val versions = listOf("macos-x64", "macos-arm64", "windows-x64", "windows-arm64", "linux-x64", "linux-arm64")
-
-  val version = "0.9.24"
-
-  sourceSets {
-    dependencies {
-      for (versiona in versions) {
-        implementation("org.jetbrains.skiko:skiko-awt-runtime-$versiona:$version")
-      }
-    }
-  }
-
-  jvmToolchain(17)
-}
-
-dependencies {
-  // Note, if you develop a library, you should use compose.desktop.common.
-  // compose.desktop.currentOs should be used in launcher-sourceSet
-  // (in a separate module for demo project and in testMain).
-  // With compose.desktop.common you will also lose @Preview functionality
-  implementation(compose.desktop.currentOs)
-
-  implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
-
-  // grpc
-  implementation("io.grpc:grpc-kotlin-stub:1.4.0")
-  implementation("com.google.protobuf:protobuf-java:4.28.2")
-  implementation("com.google.protobuf:protobuf-kotlin:4.28.2")
-  runtimeOnly("io.grpc:grpc-netty-shaded:1.59.0")
-  implementation("io.grpc:grpc-protobuf:1.59.0")
-  implementation("io.grpc:grpc-stub:1.59.0")
-  compileOnly("org.apache.tomcat:annotations-api:6.0.53")
-  protobuf(files("discord-bots-rpc/proxy-request.proto", "discord-bots-rpc/ocr-request.proto", "discord-bots-rpc/gpt-request.proto", "discord-bots-rpc/is-alive.proto", "discord-bots-rpc/image.proto"))
-
-  // coroutines
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
-
-  // json
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
-
-  // file chooser
-  implementation("io.github.vinceglb:filekit-compose:0.8.3")
-
-  // logging
-  implementation("org.slf4j:slf4j-simple:2.0.16")
-
-  // reordable list
-  implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
-
-  // koin
-  implementation("io.insert-koin:koin-core:3.5.0")
-  implementation("io.insert-koin:koin-compose:1.1.0")
-
-  // Testing dependencies
-  testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
-  testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
-  testImplementation("io.mockk:mockk:1.13.8")
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-
-  // For testing Compose UI components if needed later
-  testImplementation("org.jetbrains.compose.ui:ui-test-junit4:1.6.10") // compose.version
-}
-
-tasks.test {
-  useJUnitPlatform()
-}
-
-compose.desktop {
-  application {
-    mainClass = "MainKt"
-
-    nativeDistributions {
-      targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-      packageName = "translation-tool-desktop"
-      packageVersion = "1.0.0"
-
-      linux {
-        modules("jdk.security.auth")
-      }
-    }
+allprojects {
+  repositories {
+    mavenCentral()
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    google()
   }
 }
 
-task<JavaExec>("runServer") {
-  classpath = sourceSets.main.get().runtimeClasspath
-  mainClass.set("MainKt")
-}
+subprojects {
+  apply(plugin = "org.jetbrains.kotlin.jvm")
 
-task<JavaExec>("runDebugApplication") {
-  classpath = sourceSets.main.get().runtimeClasspath
-  mainClass.set("MainKt")
-  jvmArgs("-Dkotlinx.coroutines.debug=off")
-}
-
-fun createJarTaskByJavaExec(name: String, resultName: String) = tasks.create<ShadowJar>("${name}Jar") {
-  mergeServiceFiles()
-  group = "shadow"
-  description = "Run server $name"
-
-  from(sourceSets.main.get().output)
-  from(project.configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-  exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
-  configurations = listOf(project.configurations.runtimeClasspath.get())
-
-  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-  archiveFileName.set("${resultName}.jar")
-  manifest {
-    attributes["Main-Class"] = (tasks.findByName(name) as JavaExec).mainClass.get()
-  }
-}.apply task@ { tasks.named("jar") { dependsOn(this@task) } }
-
-createJarTaskByJavaExec("runServer", "translation-tool-0.1-beta")
-
-protobuf {
-  protoc {
-    artifact = "com.google.protobuf:protoc:3.24.4"
-  }
-  plugins {
-    id("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:1.59.0"
-    }
-    create("grpckt") {
-      artifact = "io.grpc:protoc-gen-grpc-kotlin:1.4.0:jdk8@jar"
-    }
-  }
-  generateProtoTasks {
-    all().forEach {
-      it.plugins {
-        id("grpc")
-        id("grpckt")
-      }
-      it.builtins {
-        create("kotlin")
-      }
-    }
+  configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+    jvmToolchain(17)
   }
 }
