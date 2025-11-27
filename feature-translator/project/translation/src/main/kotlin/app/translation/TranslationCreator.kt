@@ -23,6 +23,7 @@ import core.navigation.NavigationDestination
 import core.utils.JSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
 import project.data.Project
@@ -144,8 +145,11 @@ private fun TranslatorCreatorStep(
     Button(
       onClick = {
         ocrCounter.incrementAndGet()
-        coroutineScope.launch(Dispatchers.IO) {
-          translatorRepository.translateBatch(currentData.map { it.first.text })
+        coroutineScope.launch {
+          val result = withContext(Dispatchers.IO) {
+            translatorRepository.translateBatch(currentData.map { it.first.text })
+          }
+          result
             .onSuccess { translation ->
               translationData.value = translationData.value!!.copy(
                 translatedData = translationData.value!!.translatedData.copy(
@@ -183,8 +187,11 @@ private fun TranslatorCreatorStep(
         Button(
           onClick = {
             ocrCounter.incrementAndGet()
-            coroutineScope.launch(Dispatchers.IO) {
-              translatorRepository.translateText(untranslatedData.text)
+            coroutineScope.launch {
+              val result = withContext(Dispatchers.IO) {
+                translatorRepository.translateText(untranslatedData.text)
+              }
+              result
                 .onSuccess { translation ->
                   setTranslation(index, translation)
                   errorMessage = null
@@ -289,8 +296,10 @@ private fun TranslatorCreatorFinal(
       )
       Button(
         onClick = {
-          scope.launch(Dispatchers.IO) {
-            val files = openFileDialog(parent, "Files to add", false, FileDialog.SAVE)
+          scope.launch {
+            val files = withContext(Dispatchers.IO) {
+              openFileDialog(parent, "Files to add", false, FileDialog.SAVE)
+            }
             savePath.value = files.single().absolutePath
           }
         },
