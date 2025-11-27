@@ -28,10 +28,7 @@ import core.navigation.NavigationDestination
 import core.utils.ImageUtils.deepCopy
 import core.utils.Text2ImageUtils
 import io.github.vinceglb.filekit.core.FileKit
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import org.koin.compose.koinInject
@@ -408,7 +405,9 @@ private fun EditCreatorFinal(
             }
           }.awaitAll()
           progress = 1.0f
-          navigationController.navigateTo(NavigationDestination.MainMenu)
+          withContext(Dispatchers.Main) {
+            navigationController.navigateTo(NavigationDestination.MainMenu)
+          }
         }
       }) {
         Text("Done")
