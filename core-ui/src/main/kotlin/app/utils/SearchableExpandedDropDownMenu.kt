@@ -69,7 +69,11 @@ fun <T> SearchableExpandedDropDownMenu(
   var selectedOptionText by rememberSaveable { mutableStateOf("") }
   var searchedOption by rememberSaveable { mutableStateOf("") }
   var expanded by remember { mutableStateOf(false) }
-  var filteredItems = mutableListOf<T>()
+  val filteredItems = remember(listOfItems, searchedOption) {
+    listOfItems.filter {
+      textFromItem(it).contains(searchedOption, ignoreCase = true)
+    }
+  }
   val keyboardController = LocalSoftwareKeyboardController.current
   val focusRequester = remember { FocusRequester() }
   val itemHeights = remember { mutableStateMapOf<Int, Int>() }
@@ -168,12 +172,6 @@ fun <T> SearchableExpandedDropDownMenu(
             value = searchedOption,
             onValueChange = { selectedSport ->
               searchedOption = selectedSport
-              filteredItems = listOfItems.filter {
-                it.toString().contains(
-                  searchedOption,
-                  ignoreCase = true,
-                )
-              }.toMutableList()
             },
             placeholder = {
               Text(text = "Search")
