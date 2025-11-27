@@ -23,7 +23,7 @@ import java.nio.file.Path
 @Composable
 fun FontsSettings(navigationController: NavigationController) {
   val fontViewModel: FontViewModel = koinInject()
-  val fontSettingsState = mutableStateOf(SettingsState.MAIN_MENU)
+  val fontSettingsState = remember { mutableStateOf(SettingsState.MAIN_MENU) }
 
   Scaffold(
     modifier = Modifier.fillMaxSize(),
