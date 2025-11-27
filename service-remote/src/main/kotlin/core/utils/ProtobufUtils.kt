@@ -21,6 +21,7 @@ import translation.data.OCRBoxData
 import translation.data.clampToImageBounds
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
+import java.util.*
 import javax.imageio.ImageIO
 
 private val AUTHORIZATION_KEY: Metadata.Key<String> = Metadata.Key.of("x-api-key", Metadata.ASCII_STRING_MARSHALLER)
@@ -104,8 +105,9 @@ object ProtobufUtils : KoinComponent {
       val rectangles = response.rectangles.rectanglesList
       val imageSize = IntSize(image.width, image.height)
 
-      rectangles.map { rectangle ->
+      val boxes = rectangles.map { rectangle ->
         OCRBoxData(
+          id = generateUniqueId(),
           box = BlockPosition(
             x = rectangle.x.toDouble(),
             y = rectangle.y.toDouble(),
@@ -115,6 +117,40 @@ object ProtobufUtils : KoinComponent {
           ).clampToImageBounds(imageSize),
           text = rectangle.text
         )
+      }
+
+      ensureUniqueIds(boxes)
+    }
+  }
+
+  /**
+   * Generates a unique UUID-based ID.
+   */
+  private fun generateUniqueId(): String = UUID.randomUUID().toString()
+
+  /**
+   * Ensures all boxes have unique IDs. If duplicates are found, regenerates them.
+   */
+  private fun ensureUniqueIds(boxes: List<OCRBoxData>): List<OCRBoxData> {
+    val ids = boxes.map { it.id }
+    val duplicates = ids.groupingBy { it }.eachCount().filter { it.value > 1 }.keys
+
+    if (duplicates.isEmpty()) {
+      return boxes
+    }
+
+    val usedIds = mutableSetOf<String>()
+    return boxes.map { box ->
+      if (box.id in duplicates || box.id in usedIds) {
+        var newId = generateUniqueId()
+        while (newId in usedIds || newId in ids) {
+          newId = generateUniqueId()
+        }
+        usedIds.add(newId)
+        box.copy(id = newId)
+      } else {
+        usedIds.add(box.id)
+        box
       }
     }
   }

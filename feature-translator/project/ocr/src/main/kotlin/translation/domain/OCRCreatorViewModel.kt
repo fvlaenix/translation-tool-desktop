@@ -100,6 +100,7 @@ class OCRCreatorViewModel(
       val maxY = maxOf(currentBox.box.y + currentBox.box.height, nextBox.box.y + nextBox.box.height)
 
       val mergedBox = OCRBoxData(
+        id = currentBox.id,
         box = BlockPosition(
           x = minX,
           y = minY,
@@ -179,6 +180,7 @@ class OCRCreatorViewModel(
       image = null,
       blockData = ocrBoxes.map { ocrBox ->
         BlockData(
+          id = ocrBox.id,
           blockPosition = ocrBox.box,
           text = ocrBox.text,
           settings = null

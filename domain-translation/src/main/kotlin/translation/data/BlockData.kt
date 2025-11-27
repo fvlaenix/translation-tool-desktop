@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Immutable
 data class BlockData(
+  val id: String,
   val blockPosition: BlockPosition,
   val text: String,
   val settings: BlockSettings? = null

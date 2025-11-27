@@ -26,6 +26,7 @@ import core.image.ImageCanvasState
 import translation.data.BlockData
 import translation.data.BlockPosition
 import translation.data.BlockSettings
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -70,6 +71,7 @@ class BoxOverlay private constructor(
       onBoxSelect: (Int) -> Unit = {}
     ): BoxOverlay {
       val blockData = BlockData(
+        id = UUID.randomUUID().toString(),
         blockPosition = blockPosition,
         text = "",
         settings = null

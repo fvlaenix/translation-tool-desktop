@@ -63,7 +63,13 @@ fun OCRCreator(navigationController: NavigationController, project: Project? = n
         images.mapIndexed { index, image ->
           ImageInfoWithBox(
             imagePathInfo = image,
-            box = texts.getOrNull(index)?.blockData?.map { block -> OCRBoxData(block.blockPosition, block.text) }
+            box = texts.getOrNull(index)?.blockData?.map { block ->
+              OCRBoxData(
+                block.id,
+                block.blockPosition,
+                block.text
+              )
+            }
               ?: emptyList()
           )
         }
@@ -75,7 +81,13 @@ fun OCRCreator(navigationController: NavigationController, project: Project? = n
         images.mapIndexed { index, image ->
           ImageInfoWithBox(
             imagePathInfo = image,
-            box = texts.getOrNull(index)?.blockData?.map { block -> OCRBoxData(block.blockPosition, block.text) }
+            box = texts.getOrNull(index)?.blockData?.map { block ->
+              OCRBoxData(
+                block.id,
+                block.blockPosition,
+                block.text
+              )
+            }
               ?: emptyList()
           )
         }
@@ -254,7 +266,10 @@ private fun OCRControlsList(
       )
     }
 
-    items(boxes.size, { it }) { index ->
+    items(
+      count = boxes.size,
+      key = { index -> boxes[index].id }
+    ) { index ->
       OCRTextBoxItem(
         index = index,
         box = boxes[index],
@@ -305,7 +320,7 @@ private fun OCRTextBoxItem(
   onRemoveBox: (Int) -> Unit,
   onBoxSelect: (Int) -> Unit
 ) {
-  ReorderableItem(lazyListState, key = index) { isDragging ->
+  ReorderableItem(lazyListState, key = box.id) { isDragging ->
     val elevation = animateDpAsState(if (isDragging) 16.dp else 0.dp)
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -436,13 +451,8 @@ private fun OCRCreatorFinal(
               image = null,
               blockData = imageBoxes.map { box ->
                 BlockData(
-                  blockPosition = BlockPosition(
-                    box.box.x,
-                    box.box.y,
-                    box.box.width,
-                    box.box.height,
-                    BlockPosition.Shape.Rectangle
-                  ),
+                  id = box.id,
+                  blockPosition = box.box,
                   text = box.text,
                   settings = null
                 )

@@ -11,6 +11,7 @@ import java.awt.FontMetrics
 import java.awt.RenderingHints
 import java.awt.font.GlyphVector
 import java.awt.image.BufferedImage
+import java.util.*
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -175,6 +176,7 @@ object Text2ImageUtils {
 
     val imageSize = IntSize(width, height)
     val blockData = BlockData(
+      id = UUID.randomUUID().toString(),
       blockPosition = BlockPosition(.0, .0, width.toDouble(), height.toDouble(), BlockPosition.Shape.Oval)
         .clampToImageBounds(imageSize),
       text = text,
