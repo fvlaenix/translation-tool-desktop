@@ -6,6 +6,7 @@ import core.base.BaseViewModel
 import core.utils.ClipboardUtils.getClipboardImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import translation.data.OCRRepository
 import translation.data.TranslationRepository
 import java.awt.image.BufferedImage
@@ -44,9 +45,11 @@ class SimpleTranslatorViewModel(
 
   fun loadImageFromClipboard() {
     _statusMessage.value = "Image is loading"
-    viewModelScope.launch(Dispatchers.IO) {
+    viewModelScope.launch {
       try {
-        val image = getClipboardImage()
+        val image = withContext(Dispatchers.IO) {
+          getClipboardImage()
+        }
         if (image == null) {
           _statusMessage.value = "Failed to get image from clipboard"
         } else {

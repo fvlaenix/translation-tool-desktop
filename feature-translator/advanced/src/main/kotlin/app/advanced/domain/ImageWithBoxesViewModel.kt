@@ -8,6 +8,7 @@ import core.base.BaseViewModel
 import core.utils.ClipboardUtils.getClipboardImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import translation.data.BlockPosition
 import translation.data.clampToImageBounds
 import java.io.ByteArrayInputStream
@@ -25,17 +26,22 @@ class ImageWithBoxesViewModel : BaseViewModel() {
   fun loadImageFromClipboard() {
     updateEmptyText("Image is loading")
 
-    viewModelScope.launch(Dispatchers.IO) {
+    viewModelScope.launch {
       try {
-        val clipboardImage = getClipboardImage()
-        if (clipboardImage == null) {
-          updateEmptyText("Can't take image from clipboard")
-        } else {
+        val imageBitmap = withContext(Dispatchers.IO) {
+          val clipboardImage = getClipboardImage()
+          if (clipboardImage == null) {
+            return@withContext null
+          }
           val outputStream = ByteArrayOutputStream()
           ImageIO.write(clipboardImage, "png", outputStream)
           val byteArray = outputStream.toByteArray()
-          val imageBitmap = loadImageBitmap(ByteArrayInputStream(byteArray))
+          loadImageBitmap(ByteArrayInputStream(byteArray))
+        }
 
+        if (imageBitmap == null) {
+          updateEmptyText("Can't take image from clipboard")
+        } else {
           _uiState.value = _uiState.value.copy(
             image = imageBitmap,
             isEnabled = true

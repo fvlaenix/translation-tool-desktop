@@ -20,6 +20,7 @@ import fonts.domain.FontResolver
 import fonts.domain.FontViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import translation.data.BlockSettings
 import java.awt.image.BufferedImage
@@ -41,10 +42,12 @@ fun BlockSettingsPanelWithPreview(settings: MutableState<BlockSettings>, imageSt
     }
     LaunchedEffect(settings.value) {
       imageState.value = null
-      coroutineScope.launch(Dispatchers.IO) {
-        // Resolve font before creating sample
-        val resolvedSettings = fontResolver.resolveFont(settings.value)
-        val image = Text2ImageUtils.createSample(500, 500, resolvedSettings)
+      coroutineScope.launch {
+        val image = withContext(Dispatchers.IO) {
+          // Resolve font before creating sample
+          val resolvedSettings = fontResolver.resolveFont(settings.value)
+          Text2ImageUtils.createSample(500, 500, resolvedSettings)
+        }
         imageState.value = image
       }
     }

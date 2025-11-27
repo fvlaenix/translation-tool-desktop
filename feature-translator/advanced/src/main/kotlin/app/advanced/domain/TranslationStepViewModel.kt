@@ -7,6 +7,7 @@ import app.advanced.TranslationInfo
 import core.base.BaseViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import translation.data.OCRRepository
 import translation.data.TranslationRepository
 
@@ -35,18 +36,21 @@ class TranslationStepViewModel(
   fun processOCRForInfo(index: Int) {
     val info = _uiState.value.translationInfos.getOrNull(index) ?: return
 
-    viewModelScope.launch(Dispatchers.IO) {
+    viewModelScope.launch {
       _uiState.value = _uiState.value.copy(
         isProcessing = true,
         processingIndex = index,
         processingType = ProcessingType.OCR
       )
 
-      ocrRepository.processImage(info.subImage)
-        .onSuccess { ocrResult ->
-          updateOcrText(index, ocrResult)
-          clearError()
-        }
+      val result = withContext(Dispatchers.IO) {
+        ocrRepository.processImage(info.subImage)
+      }
+
+      result.onSuccess { ocrResult ->
+        updateOcrText(index, ocrResult)
+        clearError()
+      }
         .onFailure { exception ->
           setError("OCR processing failed: ${exception.message}")
         }
@@ -66,18 +70,21 @@ class TranslationStepViewModel(
     val info = _uiState.value.translationInfos.getOrNull(index) ?: return
     if (info.ocr.isBlank()) return
 
-    viewModelScope.launch(Dispatchers.IO) {
+    viewModelScope.launch {
       _uiState.value = _uiState.value.copy(
         isProcessing = true,
         processingIndex = index,
         processingType = ProcessingType.TRANSLATION
       )
 
-      translationRepository.translateText(info.ocr)
-        .onSuccess { translationResult ->
-          updateTranslationText(index, translationResult)
-          clearError()
-        }
+      val result = withContext(Dispatchers.IO) {
+        translationRepository.translateText(info.ocr)
+      }
+
+      result.onSuccess { translationResult ->
+        updateTranslationText(index, translationResult)
+        clearError()
+      }
         .onFailure { exception ->
           setError("Translation failed: ${exception.message}")
         }
