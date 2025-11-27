@@ -59,7 +59,7 @@ class WorkflowState {
     isLoading = true
 
     try {
-      val currentProject = projectSelectionState.selectedProject
+      val currentProject = projectSelectionState.selectedProject.value
 
       if (currentProject == null) {
         // App-level workflow
@@ -76,17 +76,17 @@ class WorkflowState {
         hasCleanedImages = hasImages // Cleaned images same as batch images in app workflow
       } else {
         // Project-based workflow
-        hasImages = imageDataRepository.loadImages(currentProject.value!!, project.data.ImageType.UNTRANSLATED)
+        hasImages = imageDataRepository.loadImages(currentProject, project.data.ImageType.UNTRANSLATED)
           .getOrElse { emptyList() }
           .isNotEmpty()
 
-        hasOCRData = textDataRepository.hasWorkData(currentProject.value!!, TextType.UNTRANSLATED)
+        hasOCRData = textDataRepository.hasWorkData(currentProject, TextType.UNTRANSLATED)
           .getOrElse { false }
 
-        hasTranslationData = textDataRepository.hasWorkData(currentProject.value!!, TextType.TRANSLATED)
+        hasTranslationData = textDataRepository.hasWorkData(currentProject, TextType.TRANSLATED)
           .getOrElse { false }
 
-        hasCleanedImages = imageDataRepository.loadImages(currentProject.value!!, project.data.ImageType.CLEANED)
+        hasCleanedImages = imageDataRepository.loadImages(currentProject, project.data.ImageType.CLEANED)
           .getOrElse { emptyList() }
           .isNotEmpty()
       }
