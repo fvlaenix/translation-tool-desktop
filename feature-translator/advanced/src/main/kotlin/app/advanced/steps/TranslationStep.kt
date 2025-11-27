@@ -10,16 +10,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.advanced.TranslationInfo
 import app.advanced.domain.ProcessingType
 import app.advanced.domain.TranslationStepViewModel
 import app.common.ProcessingButton
+import core.utils.toComposeBitmap
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
 
 @Composable
 fun TranslationStep(
@@ -117,21 +116,31 @@ private fun ImagePreviewColumn(
   width: Int,
   height: Int
 ) {
-  val outputStream = ByteArrayOutputStream()
-  ImageIO.write(info.subImage, "png", outputStream)
-  val byteArray = outputStream.toByteArray()
-  val image = loadImageBitmap(java.io.ByteArrayInputStream(byteArray))
+  val scope = rememberCoroutineScope()
+  val imageBitmap = remember(info.subImage) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+
+  LaunchedEffect(info.subImage) {
+    scope.launch {
+      try {
+        imageBitmap.value = info.subImage.toComposeBitmap()
+      } catch (e: Exception) {
+        println("Error converting image to bitmap: ${e.message}")
+      }
+    }
+  }
 
   Column(
     modifier = Modifier
       .padding(16.dp)
       .size(width = width.dp, height = height.dp)
   ) {
-    androidx.compose.foundation.Image(
-      bitmap = image,
-      contentDescription = null,
-      modifier = Modifier.fillMaxSize()
-    )
+    imageBitmap.value?.let { bitmap ->
+      androidx.compose.foundation.Image(
+        bitmap = bitmap,
+        contentDescription = null,
+        modifier = Modifier.fillMaxSize()
+      )
+    }
   }
 }
 

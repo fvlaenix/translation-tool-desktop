@@ -15,13 +15,13 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.TopBar
 import app.utils.openFileDialog
 import core.navigation.NavigationController
 import core.utils.ClipboardUtils.getClipboardImage
+import core.utils.toComposeBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -29,8 +29,6 @@ import project.data.ImageDataRepository
 import project.data.ImageType
 import project.data.Project
 import translation.data.ImageProjectPanelState
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 @Composable
@@ -190,25 +188,10 @@ fun ImageDataCreator(
         }
 
         currentImages.forEach { image ->
-          Row(
-            modifier = Modifier
-              .border(1.dp, Color.Black, CutCornerShape(16.dp))
-              .height(parentSize.value.height.dp / 4)
-              .fillMaxWidth()
-          ) {
-            val outputStream = ByteArrayOutputStream()
-            ImageIO.write(image.image, "png", outputStream)
-            val byteArray = outputStream.toByteArray()
-            val bitmapImage = loadImageBitmap(ByteArrayInputStream(byteArray))
-            Image(
-              bitmap = bitmapImage,
-              contentDescription = null,
-              modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.CenterVertically)
-                .height(parentSize.value.height.dp / 5)
-            )
-          }
+          ImagePreviewRow(
+            imagePathInfo = image,
+            parentHeight = parentSize.value.height
+          )
         }
       }
     }
@@ -216,5 +199,42 @@ fun ImageDataCreator(
 
   LaunchedEffect(Unit) {
     requester.requestFocus()
+  }
+}
+
+@Composable
+private fun ImagePreviewRow(
+  imagePathInfo: ImagePathInfo,
+  parentHeight: Int
+) {
+  val scope = rememberCoroutineScope()
+  val imageBitmap = remember(imagePathInfo.image) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+
+  LaunchedEffect(imagePathInfo.image) {
+    scope.launch {
+      try {
+        imageBitmap.value = imagePathInfo.image.toComposeBitmap()
+      } catch (e: Exception) {
+        println("Error converting image to bitmap: ${e.message}")
+      }
+    }
+  }
+
+  Row(
+    modifier = Modifier
+      .border(1.dp, Color.Black, CutCornerShape(16.dp))
+      .height(parentHeight.dp / 4)
+      .fillMaxWidth()
+  ) {
+    imageBitmap.value?.let { bitmap ->
+      Image(
+        bitmap = bitmap,
+        contentDescription = null,
+        modifier = Modifier
+          .fillMaxWidth()
+          .align(Alignment.CenterVertically)
+          .height(parentHeight.dp / 5)
+      )
+    }
   }
 }
