@@ -29,7 +29,7 @@ fun rememberWorkflowState(): WorkflowState {
   }
 
   // Refresh when project selection changes
-  LaunchedEffect(projectSelectionState.selectedProject) {
+  LaunchedEffect(projectSelectionState.selectedProject.value) {
     scope.launch {
       state.refreshState(imageDataRepository, workDataRepository, textDataRepository, projectSelectionState)
     }
