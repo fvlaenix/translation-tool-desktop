@@ -20,6 +20,9 @@ class SettingsViewModel(
   private val _isSaving = mutableStateOf(false)
   val isSaving: State<Boolean> = _isSaving
 
+  private val _saveSuccess = mutableStateOf(false)
+  val saveSuccess: State<Boolean> = _saveSuccess
+
   init {
     loadSettings()
   }
@@ -64,11 +67,13 @@ class SettingsViewModel(
 
     viewModelScope.launch {
       _isSaving.value = true
+      _saveSuccess.value = false
       clearError()
 
       settingsRepository.saveSettings(_currentSettings.value)
         .onSuccess {
-          // Settings saved successfully
+          showSuccess("Settings saved successfully")
+          _saveSuccess.value = true
         }
         .onFailure { exception ->
           setError("Failed to save settings: ${exception.message}")

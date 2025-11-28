@@ -24,6 +24,7 @@ fun Settings(navigationController: NavigationController) {
   val isLoading by viewModel.isLoading
   val isSaving by viewModel.isSaving
   val error by viewModel.error
+  val saveSuccess by viewModel.saveSuccess
 
   var localHostname by remember { mutableStateOf(currentSettings.proxyServiceHostname) }
   var localPort by remember { mutableStateOf(currentSettings.proxyServicePort.toString()) }
@@ -34,6 +35,13 @@ fun Settings(navigationController: NavigationController) {
     localHostname = currentSettings.proxyServiceHostname
     localPort = currentSettings.proxyServicePort.toString()
     localApiKey = currentSettings.apiKey
+  }
+
+  // Navigate after successful save
+  LaunchedEffect(saveSuccess) {
+    if (saveSuccess) {
+      navigationController.navigateTo(NavigationDestination.MainMenu)
+    }
   }
 
   Scaffold(
@@ -52,9 +60,6 @@ fun Settings(navigationController: NavigationController) {
         Button(
           onClick = {
             viewModel.saveSettings()
-            if (validationErrors.isEmpty()) {
-              navigationController.navigateTo(NavigationDestination.MainMenu)
-            }
           },
           enabled = !isLoading && !isSaving
         ) {
