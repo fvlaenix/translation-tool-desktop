@@ -15,6 +15,7 @@ import core.navigation.NavigationDestination
 import io.github.vinceglb.filekit.core.FileKit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import project.domain.NewProjectViewModel
 
@@ -54,7 +55,9 @@ fun NewProjectPanel(navigationController: NavigationController) {
           scope.launch(Dispatchers.IO) {
             val files = FileKit.pickDirectory("Directory where project created")
             files?.file?.absolutePath?.let { path ->
-              viewModel.setBasePath(path)
+              withContext(Dispatchers.Main) {
+                viewModel.setBasePath(path)
+              }
             }
           }
         },

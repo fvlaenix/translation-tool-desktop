@@ -27,7 +27,6 @@ import translation.data.BlockData
 import translation.data.BlockPosition
 import translation.data.BlockSettings
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Box overlay that replaces BoxOnImage/BlockOnImage with migration-friendly interface.
@@ -48,8 +47,7 @@ class BoxOverlay private constructor(
   private val showText: Boolean = false,
   private val onBoxUpdate: (Int, BlockData) -> Unit = { _, _ -> },
   private val onBoxSelect: (Int) -> Unit = {},
-  private val onHeavyChange: (() -> Unit)? = null,
-  private val jobCounter: AtomicInteger? = null
+  private val onHeavyChange: (() -> Unit)? = null
 ) : ImageOverlay {
 
   override val id = "box_${index}_${blockData.hashCode()}"
@@ -95,7 +93,6 @@ class BoxOverlay private constructor(
       blockData: BlockData,
       basicSettings: BlockSettings,
       isSelected: Boolean,
-      jobCounter: AtomicInteger,
       onDataUpdate: (BlockData) -> Unit,
       onBoxSelect: (Int) -> Unit = {},
       onHeavyChange: () -> Unit = {}
@@ -108,8 +105,7 @@ class BoxOverlay private constructor(
         showText = true,
         onBoxUpdate = { _, newData -> onDataUpdate(newData) },
         onBoxSelect = onBoxSelect,
-        onHeavyChange = onHeavyChange,
-        jobCounter = jobCounter
+        onHeavyChange = onHeavyChange
       )
     }
 
@@ -361,7 +357,6 @@ object BoxOverlayMigration {
     blocks: List<BlockData>,
     basicSettings: BlockSettings,
     selectedBoxIndex: Int?,
-    jobCounter: AtomicInteger,
     onBlockUpdate: (Int, BlockData) -> Unit,
     onBoxSelect: (Int?) -> Unit,
     onHeavyChange: () -> Unit = {}
@@ -372,7 +367,6 @@ object BoxOverlayMigration {
         blockData = blockData,
         basicSettings = basicSettings,
         isSelected = selectedBoxIndex == index,
-        jobCounter = jobCounter,
         onDataUpdate = { newData -> onBlockUpdate(index, newData) },
         onBoxSelect = { onBoxSelect(index) },
         onHeavyChange = onHeavyChange

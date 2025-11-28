@@ -24,6 +24,7 @@ import core.utils.ClipboardUtils.getClipboardImage
 import core.utils.toComposeBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import project.data.ImageDataRepository
 import project.data.ImageType
@@ -131,38 +132,48 @@ fun ImageDataCreator(
             .focusRequester(requester)
             .focusable()
             .onKeyEvent { keyEvent ->
-              if (keyEvent.type.toString() != "KeyUp") return@onKeyEvent true
-              if (keyEvent.isCtrlPressed && keyEvent.key == Key.V) {
-                scope.launch(Dispatchers.IO) {
-                  isLoading = true
-                  progress = 0f
-                  val clipboardImage = getClipboardImage()
-                  if (clipboardImage == null) {
-                    // TODO make progress somehow
-                  } else {
-                    progress = 0.5f
-                    imagesService.add(ImagePathInfo(clipboardImage, "clipboard-image"))
+              if (keyEvent.type != KeyEventType.KeyUp) return@onKeyEvent false
+              when {
+                keyEvent.isCtrlPressed && keyEvent.key == Key.V -> {
+                  scope.launch(Dispatchers.IO) {
+                    withContext(Dispatchers.Main) {
+                      isLoading = true
+                      progress = 0f
+                    }
+                    val clipboardImage = getClipboardImage()
+                    if (clipboardImage == null) {
+                      // TODO make progress somehow
+                    } else {
+                      withContext(Dispatchers.Main) { progress = 0.5f }
+                      imagesService.add(ImagePathInfo(clipboardImage, "clipboard-image"))
+                    }
+                    imagesService.saveIfRequired()
+                    withContext(Dispatchers.Main) { isLoading = false }
                   }
-                  imagesService.saveIfRequired()
-                  isLoading = false
+                  true
                 }
+
+                else -> false
               }
-              false
             }
         ) {
           Button(
             onClick = {
               val files = openFileDialog(parent, "Files to add")
               scope.launch(Dispatchers.IO) {
-                isLoading = true
-                progress = 0f
+                withContext(Dispatchers.Main) {
+                  isLoading = true
+                  progress = 0f
+                }
                 files.forEachIndexed { index, file ->
-                  progress = index.toFloat() / files.size
+                  withContext(Dispatchers.Main) {
+                    progress = index.toFloat() / files.size
+                  }
                   val image = ImageIO.read(file)
                   imagesService.add(ImagePathInfo(image, file.nameWithoutExtension))
                 }
                 imagesService.saveIfRequired()
-                isLoading = false
+                withContext(Dispatchers.Main) { isLoading = false }
               }
             },
             enabled = !isLoading

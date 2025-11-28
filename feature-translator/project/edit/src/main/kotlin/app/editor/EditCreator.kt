@@ -38,7 +38,6 @@ import translation.data.BlockSettings
 import translation.data.ImageData
 import translation.data.WorkDataRepository
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import javax.imageio.ImageIO
 import kotlin.concurrent.withLock
@@ -87,7 +86,7 @@ fun EditCreator(navigationController: NavigationController, project: Project? = 
         .map { (imagePathInfo, imageData) -> CleanedImageWithBlock(imagePathInfo, imageData) }
     },
     stepWindow = { jobCounter, data ->
-      EditCreatorStep(imageEditsCounter = jobCounter, currentImage = data)
+      EditCreatorStep(currentImage = data)
     },
     finalWindow = { dataList ->
       EditCreatorFinal(navigationController, dataList, project)
@@ -102,14 +101,12 @@ data class CleanedImageWithBlock(
 
 @Composable
 private fun EditCreatorStep(
-  imageEditsCounter: AtomicInteger,
   currentImage: MutableState<CleanedImageWithBlock?>
 ) {
   val viewModel: EditCreatorStepViewModel = koinInject()
 
   EditCreatorStep(
     viewModel = viewModel,
-    imageEditsCounter = imageEditsCounter,
     currentImage = currentImage,
     onDataChange = { updatedData ->
       currentImage.value = updatedData
@@ -120,7 +117,6 @@ private fun EditCreatorStep(
 @Composable
 fun EditCreatorStep(
   viewModel: EditCreatorStepViewModel = koinInject(),
-  imageEditsCounter: AtomicInteger,
   currentImage: MutableState<CleanedImageWithBlock?>,
   onDataChange: (CleanedImageWithBlock) -> Unit
 ) {
@@ -156,8 +152,7 @@ fun EditCreatorStep(
       }
   ) {
     ImageEditingArea(
-      uiState = uiState,
-      imageEditsCounter = imageEditsCounter
+      uiState = uiState
     )
 
     EditControlsPanel(
@@ -171,8 +166,7 @@ fun EditCreatorStep(
 
 @Composable
 private fun ImageEditingArea(
-  uiState: EditCreatorStepUiState,
-  imageEditsCounter: AtomicInteger
+  uiState: EditCreatorStepUiState
 ) {
   Column(modifier = Modifier.fillMaxWidth(0.5f)) {
     val currentSettings = uiState.currentSettings
@@ -182,10 +176,9 @@ private fun ImageEditingArea(
           blocks = uiState.boxes,
           basicSettings = currentSettings,
           selectedBoxIndex = uiState.selectedBoxIndex,
-          jobCounter = imageEditsCounter,
-          onBlockUpdate = { index, newBlockData ->
+          onBlockUpdate = { _, _ ->
           },
-          onBoxSelect = { index ->
+          onBoxSelect = { _ ->
           },
           onHeavyChange = {
           }
@@ -336,7 +329,10 @@ private fun EditCreatorFinal(
         onClick = {
           scope.launch(Dispatchers.IO) {
             val files = FileKit.pickDirectory("Directory to save")
-            savePath.value = files?.file?.absolutePath ?: return@launch
+            val selectedPath = files?.file?.absolutePath ?: return@launch
+            withContext(Dispatchers.Main) {
+              savePath.value = selectedPath
+            }
           }
         },
         enabled = project == null
@@ -365,7 +361,7 @@ private fun EditCreatorFinal(
           val path = Path.of(savePath.value)
           path.createDirectories()
           check(path.isDirectory())
-          progress = 0.0f
+          withContext(Dispatchers.Main) { progress = 0.0f }
           val part = 1.0 / cleanedImages.size.toFloat()
           val semaphore = Semaphore(4)
           cleanedImages.mapIndexed { index, (imagePathInfo, imageData) ->
@@ -394,9 +390,12 @@ private fun EditCreatorFinal(
                     null
                   )
                 }
-                progressLock.withLock {
-                  progress += part.toFloat()
-                  progress = progress.coerceIn(0.0f, 1.0f)
+                val newProgress = progressLock.withLock {
+                  val updated = progress + part.toFloat()
+                  updated.coerceIn(0.0f, 1.0f)
+                }
+                withContext(Dispatchers.Main) {
+                  progress = newProgress
                 }
                 val imagePath =
                   path.resolve("${(index + 1).toString().padStart(cleanedImages.size.toString().length + 1, '0')}.png")
@@ -404,7 +403,7 @@ private fun EditCreatorFinal(
               }
             }
           }.awaitAll()
-          progress = 1.0f
+          withContext(Dispatchers.Main) { progress = 1.0f }
           withContext(Dispatchers.Main) {
             navigationController.navigateTo(NavigationDestination.MainMenu)
           }

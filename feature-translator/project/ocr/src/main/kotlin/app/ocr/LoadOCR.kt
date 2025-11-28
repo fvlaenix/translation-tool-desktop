@@ -14,6 +14,7 @@ import core.navigation.NavigationDestination
 import core.utils.JSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import translation.data.WorkData
 import translation.data.WorkDataRepository
@@ -45,40 +46,52 @@ fun LoadOCR(navigationController: NavigationController) {
               val path = try {
                 Path.of(file.value)
               } catch (_: InvalidPathException) {
-                error.value = "Invalid path"
-                isLoading = false
+                withContext(Dispatchers.Main) {
+                  error.value = "Invalid path"
+                  isLoading = false
+                }
                 return@launch
               }
               if (path.notExists()) {
-                error.value = "File not found"
-                isLoading = false
+                withContext(Dispatchers.Main) {
+                  error.value = "File not found"
+                  isLoading = false
+                }
                 return@launch
               }
               val text = try {
                 path.readText()
               } catch (e: IOException) {
                 e.printStackTrace()
-                error.value = "Error while reading file"
-                isLoading = false
+                withContext(Dispatchers.Main) {
+                  error.value = "Error while reading file"
+                  isLoading = false
+                }
                 return@launch
               }
               val workData = try {
                 JSON.decodeFromString<WorkData>(text)
               } catch (e: Exception) {
-                error.value = "Error while parsing file: ${e.message}"
-                isLoading = false
+                withContext(Dispatchers.Main) {
+                  error.value = "Error while parsing file: ${e.message}"
+                  isLoading = false
+                }
                 return@launch
               }
 
               workDataRepository.setWorkData(workData).fold(
                 onSuccess = {
-                  navigationController.navigateTo(NavigationDestination.MainMenu)
+                  withContext(Dispatchers.Main) {
+                    navigationController.navigateTo(NavigationDestination.MainMenu)
+                  }
                 },
                 onFailure = { exception ->
-                  error.value = "Error saving work data: ${exception.message}"
+                  withContext(Dispatchers.Main) {
+                    error.value = "Error saving work data: ${exception.message}"
+                  }
                 }
               )
-              isLoading = false
+              withContext(Dispatchers.Main) { isLoading = false }
             }
           }, enabled = !isLoading) { Text("Load") }
         }
