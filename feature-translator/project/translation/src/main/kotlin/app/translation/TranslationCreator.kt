@@ -300,7 +300,7 @@ private fun TranslatorCreatorFinal(
             val files = withContext(Dispatchers.IO) {
               openFileDialog(parent, "Files to add", false, FileDialog.SAVE)
             }
-            savePath.value = files.single().absolutePath
+            files.singleOrNull()?.let { savePath.value = it.absolutePath }
           }
         },
         enabled = project == null,
