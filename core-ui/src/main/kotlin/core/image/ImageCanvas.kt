@@ -11,6 +11,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import core.image.overlays.ImageOverlay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.awt.image.BufferedImage
 
 /**
@@ -109,12 +111,17 @@ private fun ImageCanvasContent(
  */
 @Composable
 private fun ImageRenderer(state: ImageCanvasState, transformer: CoordinateTransformer) {
-  val imageBitmap = remember(state.hasImage, state.imageSize) {
-    mutableStateOf<ImageBitmap?>(null)
-  }
+  val imageBitmap = remember { mutableStateOf<ImageBitmap?>(null) }
 
-  LaunchedEffect(state.hasImage, state.imageSize) {
-    imageBitmap.value = state.getImageBitmapForRendering()
+  LaunchedEffect(state.bufferedImage, state.imageBitmap) {
+    imageBitmap.value = when {
+      state.imageBitmap != null -> state.imageBitmap
+      state.bufferedImage != null -> withContext(Dispatchers.IO) {
+        state.bufferedImage?.toComposeBitmap()
+      }
+
+      else -> null
+    }
   }
 
   imageBitmap.value?.let { bitmap ->
@@ -173,4 +180,21 @@ fun SimpleImageCanvas(
 @Composable
 private fun Float.toDp(): Dp {
   return Dp(this / LocalDensity.current.density)
+}
+
+/**
+ * Converts BufferedImage to Compose ImageBitmap.
+ * This operation is expensive and should be called off the main thread.
+ */
+private fun BufferedImage.toComposeBitmap(): ImageBitmap? {
+  return try {
+    val outputStream = java.io.ByteArrayOutputStream()
+    javax.imageio.ImageIO.write(this, "png", outputStream)
+    val byteArray = outputStream.toByteArray()
+    androidx.compose.ui.res.loadImageBitmap(java.io.ByteArrayInputStream(byteArray))
+  } catch (e: Exception) {
+    println("Error converting BufferedImage to ImageBitmap: ${e.message}")
+    e.printStackTrace()
+    null
+  }
 }
