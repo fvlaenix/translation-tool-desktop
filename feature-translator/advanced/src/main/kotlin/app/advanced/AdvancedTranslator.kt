@@ -1,16 +1,13 @@
 package app.advanced
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.BottomAppBar
 import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -41,6 +38,15 @@ fun AdvancedTranslator(navigationController: NavigationController) {
     isEnabled.value = imageWithBoxesState.image != null
   }
 
+  LaunchedEffect(imageWithBoxesState.preparedTranslationInfos) {
+    val preparedInfos = imageWithBoxesState.preparedTranslationInfos
+    if (preparedInfos != null) {
+      translationInfos.value = preparedInfos
+      currentState.value = AdvancedTranslatorState.TRANSLATION_STEP
+      isEnabled.value = false
+    }
+  }
+
   TopBar(
     navigationController, "Advanced Translator",
     bottomBar = {
@@ -61,32 +67,18 @@ fun AdvancedTranslator(navigationController: NavigationController) {
           Button(
             onClick = {
               if (currentState.value.ordinal < AdvancedTranslatorState.entries.size - 1) {
-                currentState.value = AdvancedTranslatorState.entries[currentState.value.ordinal + 1]
-                isEnabled.value = false
-
-                // Prepare translation infos when moving to translation step
-                val fullBufferedImage = imageWithBoxesState.image?.toAwtImage()
-                if (fullBufferedImage != null) {
-                  val infos = if (imageWithBoxesState.boxes.isEmpty()) {
-                    listOf(TranslationInfo(fullBufferedImage))
-                  } else {
-                    imageWithBoxesState.boxes.map { boxData ->
-                      val subImage = fullBufferedImage.getSubimage(
-                        boxData.x.toInt(),
-                        boxData.y.toInt(),
-                        boxData.width.toInt(),
-                        boxData.height.toInt()
-                      )
-                      TranslationInfo(subImage)
-                    }
-                  }
-                  translationInfos.value = infos
-                }
+                imageWithBoxesViewModel.prepareTranslationInfos()
               }
             },
-            enabled = currentState.value.ordinal < AdvancedTranslatorState.entries.size - 1 && isEnabled.value
+            enabled = currentState.value.ordinal < AdvancedTranslatorState.entries.size - 1 &&
+                isEnabled.value &&
+                !imageWithBoxesState.isPreparingTranslation
           ) {
-            Text("Next")
+            if (imageWithBoxesState.isPreparingTranslation) {
+              CircularProgressIndicator(modifier = Modifier.size(16.dp))
+            } else {
+              Text("Next")
+            }
           }
         }
       }

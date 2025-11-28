@@ -2,8 +2,10 @@ package app.advanced.domain
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.IntSize
+import app.advanced.TranslationInfo
 import core.base.BaseViewModel
 import core.utils.ClipboardUtils.getClipboardImage
 import kotlinx.coroutines.Dispatchers
@@ -105,5 +107,48 @@ class ImageWithBoxesViewModel : BaseViewModel() {
 
   fun clearState() {
     _uiState.value = ImageWithBoxesUiState()
+  }
+
+  fun prepareTranslationInfos() {
+    val currentImage = _uiState.value.image
+    if (currentImage == null) {
+      setError("No image loaded")
+      return
+    }
+
+    viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(
+        isPreparingTranslation = true,
+        preparedTranslationInfos = null
+      )
+
+      try {
+        val translationInfos = withContext(Dispatchers.Default) {
+          val fullBufferedImage = currentImage.toAwtImage()
+
+          if (_uiState.value.boxes.isEmpty()) {
+            listOf(TranslationInfo(fullBufferedImage))
+          } else {
+            _uiState.value.boxes.map { boxData ->
+              val subImage = fullBufferedImage.getSubimage(
+                boxData.x.toInt(),
+                boxData.y.toInt(),
+                boxData.width.toInt(),
+                boxData.height.toInt()
+              )
+              TranslationInfo(subImage)
+            }
+          }
+        }
+
+        _uiState.value = _uiState.value.copy(
+          isPreparingTranslation = false,
+          preparedTranslationInfos = translationInfos
+        )
+      } catch (e: Exception) {
+        _uiState.value = _uiState.value.copy(isPreparingTranslation = false)
+        setError("Failed to prepare translation: ${e.message}")
+      }
+    }
   }
 }
