@@ -48,17 +48,25 @@ fun ImageWithBoxes(
     modifier = Modifier
       .fillMaxSize()
       .onKeyEvent { keyEvent ->
-        if (keyEvent.type.toString() != "KeyUp") return@onKeyEvent true
-        if (keyEvent.isCtrlPressed && keyEvent.key == Key.V) {
-          viewModel.loadImageFromClipboard()
+        if (keyEvent.type != KeyEventType.KeyUp) return@onKeyEvent false
+        when {
+          keyEvent.isCtrlPressed && keyEvent.key == Key.V -> {
+            viewModel.loadImageFromClipboard()
+            true
+          }
+
+          keyEvent.isCtrlPressed && keyEvent.key == Key.N -> {
+            viewModel.addNewBox()
+            true
+          }
+
+          keyEvent.key == Key.Delete -> {
+            viewModel.deleteLastBox()
+            true
+          }
+
+          else -> false
         }
-        if (keyEvent.isCtrlPressed && keyEvent.key == Key.N) {
-          viewModel.addNewBox()
-        }
-        if (keyEvent.key == Key.Delete) {
-          viewModel.deleteLastBox()
-        }
-        false
       }
       .focusRequester(requester)
       .focusable()
