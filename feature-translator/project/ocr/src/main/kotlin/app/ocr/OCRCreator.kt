@@ -42,7 +42,6 @@ import java.awt.FileDialog
 import java.awt.image.BufferedImage
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.writeText
 
 @Composable
@@ -109,7 +108,7 @@ private data class ImageInfoWithBox(
 
 @Composable
 private fun OCRCreatorStep(
-  jobCounter: AtomicInteger,
+  jobCounter: MutableState<Int>,
   imageInfoWithBox: MutableState<ImageInfoWithBox?>,
   project: Project? = null
 ) {
@@ -138,9 +137,9 @@ private fun OCRCreatorStep(
   // Update job counter based on ViewModel loading state
   LaunchedEffect(isProcessingOCR) {
     if (isProcessingOCR) {
-      jobCounter.incrementAndGet()
+      jobCounter.value++
     } else {
-      jobCounter.decrementAndGet()
+      jobCounter.value--
     }
   }
 

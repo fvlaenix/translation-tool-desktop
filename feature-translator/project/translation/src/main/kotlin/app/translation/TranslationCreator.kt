@@ -36,7 +36,6 @@ import translation.data.WorkDataRepository
 import java.awt.FileDialog
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.writeText
 
 @Composable
@@ -99,7 +98,7 @@ private data class TranslationData(
 
 @Composable
 private fun TranslatorCreatorStep(
-  ocrCounter: AtomicInteger,
+  ocrCounter: MutableState<Int>,
   translationData: MutableState<TranslationData?>
 ) {
   val coroutineScope = rememberCoroutineScope()
@@ -144,7 +143,7 @@ private fun TranslatorCreatorStep(
 
     Button(
       onClick = {
-        ocrCounter.incrementAndGet()
+        ocrCounter.value++
         coroutineScope.launch {
           val result = withContext(Dispatchers.IO) {
             translatorRepository.translateBatch(currentData.map { it.first.text })
@@ -164,7 +163,7 @@ private fun TranslatorCreatorStep(
             .onFailure { exception ->
               errorMessage = "Batch translation failed: ${exception.message}"
             }
-          ocrCounter.decrementAndGet()
+          ocrCounter.value--
         }
       }
     ) {
@@ -186,7 +185,7 @@ private fun TranslatorCreatorStep(
         )
         Button(
           onClick = {
-            ocrCounter.incrementAndGet()
+            ocrCounter.value++
             coroutineScope.launch {
               val result = withContext(Dispatchers.IO) {
                 translatorRepository.translateText(untranslatedData.text)
@@ -199,7 +198,7 @@ private fun TranslatorCreatorStep(
                 .onFailure { exception ->
                   errorMessage = "Translation failed: ${exception.message}"
                 }
-              ocrCounter.decrementAndGet()
+              ocrCounter.value--
             }
           },
           modifier = Modifier.weight(0.1f)

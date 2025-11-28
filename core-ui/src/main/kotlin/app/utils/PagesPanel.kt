@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import app.TopBar
 import core.navigation.NavigationController
-import java.util.concurrent.atomic.AtomicInteger
 
 @Composable
 fun <T> PagesPanel(
@@ -16,10 +15,10 @@ fun <T> PagesPanel(
   navigationController: NavigationController,
   dataExtractor: suspend () -> List<T>,
   startWindow: @Composable () -> Unit = { Text("Click next if you want to continue") },
-  stepWindow: @Composable (AtomicInteger, MutableState<T?>) -> Unit,
+  stepWindow: @Composable (MutableState<Int>, MutableState<T?>) -> Unit,
   finalWindow: @Composable (SnapshotStateList<T>) -> Unit,
 ) {
-  val jobCounter = remember { AtomicInteger(0) }
+  val jobCounter = remember { mutableIntStateOf(0) }
 
   var index by remember { mutableIntStateOf(-1) }
   var searchIndex by remember { mutableIntStateOf(1) }
@@ -60,7 +59,7 @@ fun <T> PagesPanel(
     currentItem.value = data[index]
   }
 
-  fun isWorkInProgress(): Boolean = jobCounter.get() > 0
+  fun isWorkInProgress(): Boolean = jobCounter.value > 0
 
   TopBar(
     navigationController, name,
