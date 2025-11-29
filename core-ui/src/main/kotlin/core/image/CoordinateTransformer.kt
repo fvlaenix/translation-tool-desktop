@@ -22,8 +22,17 @@ class CoordinateTransformer(private val state: ImageCanvasState) {
   fun imageToCanvas(imagePoint: Offset): Offset {
     if (!state.hasImage) return Offset.Zero
 
-    val scaledX = imagePoint.x * state.imageToCanvasScale + state.imageOffsetInCanvas.x
-    val scaledY = imagePoint.y * state.imageToCanvasScale + state.imageOffsetInCanvas.y
+    val scale = state.imageToCanvasScale * state.zoomScale
+    val canvasCenter = state.getCanvasCenter()
+
+    val scaledX = imagePoint.x * scale +
+        state.imageOffsetInCanvas.x * state.zoomScale +
+        canvasCenter.x * (1f - state.zoomScale) +
+        state.panOffset.x
+    val scaledY = imagePoint.y * scale +
+        state.imageOffsetInCanvas.y * state.zoomScale +
+        canvasCenter.y * (1f - state.zoomScale) +
+        state.panOffset.y
 
     return Offset(scaledX, scaledY)
   }
@@ -32,10 +41,19 @@ class CoordinateTransformer(private val state: ImageCanvasState) {
    * Convert a point from canvas coordinates to image coordinates
    */
   fun canvasToImage(canvasPoint: Offset): Offset {
-    if (!state.hasImage || state.imageToCanvasScale == 0f) return Offset.Zero
+    if (!state.hasImage || state.imageToCanvasScale == 0f || state.zoomScale == 0f) return Offset.Zero
 
-    val imageX = (canvasPoint.x - state.imageOffsetInCanvas.x) / state.imageToCanvasScale
-    val imageY = (canvasPoint.y - state.imageOffsetInCanvas.y) / state.imageToCanvasScale
+    val scale = state.imageToCanvasScale * state.zoomScale
+    val canvasCenter = state.getCanvasCenter()
+
+    val imageX = (canvasPoint.x -
+        canvasCenter.x * (1f - state.zoomScale) -
+        state.panOffset.x -
+        state.imageOffsetInCanvas.x * state.zoomScale) / scale
+    val imageY = (canvasPoint.y -
+        canvasCenter.y * (1f - state.zoomScale) -
+        state.panOffset.y -
+        state.imageOffsetInCanvas.y * state.zoomScale) / scale
 
     return Offset(imageX, imageY)
   }
@@ -80,15 +98,16 @@ class CoordinateTransformer(private val state: ImageCanvasState) {
    * Scale a dimension from image coordinates to canvas coordinates
    */
   fun imageDistanceToCanvas(imageDistance: Float): Float {
-    return imageDistance * state.imageToCanvasScale
+    return imageDistance * state.imageToCanvasScale * state.zoomScale
   }
 
   /**
    * Scale a dimension from canvas coordinates to image coordinates
    */
   fun canvasDistanceToImage(canvasDistance: Float): Float {
-    if (state.imageToCanvasScale == 0f) return 0f
-    return canvasDistance / state.imageToCanvasScale
+    val scale = state.imageToCanvasScale * state.zoomScale
+    if (scale == 0f) return 0f
+    return canvasDistance / scale
   }
 
   /**

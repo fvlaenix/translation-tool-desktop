@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import core.image.CoordinateTransformer
 import core.image.ImageCanvasState
 import translation.data.BlockData
@@ -136,21 +137,24 @@ class BoxOverlay private constructor(
   override fun Render(state: ImageCanvasState, transformer: CoordinateTransformer) {
     if (!state.hasImage) return
 
-    val density = LocalDensity.current
     var currentBlockData by remember(blockData) { mutableStateOf(blockData) }
+    val density = LocalDensity.current
 
-    val imageRect = Rect(
-      offset = Offset(
-        currentBlockData.blockPosition.x.toFloat(),
-        currentBlockData.blockPosition.y.toFloat()
-      ),
-      size = Size(
-        currentBlockData.blockPosition.width.toFloat(),
-        currentBlockData.blockPosition.height.toFloat()
-      )
-    )
-
-    val canvasRect = transformer.imageRectToCanvas(imageRect)
+    val canvasRect by remember {
+      derivedStateOf {
+        val imageRect = Rect(
+          offset = Offset(
+            currentBlockData.blockPosition.x.toFloat(),
+            currentBlockData.blockPosition.y.toFloat()
+          ),
+          size = Size(
+            currentBlockData.blockPosition.width.toFloat(),
+            currentBlockData.blockPosition.height.toFloat()
+          )
+        )
+        transformer.imageRectToCanvas(imageRect)
+      }
+    }
 
     val offsetX = with(density) { canvasRect.topLeft.x.toDp() }
     val offsetY = with(density) { canvasRect.topLeft.y.toDp() }
@@ -183,12 +187,16 @@ class BoxOverlay private constructor(
           focusRequester.requestFocus()
         }
         .focusable()
-        .pointerInput(currentBlockData) {
+        .pointerInput(currentBlockData, state.isSpacePressed) {
           detectDragGestures(
             onDragEnd = {
               onHeavyChange?.invoke()
             }
           ) { change, dragAmount ->
+            if (state.isSpacePressed) {
+              return@detectDragGestures
+            }
+
             val imageSize = state.imageSize
 
             val touchCanvasPos = change.previousPosition
@@ -227,7 +235,7 @@ class BoxOverlay private constructor(
             blue = settings.fontColor.b / 255f,
             alpha = settings.fontColor.a / 255f
           ),
-          fontSize = with(density) { (settings.fontSize * (width.value / 100f)).coerceAtLeast(8f).dp.toSp() }
+          fontSize = (settings.fontSize * (width.value / 100f)).coerceAtLeast(8f).sp
         )
       }
     }

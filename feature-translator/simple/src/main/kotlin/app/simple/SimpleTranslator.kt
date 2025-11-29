@@ -13,6 +13,7 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.TopBar
@@ -80,10 +81,14 @@ private fun InsideSimpleTranslator(
   isProcessingOCR: Boolean,
   isTranslating: Boolean
 ) {
+  val density = LocalDensity.current
+  val widthDp = with(density) { (currentSize.value.width / 3).toDp() }
+  val heightDp = with(density) { (currentSize.value.height / 3).toDp() }
+  val textHeightDp = with(density) { (currentSize.value.height / 6).toDp() }
 
   Row(
     modifier = Modifier
-      .size(width = currentSize.value.width.dp / 3, height = currentSize.value.height.dp / 3)
+      .size(width = widthDp, height = heightDp)
       .focusable()
   ) {
     ImageCanvas(
@@ -109,7 +114,7 @@ private fun InsideSimpleTranslator(
     value = ocrText,
     onValueChange = { viewModel.updateOcrText(it) },
     modifier = Modifier
-      .height(currentSize.value.height.dp / 6)
+      .height(textHeightDp)
       .fillMaxWidth(),
     enabled = !isProcessingOCR && !isTranslating
   )
@@ -131,7 +136,7 @@ private fun InsideSimpleTranslator(
     value = translationText,
     onValueChange = { viewModel.updateTranslationText(it) },
     modifier = Modifier
-      .height(currentSize.value.height.dp / 6)
+      .height(textHeightDp)
       .fillMaxWidth(),
     enabled = !isProcessingOCR && !isTranslating
   )
