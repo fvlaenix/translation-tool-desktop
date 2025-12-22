@@ -14,4 +14,11 @@ dependencies {
 
   // Koin
   implementation("io.insert-koin:koin-core:3.5.0")
+
+  // Testing
+  testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+}
+
+tasks.test {
+  useJUnitPlatform()
 }

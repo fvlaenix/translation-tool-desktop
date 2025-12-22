@@ -4,6 +4,7 @@ import org.koin.dsl.module
 import settings.data.SettingsRepository
 import settings.data.SettingsRepositoryImpl
 import settings.domain.SettingsViewModel
+import settings.domain.TranslationSettingsViewModel
 
 /**
  * Dependency injection module for application settings.
@@ -27,5 +28,12 @@ val settingsModule = module {
   // This ensures fresh state and proper cleanup
   factory {
     SettingsViewModel(settingsRepository = get())
+  }
+
+  factory {
+    TranslationSettingsViewModel(
+      settingsRepository = get(),
+      translationServiceProvider = get()
+    )
   }
 }

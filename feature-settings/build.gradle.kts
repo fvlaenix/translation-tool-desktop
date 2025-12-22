@@ -8,6 +8,8 @@ dependencies {
   implementation(project(":core-foundation"))
   implementation(project(":core-ui"))
   implementation(project(":data-settings"))
+  implementation(project(":service-translation"))
+  implementation("com.github.fvlaenix:ai-services:1.0.4")
 
   // Compose
   implementation(compose.desktop.common)

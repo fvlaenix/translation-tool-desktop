@@ -18,6 +18,7 @@ import app.ocr.OCRCreator
 import app.project.NewProjectPanel
 import app.project.ProjectPanel
 import app.settings.Settings
+import app.settings.TranslationSettings
 import app.simple.SimpleTranslator
 import app.translation.TranslationCreator
 import core.error.ErrorHandler
@@ -70,6 +71,7 @@ fun App() {
 
           NavigationDestination.Settings -> Settings(navigationController)
           NavigationDestination.FontSettings -> FontsSettings(navigationController)
+          NavigationDestination.TranslationSettings -> TranslationSettings(navigationController)
         }
       }
     }

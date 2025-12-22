@@ -13,6 +13,7 @@ allprojects {
   repositories {
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://maven.fvlaenix.com/repository/maven-public")
     google()
   }
 }
@@ -21,6 +22,6 @@ subprojects {
   apply(plugin = "org.jetbrains.kotlin.jvm")
 
   configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
-    jvmToolchain(17)
+    jvmToolchain(21)
   }
 }

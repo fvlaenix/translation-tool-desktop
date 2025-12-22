@@ -37,6 +37,7 @@ object AnimatedContentUtils {
       NavigationDestination.Project -> 9
       NavigationDestination.Settings -> 10
       NavigationDestination.FontSettings -> 11
+      NavigationDestination.TranslationSettings -> 12
     }
   }
 }
