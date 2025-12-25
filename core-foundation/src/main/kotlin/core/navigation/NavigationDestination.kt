@@ -27,4 +27,5 @@ sealed class NavigationDestination {
   object Settings : NavigationDestination()
   object FontSettings : NavigationDestination()
   object TranslationSettings : NavigationDestination()
+  object OCRSettings : NavigationDestination()
 }

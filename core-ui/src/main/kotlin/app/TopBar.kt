@@ -39,6 +39,9 @@ fun TopBar(
             IconButton(onClick = { navigationController.navigateTo(NavigationDestination.TranslationSettings) }) {
               Text("T")
             }
+            IconButton(onClick = { navigationController.navigateTo(NavigationDestination.OCRSettings) }) {
+              Text("O")
+            }
             IconButton(onClick = { navigationController.navigateTo(NavigationDestination.Settings) }) {
               Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Settings")
             }

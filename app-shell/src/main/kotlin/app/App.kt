@@ -17,6 +17,7 @@ import app.ocr.LoadOCR
 import app.ocr.OCRCreator
 import app.project.NewProjectPanel
 import app.project.ProjectPanel
+import app.settings.OCRSettings
 import app.settings.Settings
 import app.settings.TranslationSettings
 import app.simple.SimpleTranslator
@@ -72,6 +73,7 @@ fun App() {
           NavigationDestination.Settings -> Settings(navigationController)
           NavigationDestination.FontSettings -> FontsSettings(navigationController)
           NavigationDestination.TranslationSettings -> TranslationSettings(navigationController)
+          NavigationDestination.OCRSettings -> OCRSettings(navigationController)
         }
       }
     }

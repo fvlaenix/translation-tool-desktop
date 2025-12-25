@@ -38,6 +38,7 @@ object AnimatedContentUtils {
       NavigationDestination.Settings -> 10
       NavigationDestination.FontSettings -> 11
       NavigationDestination.TranslationSettings -> 12
+      NavigationDestination.OCRSettings -> 13
     }
   }
 }

@@ -16,6 +16,12 @@ enum class TranslationModelProvider {
 }
 
 @Serializable
+enum class OCRMode {
+  GRPC,
+  DIRECT
+}
+
+@Serializable
 data class TranslationDirectSettings(
   val apiKey: String = "",
   val provider: TranslationModelProvider = TranslationModelProvider.OPENAI,
@@ -30,13 +36,27 @@ data class TranslationGrpcSettings(
 )
 
 @Serializable
+data class OCRGrpcSettings(
+  val apiKey: String = ""
+)
+
+@Serializable
+data class OCRDirectSettings(
+  val credentialsPath: String = "",
+  val timeoutSeconds: Int = 120
+)
+
+@Serializable
 data class SettingsModel(
   val proxyServiceHostname: String = "localhost",
   val proxyServicePort: Int = 443,
   val apiKey: String = "TEST_API_KEY",
   val translationMode: TranslationMode = TranslationMode.GRPC,
   val translationGrpc: TranslationGrpcSettings = TranslationGrpcSettings(),
-  val translationDirect: TranslationDirectSettings = TranslationDirectSettings()
+  val translationDirect: TranslationDirectSettings = TranslationDirectSettings(),
+  val ocrMode: OCRMode = OCRMode.GRPC,
+  val ocrGrpc: OCRGrpcSettings = OCRGrpcSettings(),
+  val ocrDirect: OCRDirectSettings = OCRDirectSettings()
 ) {
   companion object {
     val DEFAULT = SettingsModel()

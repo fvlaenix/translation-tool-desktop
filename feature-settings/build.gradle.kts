@@ -9,6 +9,7 @@ dependencies {
   implementation(project(":core-ui"))
   implementation(project(":data-settings"))
   implementation(project(":service-translation"))
+  implementation(project(":service-ocr"))
   implementation("com.github.fvlaenix:ai-services:1.0.4")
 
   // Compose

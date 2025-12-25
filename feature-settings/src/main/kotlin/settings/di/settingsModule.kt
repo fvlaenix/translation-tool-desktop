@@ -3,6 +3,7 @@ package settings.di
 import org.koin.dsl.module
 import settings.data.SettingsRepository
 import settings.data.SettingsRepositoryImpl
+import settings.domain.OCRSettingsViewModel
 import settings.domain.SettingsViewModel
 import settings.domain.TranslationSettingsViewModel
 
@@ -34,6 +35,13 @@ val settingsModule = module {
     TranslationSettingsViewModel(
       settingsRepository = get(),
       translationServiceProvider = get()
+    )
+  }
+
+  factory {
+    OCRSettingsViewModel(
+      settingsRepository = get(),
+      ocrServiceProvider = get()
     )
   }
 }
