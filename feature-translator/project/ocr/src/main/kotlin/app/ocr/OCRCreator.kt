@@ -128,7 +128,7 @@ private fun OCRCreatorStep(
   }
 
   // Load image into ViewModel when it changes
-  LaunchedEffect(imageInfoWithBox.value) {
+  LaunchedEffect(imageInfoWithBox.value?.imagePathInfo) {
     imageInfoWithBox.value?.let { info ->
       viewModel.loadImage(info.imagePathInfo)
     }
@@ -168,12 +168,23 @@ private fun OCRCreatorStep(
     }
   })
 
+  val operationNumberState = remember { mutableStateOf(0) }
+  val selectedBoxIndexState = remember { mutableStateOf<Int?>(null) }
+
+  LaunchedEffect(operationNumber) {
+    operationNumberState.value = operationNumber
+  }
+
+  LaunchedEffect(selectedBoxIndex) {
+    selectedBoxIndexState.value = selectedBoxIndex
+  }
+
   Row {
     OCRImageDisplayArea(
       image = image,
       boxes = boxes,
-      operationNumber = mutableStateOf(operationNumber),
-      selectedBoxIndex = mutableStateOf(selectedBoxIndex)
+      operationNumber = operationNumberState,
+      selectedBoxIndex = selectedBoxIndexState
     )
 
     OCRControlsList(
