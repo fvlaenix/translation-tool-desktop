@@ -11,6 +11,8 @@ dependencies {
   // Compose
   implementation(compose.desktop.common)
   implementation(compose.material3)
+  implementation(compose.animation)
+  implementation(compose.ui)
   implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
 
   // Coroutines

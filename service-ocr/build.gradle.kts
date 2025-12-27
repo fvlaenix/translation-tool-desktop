@@ -1,5 +1,7 @@
 plugins {
   kotlin("jvm")
+  id("org.jetbrains.compose")
+  id("org.jetbrains.kotlin.plugin.compose")
 }
 
 dependencies {
@@ -9,7 +11,7 @@ dependencies {
   implementation(project(":service-remote"))
 
   // Compose UI (for IntSize)
-  implementation("androidx.compose.ui:ui:1.7.3")
+  implementation(compose.ui)
 
   // OCR library (includes Google Cloud Vision transitively)
   implementation("com.github.fvlaenix:ocr-image-to-text:1.0.3")

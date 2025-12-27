@@ -25,6 +25,8 @@ dependencies {
   // Compose
   implementation(compose.desktop.common)
   implementation(compose.material3)
+  implementation(compose.animation)
+  implementation(compose.ui)
 
   // Koin
   implementation("io.insert-koin:koin-core:3.5.0")
