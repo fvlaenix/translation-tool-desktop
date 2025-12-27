@@ -184,7 +184,8 @@ private fun OCRCreatorStep(
       image = image,
       boxes = boxes,
       operationNumber = operationNumberState,
-      selectedBoxIndex = selectedBoxIndexState
+      selectedBoxIndex = selectedBoxIndexState,
+      onBoxPositionUpdate = { index, position -> viewModel.updateBoxPosition(index, position) }
     )
 
     OCRControlsList(
@@ -221,7 +222,8 @@ private fun OCRImageDisplayArea(
   image: MutableState<BufferedImage?>,
   boxes: MutableList<OCRBoxData>,
   operationNumber: MutableState<Int>,
-  selectedBoxIndex: MutableState<Int?>
+  selectedBoxIndex: MutableState<Int?>,
+  onBoxPositionUpdate: (Int, BlockPosition) -> Unit
 ) {
   Column(modifier = Modifier.fillMaxWidth(0.7f)) {
     val overlays = remember(boxes.size, selectedBoxIndex.value, operationNumber.value) {
@@ -233,7 +235,9 @@ private fun OCRImageDisplayArea(
           isSelected = selectedBoxIndex.value == index,
           onPositionUpdate = { newPosition ->
             val imageSize = image.value?.let { IntSize(it.width, it.height) } ?: IntSize(1000, 1000)
-            boxes[index] = boxes[index].copy(box = newPosition.clampToImageBounds(imageSize))
+            val clampedPosition = newPosition.clampToImageBounds(imageSize)
+            boxes[index] = boxes[index].copy(box = clampedPosition)
+            onBoxPositionUpdate(index, clampedPosition)
           },
           onBoxSelect = { selectedBoxIndex.value = index }
         )
