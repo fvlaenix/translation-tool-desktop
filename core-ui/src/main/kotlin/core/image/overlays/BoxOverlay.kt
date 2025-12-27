@@ -187,7 +187,7 @@ class BoxOverlay private constructor(
           focusRequester.requestFocus()
         }
         .focusable()
-        .pointerInput(currentBlockData, state.isSpacePressed) {
+        .pointerInput(blockData.id, state.isSpacePressed) {
           detectDragGestures(
             onDragEnd = {
               onHeavyChange?.invoke()
@@ -199,17 +199,23 @@ class BoxOverlay private constructor(
 
             val imageSize = state.imageSize
 
-            val touchCanvasPos = change.previousPosition
-            val touchImagePos = transformer.canvasToImage(touchCanvasPos)
-            val dragImageAmount = transformer.canvasToImage(dragAmount) - transformer.canvasToImage(Offset.Zero)
+            // change.previousPosition is relative to the Box (not the canvas)
+            // because this pointerInput is on a Box with .offset()
+            // We only need to convert the scale from canvas pixels to image pixels
+            val scale = state.imageToCanvasScale * state.zoomScale
+            val relativeX = change.previousPosition.x / scale
+            val relativeY = change.previousPosition.y / scale
 
-            val relativeX = touchImagePos.x - currentBlockData.blockPosition.x
-            val relativeY = touchImagePos.y - currentBlockData.blockPosition.y
+            // Convert drag amount from canvas pixels to image pixels
+            val dragImageAmount = Offset(
+              dragAmount.x / scale,
+              dragAmount.y / scale
+            )
 
             val newPosition = handleDragGesture(
               currentBlockData.blockPosition,
-              relativeX.toFloat(),
-              relativeY.toFloat(),
+              relativeX,
+              relativeY,
               dragImageAmount,
               imageSize
             )

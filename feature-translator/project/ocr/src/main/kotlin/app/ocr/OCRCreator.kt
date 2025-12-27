@@ -224,7 +224,7 @@ private fun OCRImageDisplayArea(
   selectedBoxIndex: MutableState<Int?>
 ) {
   Column(modifier = Modifier.fillMaxWidth(0.7f)) {
-    val overlays = remember(boxes.toList(), selectedBoxIndex.value, operationNumber.value) {
+    val overlays = remember(boxes.size, selectedBoxIndex.value, operationNumber.value) {
       boxes.mapIndexed { index, ocrBox ->
         BoxOverlay.fromBoxOnImage(
           index = index,
