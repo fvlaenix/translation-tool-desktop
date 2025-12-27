@@ -5,7 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import app.batch.ImagePathInfo
 import app.translation.domain.OCRCreatorStepUiState
 import core.base.BaseViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import project.data.ImageDataRepository
 import project.data.Project
 import project.data.TextDataRepository
@@ -64,7 +66,11 @@ class OCRCreatorViewModel(
       _isProcessingOCR.value = true
       clearError()
 
-      ocrRepository.getBoxedOCR(image)
+      val result = withContext(Dispatchers.IO) {
+        ocrRepository.getBoxedOCR(image)
+      }
+
+      result
         .onSuccess { boxes ->
           _ocrBoxes.value = boxes
           incrementOperationNumber()
