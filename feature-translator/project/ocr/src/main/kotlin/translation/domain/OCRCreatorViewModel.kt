@@ -94,6 +94,14 @@ class OCRCreatorViewModel(
     }
   }
 
+  fun updateBoxPosition(index: Int, position: BlockPosition) {
+    val currentBoxes = _ocrBoxes.value.toMutableList()
+    if (index in currentBoxes.indices) {
+      currentBoxes[index] = currentBoxes[index].copy(box = position)
+      _ocrBoxes.value = currentBoxes
+    }
+  }
+
   fun mergeBoxes(index: Int) {
     val currentBoxes = _ocrBoxes.value.toMutableList()
     if (index < currentBoxes.size - 1) {
