@@ -235,11 +235,12 @@ class BoxOverlay private constructor(
         // Generate text image asynchronously and cache it
         var textImage by remember { mutableStateOf<ImageBitmap?>(null) }
 
-        // Key for regenerating: text content, settings, and block dimensions
+        // Key for regenerating: text content, settings, shape, and block dimensions
         val renderKey = remember(
           currentBlockData.text,
           currentBlockData.blockPosition.width,
           currentBlockData.blockPosition.height,
+          currentBlockData.blockPosition.shape,
           settings
         ) { Any() }
 
