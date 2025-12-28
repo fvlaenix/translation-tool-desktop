@@ -3,24 +3,43 @@ package app.editor.domain
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import core.base.BaseViewModel
+import fonts.domain.FontResolver
+import kotlinx.coroutines.launch
 import translation.data.BlockData
 import translation.data.BlockPosition
 import translation.data.BlockSettings
 import java.awt.image.BufferedImage
 
-class EditCreatorStepViewModel : BaseViewModel() {
+class EditCreatorStepViewModel(
+  private val fontResolver: FontResolver
+) : BaseViewModel() {
 
   private val _uiState = mutableStateOf(EditCreatorStepUiState())
   val uiState: State<EditCreatorStepUiState> = _uiState
 
   fun loadImageData(image: BufferedImage, blockData: List<BlockData>, settings: BlockSettings) {
-    _uiState.value = _uiState.value.copy(
-      image = image,
-      boxes = blockData,
-      currentSettings = settings,
-      selectedBoxIndex = null,
-      currentShape = null
-    )
+    viewModelScope.launch {
+      // Resolve font for global settings
+      val resolvedSettings = fontResolver.resolveFont(settings)
+
+      // Resolve fonts for each box's individual settings
+      val resolvedBoxes = blockData.map { box ->
+        val boxSettings = box.settings
+        if (boxSettings != null) {
+          box.copy(settings = fontResolver.resolveFont(boxSettings))
+        } else {
+          box
+        }
+      }
+
+      _uiState.value = _uiState.value.copy(
+        image = image,
+        boxes = resolvedBoxes,
+        currentSettings = resolvedSettings,
+        selectedBoxIndex = null,
+        currentShape = null
+      )
+    }
   }
 
   fun selectBox(index: Int?) {
@@ -70,21 +89,26 @@ class EditCreatorStepViewModel : BaseViewModel() {
     val state = _uiState.value
     val selectedIndex = state.selectedBoxIndex
 
-    if (selectedIndex == null) {
-      // Update global settings (no box selected)
-      _uiState.value = state.copy(currentSettings = settings)
-      incrementOperationNumber()
-    } else {
-      // Update ONLY box-specific settings, NOT the global currentSettings
-      val currentBoxes = state.boxes.toMutableList()
-      if (selectedIndex in currentBoxes.indices) {
-        val box = currentBoxes[selectedIndex]
-        currentBoxes[selectedIndex] = box.copy(settings = settings)
-        _uiState.value = state.copy(
-          boxes = currentBoxes
-          // Don't update currentSettings - it stays as global default
-        )
+    viewModelScope.launch {
+      // Resolve font for the new settings
+      val resolvedSettings = fontResolver.resolveFont(settings)
+
+      if (selectedIndex == null) {
+        // Update global settings (no box selected)
+        _uiState.value = _uiState.value.copy(currentSettings = resolvedSettings)
         incrementOperationNumber()
+      } else {
+        // Update ONLY box-specific settings, NOT the global currentSettings
+        val currentBoxes = _uiState.value.boxes.toMutableList()
+        if (selectedIndex in currentBoxes.indices) {
+          val box = currentBoxes[selectedIndex]
+          currentBoxes[selectedIndex] = box.copy(settings = resolvedSettings)
+          _uiState.value = _uiState.value.copy(
+            boxes = currentBoxes
+            // Don't update currentSettings - it stays as global default
+          )
+          incrementOperationNumber()
+        }
       }
     }
   }
@@ -148,6 +172,9 @@ class EditCreatorStepViewModel : BaseViewModel() {
 
   // Method to handle global settings changes from parent
   fun updateGlobalSettings(settings: BlockSettings) {
-    _uiState.value = _uiState.value.copy(currentSettings = settings)
+    viewModelScope.launch {
+      val resolvedSettings = fontResolver.resolveFont(settings)
+      _uiState.value = _uiState.value.copy(currentSettings = resolvedSettings)
+    }
   }
 }
