@@ -12,9 +12,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.*
 import app.batch.ImagePathInfo
 import app.block.BlockSettingsPanel
 import app.editor.domain.EditCreatorStepUiState
@@ -146,8 +144,15 @@ fun EditCreatorStep(
   Row(
     modifier = Modifier
       .onKeyEvent { keyEvent ->
-        if (keyEvent.key != Key.Escape) return@onKeyEvent true
-        viewModel.selectBox(null)
+        // Only handle key down events
+        if (keyEvent.type != KeyEventType.KeyDown) {
+          return@onKeyEvent false
+        }
+        // Escape to deselect box
+        if (keyEvent.key == Key.Escape) {
+          viewModel.selectBox(null)
+          return@onKeyEvent true
+        }
         false
       }
   ) {
