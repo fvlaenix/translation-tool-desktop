@@ -86,28 +86,32 @@ class EditCreatorStepViewModel(
   }
 
   fun updateSettings(settings: BlockSettings) {
-    val state = _uiState.value
-    val selectedIndex = state.selectedBoxIndex
+    val selectedIndex = _uiState.value.selectedBoxIndex
 
     viewModelScope.launch {
       // Resolve font for the new settings
       val resolvedSettings = fontResolver.resolveFont(settings)
 
+      // Read current state AFTER font resolution (state might have changed)
+      val currentState = _uiState.value
+
       if (selectedIndex == null) {
-        // Update global settings (no box selected)
-        _uiState.value = _uiState.value.copy(currentSettings = resolvedSettings)
-        incrementOperationNumber()
+        // Update global settings (no box selected) - atomic update
+        _uiState.value = currentState.copy(
+          currentSettings = resolvedSettings,
+          operationNumber = currentState.operationNumber + 1
+        )
       } else {
         // Update ONLY box-specific settings, NOT the global currentSettings
-        val currentBoxes = _uiState.value.boxes.toMutableList()
+        val currentBoxes = currentState.boxes.toMutableList()
         if (selectedIndex in currentBoxes.indices) {
           val box = currentBoxes[selectedIndex]
           currentBoxes[selectedIndex] = box.copy(settings = resolvedSettings)
-          _uiState.value = _uiState.value.copy(
-            boxes = currentBoxes
-            // Don't update currentSettings - it stays as global default
+          // Atomic update: boxes and operation number together
+          _uiState.value = currentState.copy(
+            boxes = currentBoxes,
+            operationNumber = currentState.operationNumber + 1
           )
-          incrementOperationNumber()
         }
       }
     }
@@ -123,19 +127,25 @@ class EditCreatorStepViewModel(
       currentBoxes[selectedIndex] = box.copy(
         blockPosition = box.blockPosition.copy(shape = shape)
       )
+      // Atomic update: boxes, shape, and operation number together
       _uiState.value = state.copy(
         boxes = currentBoxes,
-        currentShape = shape
+        currentShape = shape,
+        operationNumber = state.operationNumber + 1
       )
     }
   }
 
   fun updateBox(index: Int, blockData: BlockData) {
-    val currentBoxes = _uiState.value.boxes.toMutableList()
+    val state = _uiState.value
+    val currentBoxes = state.boxes.toMutableList()
     if (index in currentBoxes.indices) {
       currentBoxes[index] = blockData
-      _uiState.value = _uiState.value.copy(boxes = currentBoxes)
-      incrementOperationNumber()
+      // Atomic update: boxes and operation number together
+      _uiState.value = state.copy(
+        boxes = currentBoxes,
+        operationNumber = state.operationNumber + 1
+      )
     }
   }
 
