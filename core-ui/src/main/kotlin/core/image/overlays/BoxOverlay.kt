@@ -1,13 +1,12 @@
 package core.image.overlays
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -16,15 +15,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import bean.Alignment
 import core.image.CoordinateTransformer
 import core.image.ImageCanvasState
+import core.utils.Text2ImageUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import translation.data.BlockData
 import translation.data.BlockPosition
 import translation.data.BlockSettings
@@ -52,7 +54,7 @@ class BoxOverlay private constructor(
   private val onHeavyChange: (() -> Unit)? = null
 ) : ImageOverlay {
 
-  override val id = "box_${index}_${blockData.hashCode()}"
+  override val id = "box_${index}_${blockData.id}"
   override val isVisible = true
   override val renderOrder = 10
 
@@ -230,46 +232,42 @@ class BoxOverlay private constructor(
         }
     ) {
       if (showText && currentBlockData.text.isNotEmpty()) {
-        val imageWidth = currentBlockData.blockPosition.width.toFloat()
-        val scale = state.imageToCanvasScale * state.zoomScale
-        val baseFontSize = settings.fontSize * (imageWidth / 100f)
-        val displayFontSize = (baseFontSize * scale).coerceAtLeast(8f)
+        // Generate text image asynchronously and cache it
+        var textImage by remember { mutableStateOf<ImageBitmap?>(null) }
 
-        // Scale padding and border with zoom (use image-space values)
-        val basePadding = settings.border.toFloat()
-        val displayPadding = (basePadding * scale).coerceAtLeast(1f)
+        // Key for regenerating: text content, settings, and block dimensions
+        val renderKey = remember(
+          currentBlockData.text,
+          currentBlockData.blockPosition.width,
+          currentBlockData.blockPosition.height,
+          settings
+        ) { Any() }
 
-        // Convert alignment
-        val textAlign = when (settings.alignment) {
-          Alignment.LEFT -> TextAlign.Left
-          Alignment.CENTER -> TextAlign.Center
-          Alignment.RIGHT -> TextAlign.Right
+        LaunchedEffect(renderKey) {
+          textImage = withContext(Dispatchers.Default) {
+            try {
+              // Create a copy with x=0, y=0 for rendering within the box
+              // The positioning is handled by the Box's offset, not by Text2ImageUtils
+              val renderBlockData = currentBlockData.copy(
+                blockPosition = currentBlockData.blockPosition.copy(x = 0.0, y = 0.0)
+              )
+              val result = Text2ImageUtils.textToImage(settings, renderBlockData)
+              result.image.toComposeImageBitmap()
+            } catch (e: Exception) {
+              e.printStackTrace()
+              null
+            }
+          }
         }
 
-        // Background color
-        val bgColor = Color(
-          red = settings.backgroundColor.r / 255f,
-          green = settings.backgroundColor.g / 255f,
-          blue = settings.backgroundColor.b / 255f,
-          alpha = settings.backgroundColor.a / 255f
-        )
-
-        Text(
-          text = currentBlockData.text,
-          modifier = Modifier
-            .fillMaxSize()
-            .background(bgColor)
-            .padding(displayPadding.dp),
-          textAlign = textAlign,
-          color = Color(
-            red = settings.fontColor.r / 255f,
-            green = settings.fontColor.g / 255f,
-            blue = settings.fontColor.b / 255f,
-            alpha = settings.fontColor.a / 255f
-          ),
-          fontSize = displayFontSize.sp,
-          lineHeight = (displayFontSize * 1.2f).sp
-        )
+        textImage?.let { bitmap ->
+          Image(
+            bitmap = bitmap,
+            contentDescription = "Text: ${currentBlockData.text}",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+          )
+        }
       }
     }
   }
