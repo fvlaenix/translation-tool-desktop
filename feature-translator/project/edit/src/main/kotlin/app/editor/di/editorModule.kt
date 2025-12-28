@@ -6,7 +6,7 @@ import project.data.Project
 import translation.domain.EditCreatorViewModel
 
 val editorModule = module {
-  factory { EditCreatorStepViewModel() }
+  factory { EditCreatorStepViewModel(fontResolver = get()) }
 
   factory { (project: Project?) ->
     EditCreatorViewModel(
