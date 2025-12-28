@@ -71,18 +71,20 @@ class EditCreatorStepViewModel : BaseViewModel() {
     val selectedIndex = state.selectedBoxIndex
 
     if (selectedIndex == null) {
-      // Update global settings
+      // Update global settings (no box selected)
       _uiState.value = state.copy(currentSettings = settings)
+      incrementOperationNumber()
     } else {
-      // Update box-specific settings
+      // Update ONLY box-specific settings, NOT the global currentSettings
       val currentBoxes = state.boxes.toMutableList()
       if (selectedIndex in currentBoxes.indices) {
         val box = currentBoxes[selectedIndex]
         currentBoxes[selectedIndex] = box.copy(settings = settings)
         _uiState.value = state.copy(
-          boxes = currentBoxes,
-          currentSettings = settings
+          boxes = currentBoxes
+          // Don't update currentSettings - it stays as global default
         )
+        incrementOperationNumber()
       }
     }
   }
