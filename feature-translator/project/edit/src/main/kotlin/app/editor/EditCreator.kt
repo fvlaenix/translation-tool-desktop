@@ -33,10 +33,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import org.koin.compose.koinInject
 import project.data.*
-import translation.data.BlockPosition
-import translation.data.BlockSettings
-import translation.data.ImageData
-import translation.data.WorkDataRepository
+import translation.data.*
 import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
 import javax.imageio.ImageIO
@@ -122,7 +119,9 @@ fun EditCreatorStep(
 ) {
   val uiState by viewModel.uiState
 
-  LaunchedEffect(currentImage.value) {
+  // Only reload when the actual IMAGE changes (not when data is synced back)
+  // Use the image reference as key, not the whole currentImage.value
+  LaunchedEffect(currentImage.value?.imagePathInfo?.image) {
     currentImage.value?.let { data ->
       viewModel.loadImageData(
         image = data.imagePathInfo.image,
@@ -132,6 +131,7 @@ fun EditCreatorStep(
     }
   }
 
+  // Sync changes back to parent (this updates currentImage.value but shouldn't trigger reload above)
   LaunchedEffect(uiState.boxes, uiState.currentSettings) {
     currentImage.value?.let { current ->
       val updatedImageData = current.imageData.copy(
@@ -152,7 +152,9 @@ fun EditCreatorStep(
       }
   ) {
     ImageEditingArea(
-      uiState = uiState
+      uiState = uiState,
+      onBoxUpdate = { index, blockData -> viewModel.updateBox(index, blockData) },
+      onBoxSelect = { index -> viewModel.selectBox(index) }
     )
 
     EditControlsPanel(
@@ -166,19 +168,28 @@ fun EditCreatorStep(
 
 @Composable
 private fun ImageEditingArea(
-  uiState: EditCreatorStepUiState
+  uiState: EditCreatorStepUiState,
+  onBoxUpdate: (Int, BlockData) -> Unit,
+  onBoxSelect: (Int?) -> Unit
 ) {
   Column(modifier = Modifier.fillMaxWidth(0.5f)) {
     val currentSettings = uiState.currentSettings
     if (currentSettings != null) {
-      val overlays = remember(uiState.boxes, uiState.selectedBoxIndex, uiState.operationNumber) {
+      val overlays = remember(
+        uiState.boxes.size,
+        uiState.selectedBoxIndex,
+        uiState.operationNumber,
+        currentSettings
+      ) {
         BoxOverlayMigration.createBlockOverlays(
           blocks = uiState.boxes,
           basicSettings = currentSettings,
           selectedBoxIndex = uiState.selectedBoxIndex,
-          onBlockUpdate = { _, _ ->
+          onBlockUpdate = onBlockUpdate@{ index, blockData ->
+            onBoxUpdate(index, blockData)
           },
-          onBoxSelect = { _ ->
+          onBoxSelect = { index ->
+            onBoxSelect(index)
           },
           onHeavyChange = {
           }
@@ -210,6 +221,7 @@ private fun EditControlsPanel(
 
     SettingsConfigurationPanel(
       currentSettings = uiState.currentSettings,
+      selectedBoxIndex = uiState.selectedBoxIndex,
       onSettingsUpdate = onSettingsUpdate
     )
 
@@ -247,18 +259,22 @@ private fun TextEditingField(
 @Composable
 private fun SettingsConfigurationPanel(
   currentSettings: BlockSettings?,
+  selectedBoxIndex: Int?,
   onSettingsUpdate: (BlockSettings) -> Unit
 ) {
-  val currentSettings = currentSettings
   if (currentSettings != null) {
-    val settingsState = remember { mutableStateOf(currentSettings) }
+    // Use selectedBoxIndex as key so state resets when selection changes
+    val settingsState = remember(selectedBoxIndex) { mutableStateOf(currentSettings) }
 
-    LaunchedEffect(currentSettings) {
-      settingsState.value = currentSettings
-    }
+    // Only sync from external when selection changes (handled by remember key above)
+    // Don't sync on every currentSettings change to avoid overwriting user edits
 
+    // Update callback when user changes settings in the panel
     LaunchedEffect(settingsState.value) {
-      onSettingsUpdate(settingsState.value)
+      // Only call update if settings actually differ from current
+      if (settingsState.value != currentSettings) {
+        onSettingsUpdate(settingsState.value)
+      }
     }
 
     BlockSettingsPanel(settingsState)

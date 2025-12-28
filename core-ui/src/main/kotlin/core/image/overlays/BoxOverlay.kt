@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import bean.Alignment
 import core.image.CoordinateTransformer
 import core.image.ImageCanvasState
 import translation.data.BlockData
@@ -229,19 +230,45 @@ class BoxOverlay private constructor(
         }
     ) {
       if (showText && currentBlockData.text.isNotEmpty()) {
+        val imageWidth = currentBlockData.blockPosition.width.toFloat()
+        val scale = state.imageToCanvasScale * state.zoomScale
+        val baseFontSize = settings.fontSize * (imageWidth / 100f)
+        val displayFontSize = (baseFontSize * scale).coerceAtLeast(8f)
+
+        // Scale padding and border with zoom (use image-space values)
+        val basePadding = settings.border.toFloat()
+        val displayPadding = (basePadding * scale).coerceAtLeast(1f)
+
+        // Convert alignment
+        val textAlign = when (settings.alignment) {
+          Alignment.LEFT -> TextAlign.Left
+          Alignment.CENTER -> TextAlign.Center
+          Alignment.RIGHT -> TextAlign.Right
+        }
+
+        // Background color
+        val bgColor = Color(
+          red = settings.backgroundColor.r / 255f,
+          green = settings.backgroundColor.g / 255f,
+          blue = settings.backgroundColor.b / 255f,
+          alpha = settings.backgroundColor.a / 255f
+        )
+
         Text(
           text = currentBlockData.text,
           modifier = Modifier
             .fillMaxSize()
-            .padding(4.dp),
-          textAlign = TextAlign.Center,
+            .background(bgColor)
+            .padding(displayPadding.dp),
+          textAlign = textAlign,
           color = Color(
             red = settings.fontColor.r / 255f,
             green = settings.fontColor.g / 255f,
             blue = settings.fontColor.b / 255f,
             alpha = settings.fontColor.a / 255f
           ),
-          fontSize = (settings.fontSize * (width.value / 100f)).coerceAtLeast(8f).sp
+          fontSize = displayFontSize.sp,
+          lineHeight = (displayFontSize * 1.2f).sp
         )
       }
     }
